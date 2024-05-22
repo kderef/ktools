@@ -1,8 +1,13 @@
 use raylib::{
-    camera::Camera3D, color::Color, drawing::{RaylibDraw, RaylibDraw3D, RaylibDrawHandle, RaylibMode3DExt}, math::Matrix, models::RaylibModel, RaylibHandle, RaylibThread
+    camera::Camera3D,
+    color::Color,
+    drawing::{RaylibDraw, RaylibDraw3D, RaylibDrawHandle, RaylibMode3DExt},
+    math::Matrix,
+    models::RaylibModel,
+    RaylibHandle, RaylibThread,
 };
 
-use crate::{assets::Assets, context::GameContext, rl_misc::vec3};
+use crate::{assets::Assets, context::GameContext, rl_misc::vec3, settings::Settings};
 
 #[derive(Debug, Clone, Copy)]
 pub enum GameState {
@@ -16,11 +21,13 @@ pub struct Game<'a> {
     thread: &'a RaylibThread,
     gamestate: GameState,
     assets: Assets,
-    context: GameContext,
+    ctx: GameContext,
+    settings: Settings,
 }
 
 impl<'a> Game<'a> {
-    pub fn new(rl: RaylibHandle, thread: &'a RaylibThread, assets: Assets) -> Self {
+    pub fn new(mut rl: RaylibHandle, thread: &'a RaylibThread, assets: Assets) -> Self {
+        rl.set_exit_key(None);
         Self {
             rl,
             thread,
@@ -34,54 +41,59 @@ impl<'a> Game<'a> {
                 ),
                 rotation: 0.0,
             },
-            context: GameContext::default(),
+            ctx: GameContext::default(),
+            settings: Settings::default(),
         }
     }
     pub fn running(&self) -> bool {
         !self.rl.window_should_close()
     }
+    fn titlescreen(&mut self) -> RaylibDrawHandle {
+        // update
+        const ROTATION_SPEED: f32 = 2.0;
+
+        let GameState::Menu {
+            camera,
+            ref mut rotation,
+        } = self.gamestate
+        else {
+            unreachable!()
+        };
+
+        let new_rotation = *rotation + ROTATION_SPEED * self.ctx.dt;
+        *rotation = if new_rotation > 360.0 {
+            0.0
+        } else {
+            new_rotation
+        };
+
+        self.assets
+            .models
+            .neptune
+            .set_transform(&Matrix::rotate_y(rotation.to_radians()));
+
+        // draw
+        let mut dr = self.rl.begin_drawing(self.thread);
+        dr.clear_background(Color::BLACK);
+
+        let mut scene = dr.begin_mode3D(camera);
+
+        scene.draw_model(
+            &self.assets.models.neptune,
+            vec3(0.0, 0.0, 5.0),
+            10.0,
+            Color::WHITE,
+        );
+        drop(scene);
+        dr
+    }
     pub fn update(&mut self) {
-        self.context.update(&self.rl);
+        self.ctx.update(&self.rl);
 
-        let mut dr: RaylibDrawHandle;
-
-        match self.gamestate {
-            GameState::Menu {
-                camera,
-                ref mut rotation,
-            } => {
-                // update
-                const ROTATION_SPEED: f32 = 2.0;
-
-                let new_rotation = *rotation + ROTATION_SPEED * self.context.dt;
-                *rotation = if new_rotation > 360.0 {
-                    0.0
-                } else {
-                    new_rotation
-                };
-
-                self.assets.models.neptune.set_transform(
-                    &Matrix::rotate_y(rotation.to_radians())
-                );
-
-                // draw
-                dr = self.rl.begin_drawing(self.thread);
-                dr.clear_background(Color::BLACK);
-
-                let mut scene = dr.begin_mode3D(camera);
-
-                scene.draw_model(
-                    &self.assets.models.neptune,
-                    vec3(0.0, 0.0, 5.0),
-                    10.0,
-                    Color::WHITE,
-                );
-                drop(scene);
-            }
-            _ => {
-                dr = self.rl.begin_drawing(self.thread);
-            }
-        }
+        let mut dr = match self.gamestate {
+            GameState::Menu { .. } => self.titlescreen(),
+            _ => self.rl.begin_drawing(self.thread),
+        };
 
         dr.draw_fps(0, 0);
     }

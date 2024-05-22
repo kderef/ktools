@@ -4,6 +4,7 @@ mod game;
 mod assets;
 mod rl_misc;
 mod context;
+mod settings;
 
 fn main() {
     let (mut rl, thread) = raylib::init()
