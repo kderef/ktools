@@ -1,0 +1,9 @@
+[submodule "games/killumall/raylib"]
+	path = games/killumall/raylib
+	url = https://github.com/raysan5/raylib
+[submodule "games/killumall/raygui"]
+	path = games/killumall/raygui
+	url = https://github.com/raysan5/raygui
+[submodule "games/killumall/incbin"]
+	path = games/killumall/incbin
+	url = https://github.com/graphitemaster/incbin
