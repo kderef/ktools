@@ -42,12 +42,13 @@ pub struct App {
 }
 
 fn home_button<'a>(
-    icon: Element<'a, Message>,
+    icon: Text<'a>,
     name: &'a str,
     bg: Color,
     text_color: Color,
     index: usize,
 ) -> Button<'a, Message> {
+    let icon = icon.size(28).color(text_color);
     button(
         container(
             iced::widget::column![icon, text(name).size(16).color(text_color),]
@@ -98,6 +99,9 @@ impl App {
     pub fn update(&mut self, message: Message) {
         let current_tool = self.selected_tool.and_then(|i| Some(&mut self.tools[i]));
 
+        #[cfg(debug_assertions)]
+        println!("=> MESSAGE: {message:?}");
+
         match message {
             Message::ChooseTool(index) => {
                 let tool = &mut self.tools[index];
@@ -116,14 +120,19 @@ impl App {
     }
 
     pub fn view(&self) -> Element<'_, Message> {
-        let children = self.tools.iter().enumerate().map(|(i, t)| {
-            home_button(t.icon(), t.name(), t.background(), t.text_color(), i).into()
-        });
+        match self.selected_tool {
+            Some(index) => self.tools[index].view(),
+            None => {
+                let children = self.tools.iter().enumerate().map(|(i, t)| {
+                    home_button(t.icon(), t.name(), t.background(), t.text_color(), i).into()
+                });
 
-        let grid = Grid::with_children(children).fluid(200).spacing(20);
+                let grid = Grid::with_children(children).fluid(200).spacing(20);
 
-        let content = Container::new(grid).padding(20);
-        let view = Scrollable::new(content);
-        view.into()
+                let content = Container::new(grid).padding(20);
+                let view = Scrollable::new(content);
+                view.into()
+            }
+        }
     }
 }

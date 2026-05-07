@@ -9,11 +9,8 @@ impl Tool for PasswordGenerator {
     fn name(&self) -> &'static str {
         "Password Generator"
     }
-    fn icon(&self) -> Element<'_, crate::Message> {
+    fn icon(&self) -> Text<'_> {
         icon_font::lock()
-            .size(28)
-            .color(rgb(0.95, 0.95, 0.95))
-            .into()
     }
 
     fn background(&self) -> Color {

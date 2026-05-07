@@ -1,5 +1,5 @@
 pub use crate::rgb;
-pub use iced::{Color, Element};
+pub use iced::{Color, Element, widget::Text};
 pub use iced_fonts::codicon as icon_font;
 
 pub mod cmd;
@@ -7,7 +7,7 @@ pub mod passgen;
 
 pub trait Tool {
     fn name(&self) -> &str;
-    fn icon(&self) -> Element<'_, crate::Message>;
+    fn icon(&self) -> Text<'_>;
     fn background(&self) -> Color;
     fn text_color(&self) -> Color;
 
