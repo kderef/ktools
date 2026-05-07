@@ -1,4 +1,7 @@
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+#![cfg_attr(
+    any(not(debug_assertions), feature = "nocon"),
+    windows_subsystem = "windows"
+)]
 
 mod tool;
 
@@ -8,9 +11,7 @@ use iced::Color;
 use iced::Element;
 use iced::Length;
 use iced::widget::*;
-use iced_fonts::{CODICON_FONT_BYTES, codicon};
-
-use codicon as icon_font;
+use iced_fonts::CODICON_FONT_BYTES;
 
 use crate::tool::Tool;
 
@@ -33,12 +34,11 @@ pub enum Message {
     /// Go to index
     ChooseTool(usize),
     PasswordGenerator(tool::passgen::Message),
-
-    Test,
 }
 
 pub struct App {
     tools: [Box<dyn Tool>; 2],
+    selected_tool: Option<usize>,
 }
 
 fn home_button<'a>(
@@ -58,7 +58,7 @@ fn home_button<'a>(
     )
     .width(Length::Fixed(160.0))
     .height(Length::Fixed(80.0))
-    .on_press(Message::Test)
+    .on_press(Message::ChooseTool(index))
     .style(move |_theme: &Theme, status| {
         let alpha = match status {
             button::Status::Hovered => 0.82,
@@ -91,11 +91,28 @@ impl App {
                 Box::new(tool::cmd::CMD),
                 Box::new(tool::passgen::PasswordGenerator {}),
             ],
+            selected_tool: None,
         }
     }
 
-    pub fn update(&mut self, _message: Message) {
-        //
+    pub fn update(&mut self, message: Message) {
+        let current_tool = self.selected_tool.and_then(|i| Some(&mut self.tools[i]));
+
+        match message {
+            Message::ChooseTool(index) => {
+                let tool = &mut self.tools[index];
+                tool.on_select();
+
+                if !tool.no_view() {
+                    self.selected_tool = Some(index);
+                }
+            }
+            other => {
+                if let Some(tool) = current_tool {
+                    tool.update(other);
+                }
+            }
+        }
     }
 
     pub fn view(&self) -> Element<'_, Message> {

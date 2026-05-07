@@ -11,6 +11,10 @@ pub trait Tool {
     fn background(&self) -> Color;
     fn text_color(&self) -> Color;
 
+    /// Run code when the tool is selected
+    fn on_select(&mut self) {}
+
+    /// Should the tool's view() be used?
     fn no_view(&self) -> bool {
         false
     }

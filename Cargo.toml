@@ -3,6 +3,11 @@ name = "ktools"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+# no console window
+default = []
+nocon = []
+
 [profile.release]
 lto = true
 strip = true
