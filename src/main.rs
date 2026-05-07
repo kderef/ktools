@@ -46,6 +46,7 @@ fn home_button<'a>(
     name: &'a str,
     bg: Color,
     text_color: Color,
+    index: usize,
 ) -> Button<'a, Message> {
     button(
         container(
@@ -98,32 +99,11 @@ impl App {
     }
 
     pub fn view(&self) -> Element<'_, Message> {
-        let lock_icon = icon_font::lock()
-            .size(28)
-            .color(rgb(0.95, 0.95, 0.95))
-            .into();
+        let children = self.tools.iter().enumerate().map(|(i, t)| {
+            home_button(t.icon(), t.name(), t.background(), t.text_color(), i).into()
+        });
 
-        let terminal_icon = icon_font::terminal()
-            .size(28)
-            .color(rgb(0.9, 0.9, 0.9))
-            .into();
-
-        let grid = grid![
-            home_button(
-                lock_icon,
-                "Password Generator",
-                rgb(0.0, 0.2, 0.7),
-                rgb(0.95, 0.95, 0.95)
-            ),
-            home_button(
-                terminal_icon,
-                "CMD",
-                rgb(0.08, 0.08, 0.08),
-                rgb(0.9, 0.9, 0.9)
-            ),
-        ]
-        .fluid(200)
-        .spacing(20);
+        let grid = Grid::with_children(children).fluid(200).spacing(20);
 
         let content = Container::new(grid).padding(20);
         let view = Scrollable::new(content);

@@ -6,15 +6,21 @@ impl Tool for CMD {
     fn name(&self) -> &'static str {
         "CMD"
     }
+    fn icon(&self) -> Element<'_, crate::Message> {
+        icon_font::terminal()
+            .size(28)
+            .color(rgb(0.9, 0.9, 0.9))
+            .into()
+    }
     fn no_view(&self) -> bool {
         true
     }
 
     fn background(&self) -> Color {
-        Color::from_rgb(0.08, 0.08, 0.08)
+        rgb(0.08, 0.08, 0.08)
     }
     fn text_color(&self) -> Color {
-        Color::from_rgb(0.9, 0.9, 0.9)
+        rgb(0.9, 0.9, 0.9)
     }
 
     fn update(&mut self, message: crate::Message) {
