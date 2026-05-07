@@ -7,10 +7,10 @@ edition = "2024"
 lto = true
 strip = true
 codegen-units = 1
-opt-level = "s"
+opt-level = "z"
 
 [dependencies]
-iced_fonts = { version = "0.3.0", features = ["bootstrap"] }
+iced_fonts = { version = "0.3.0", features = ["codicon"] }
 
 [dependencies.iced]
 version = "0.14.0"
