@@ -90,7 +90,7 @@ impl App {
         Self {
             tools: [
                 Box::new(tool::cmd::CMD),
-                Box::new(tool::passgen::PasswordGenerator {}),
+                Box::new(tool::passgen::PasswordGenerator::new()),
             ],
             selected_tool: None,
         }
