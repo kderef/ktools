@@ -10,6 +10,7 @@ codegen-units = 1
 opt-level = "s"
 
 [dependencies]
+iced_fonts = { version = "0.3.0", features = ["bootstrap"] }
 
 [dependencies.iced]
 version = "0.14.0"
