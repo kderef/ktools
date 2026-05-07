@@ -1,5 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod tool;
+
 use iced::Background;
 use iced::Border;
 use iced::Color;
@@ -9,6 +11,8 @@ use iced::widget::*;
 use iced_fonts::{CODICON_FONT_BYTES, codicon};
 
 use codicon as icon_font;
+
+use crate::tool::Tool;
 
 pub const fn rgb(r: f32, g: f32, b: f32) -> Color {
     Color::from_rgb(r, g, b)
@@ -26,12 +30,15 @@ fn main() {
 
 #[derive(Debug, Clone)]
 pub enum Message {
+    /// Go to index
+    ChooseTool(usize),
+    PasswordGenerator(tool::passgen::Message),
+
     Test,
 }
 
-#[derive(Debug, Clone)]
-pub enum App {
-    Home,
+pub struct App {
+    tools: [Box<dyn Tool>; 2],
 }
 
 fn home_button<'a>(
@@ -77,8 +84,13 @@ fn home_button<'a>(
 }
 
 impl App {
-    const fn new() -> Self {
-        Self::Home
+    fn new() -> Self {
+        Self {
+            tools: [
+                Box::new(tool::cmd::CMD),
+                Box::new(tool::passgen::PasswordGenerator {}),
+            ],
+        }
     }
 
     pub fn update(&mut self, _message: Message) {
