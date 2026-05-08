@@ -22,7 +22,7 @@ impl Tool for CMD {
         rgb(0.9, 0.9, 0.9)
     }
 
-    fn update(&mut self, message: crate::Message) {
+    fn update(&mut self, _message: crate::Message) -> Task<crate::Message> {
         unreachable!()
     }
 

@@ -10,6 +10,7 @@ use iced::Border;
 use iced::Color;
 use iced::Element;
 use iced::Length;
+use iced::Task;
 use iced::widget::*;
 use iced_fonts::CODICON_FONT_BYTES;
 
@@ -96,7 +97,7 @@ impl App {
         }
     }
 
-    pub fn update(&mut self, message: Message) {
+    pub fn update(&mut self, message: Message) -> Task<Message> {
         let current_tool = self.selected_tool.and_then(|i| Some(&mut self.tools[i]));
 
         #[cfg(debug_assertions)]
@@ -113,10 +114,12 @@ impl App {
             }
             other => {
                 if let Some(tool) = current_tool {
-                    tool.update(other);
+                    return tool.update(other);
                 }
             }
         }
+
+        Task::none()
     }
 
     pub fn view(&self) -> Element<'_, Message> {

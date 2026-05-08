@@ -1,4 +1,5 @@
 pub use crate::rgb;
+use iced::Task;
 pub use iced::{Color, Element, widget::Text};
 pub use iced_fonts::codicon as icon_font;
 
@@ -19,6 +20,6 @@ pub trait Tool {
         false
     }
 
-    fn update(&mut self, message: crate::Message);
+    fn update(&mut self, message: crate::Message) -> Task<crate::Message>;
     fn view(&self) -> Element<'_, crate::Message>;
 }
