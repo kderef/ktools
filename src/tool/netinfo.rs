@@ -1,6 +1,10 @@
 use super::*;
 
-use iced::widget::*;
+use iced::{
+    Length,
+    alignment::{Horizontal, Vertical},
+    widget::*,
+};
 use network_interface::{NetworkInterface, NetworkInterfaceConfig};
 
 pub struct NetworkInfo {}
@@ -30,6 +34,19 @@ impl Tool for NetworkInfo {
     fn view(&self) -> Element<'_, crate::Message> {
         let netconf = NetworkInterface::show();
 
-        text(format!("{netconf:#?}")).into()
+        let content: Text<'_> = match netconf {
+            Err(e) => text(format!("ERROR: {e:?}")),
+            Ok(nc) => text(format!("{nc:#?}")),
+        };
+
+        let content = container(content)
+            .padding(10)
+            .width(Length::Fill)
+            .align_x(Horizontal::Center)
+            .align_y(Vertical::Center);
+
+        let content = scrollable(content);
+
+        content.into()
     }
 }
