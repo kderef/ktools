@@ -1,10 +1,17 @@
 use super::*;
 
+use iced::Alignment;
 use iced::Background;
 use iced::Border;
+use iced::Font;
 use iced::Length;
+use iced::Padding;
 use iced::Task;
+use iced::alignment::Horizontal;
+use iced::alignment::Vertical;
+use iced::border::Radius;
 use iced::clipboard;
+use iced::font::Weight;
 use iced::widget;
 use iced::widget::*;
 
@@ -169,47 +176,57 @@ impl Tool for PasswordGenerator {
                 crate::Message::PasswordGenerator(Message::LengthChanged(n))
             });
 
-        let password_row = row![
-            button(icon_font::refresh().size(text_size))
-                .on_press(crate::Message::PasswordGenerator(Message::Regenerate))
-                .style(|_theme: &Theme, _status| button::Style {
-                    snap: false,
-                    background: Some(Background::Color(rgb(1.0, 1.0, 1.0))),
-                    text_color: rgb(0.06, 0.06, 0.06),
-                    border: Border {
-                        radius: 8.0.into(),
-                        color: Color::TRANSPARENT,
-                        width: 0.0,
-                    },
-                    shadow: iced::Shadow {
-                        color: Color::from_rgba(0.0, 0.0, 0.0, 0.2),
-                        offset: iced::Vector { x: 0.0, y: 2.0 },
-                        blur_radius: 2.0,
-                    },
-                }),
-            TextInput::new("password output...", &self.password)
-                .width(Length::FillPortion(3))
-                .size(30),
-            button(text("copy").size(text_size))
+        let password_output = TextInput::new("password output...", &self.password)
+            // .width(Length::FillPortion(3))
+            .style(|theme: &Theme, _status| text_input::Style {
+                background: Background::Color(Color::from_rgb8(100, 100, 100)),
+                border: Border {
+                    color: Color::from_rgba8(255, 255, 255, 0.5),
+                    width: 1.0,
+                    radius: Radius::new(5.0),
+                },
+                icon: Color::from_rgb8(245, 245, 245),
+                placeholder: Color::from_rgba8(255, 255, 255, 0.5),
+                value: theme.palette().text,
+                selection: theme.palette().primary,
+            })
+            .size(30);
+
+        let top_content = widget::column![
+            password_output,
+            widget::row![
+                button(
+                    container(
+                        widget::row![icon_font::copy().size(24), text("copy").size(24)]
+                            .spacing(10)
+                            .align_y(iced::Alignment::Center),
+                    )
+                    .center(Length::Fill)
+                )
                 .on_press(crate::Message::PasswordGenerator(Message::Copy))
-                .style(|_theme: &Theme, status| button::Style {
-                    snap: false,
-                    background: Some(Background::Color(match status {
-                        button::Status::Pressed => rgb(0.165, 0.31, 0.631),
-                        _ => rgb(0.224, 0.424, 0.847),
-                    })),
-                    text_color: rgb(1.0, 1.0, 1.0),
-                    border: Border {
-                        radius: 8.0.into(),
-                        color: Color::TRANSPARENT,
-                        width: 0.0,
-                    },
-                    shadow: iced::Shadow {
-                        color: Color::from_rgba(0.0, 0.0, 0.0, 0.2),
-                        offset: iced::Vector { x: 0.0, y: 2.0 },
-                        blur_radius: 2.0,
-                    },
-                }),
+                .width(Length::FillPortion(3))
+                .height(Length::Shrink),
+                button(
+                    container(
+                        widget::row![icon_font::refresh().size(24), text("regenerate").size(24)]
+                            .spacing(10)
+                            .align_y(iced::Alignment::Center),
+                    )
+                    .center(Length::Fill)
+                )
+                .on_press(crate::Message::PasswordGenerator(Message::Regenerate))
+                .width(Length::FillPortion(3))
+                .height(Length::Shrink),
+            ]
+            .spacing(30)
+        ]
+        .spacing(15)
+        .width(Length::FillPortion(4));
+
+        let password_row = row![
+            space().width(Length::FillPortion(1)),
+            top_content,
+            space().width(Length::FillPortion(1))
         ]
         .spacing(8)
         .align_y(iced::Alignment::Center);
@@ -234,35 +251,31 @@ impl Tool for PasswordGenerator {
         let go_back = button(
             row![
                 icon_font::arrow_left().size(text_size),
-                text("Back").size(text_size),
+                text("Back").size(15),
             ]
             .spacing(6)
             .align_y(iced::Alignment::Center),
         )
-        .on_press(crate::Message::GoHome)
-        .style(|_theme: &Theme, status| button::Style {
-            snap: false,
-            background: Some(Background::Color(match status {
-                button::Status::Pressed => rgb(0.85, 0.85, 0.85),
-                _ => rgb(0.93, 0.93, 0.93),
-            })),
-            text_color: rgb(0.06, 0.06, 0.06),
-            border: Border {
-                radius: 8.0.into(),
-                color: Color::TRANSPARENT,
-                width: 0.0,
-            },
-            shadow: iced::Shadow {
-                color: Color::from_rgba(0.0, 0.0, 0.0, 0.2),
-                offset: iced::Vector { x: 0.0, y: 2.0 },
-                blur_radius: 2.0,
-            },
-        });
+        .width(Length::Shrink)
+        .on_press(crate::Message::GoHome);
 
-        let title = text(self.name()).size(text_size);
+        let title = text(self.name())
+            .align_x(Alignment::Center)
+            .size(40)
+            .width(Length::Fill)
+            .wrapping(text::Wrapping::None)
+            .font(Font {
+                weight: Weight::Bold,
+                ..Default::default()
+            });
 
         widget::column![
-            widget::row![go_back, title],
+            widget::row![
+                go_back.width(Length::Shrink),
+                space().width(Length::FillPortion(1)),
+                title.width(Length::FillPortion(3)),
+                space().width(Length::FillPortion(2)),
+            ],
             password_row,
             length_row,
             checkboxes,

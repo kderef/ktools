@@ -24,6 +24,13 @@ pub const fn rgb(r: f32, g: f32, b: f32) -> Color {
 
 fn main() {
     iced::application(App::new, App::update, App::view)
+        .window(iced::window::Settings {
+            min_size: Some(iced::Size {
+                width: 500.0,
+                height: 400.0,
+            }),
+            ..Default::default()
+        })
         .title("KTools")
         .resizable(true)
         .window_size((900, 600))
