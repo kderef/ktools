@@ -1,9 +1,12 @@
 pub use crate::rgb;
+
 use iced::Task;
+
 pub use iced::{Color, Element, widget::Text};
 pub use iced_fonts::codicon as icon_font;
 
 pub mod cmd;
+pub mod netinfo;
 pub mod passgen;
 
 pub trait Tool {

@@ -10,7 +10,9 @@ use iced::Border;
 use iced::Color;
 use iced::Element;
 use iced::Length;
+use iced::Subscription;
 use iced::Task;
+use iced::keyboard;
 use iced::widget::*;
 use iced_fonts::CODICON_FONT_BYTES;
 
@@ -25,7 +27,9 @@ fn main() {
         .title("KTools")
         .resizable(true)
         .window_size((900, 600))
+        .centered()
         .font(CODICON_FONT_BYTES)
+        .subscription(App::subscription)
         .run()
         .unwrap();
 }
@@ -35,11 +39,13 @@ pub enum Message {
     /// Go to index
     ChooseTool(usize),
     GoHome,
+
+    /* messages for tools */
     PasswordGenerator(tool::passgen::Message),
 }
 
 pub struct App {
-    tools: [Box<dyn Tool>; 2],
+    tools: [Box<dyn Tool>; 3],
     selected_tool: Option<usize>,
 }
 
@@ -93,12 +99,31 @@ impl App {
             tools: [
                 Box::new(tool::cmd::CMD),
                 Box::new(tool::passgen::PasswordGenerator::new()),
+                Box::new(tool::netinfo::NetworkInfo::new()),
             ],
             selected_tool: None,
         }
     }
 
-    pub fn update(&mut self, message: Message) -> Task<Message> {
+    fn subscription(&self) -> Subscription<Message> {
+        keyboard::listen().filter_map(|event| {
+            let keyboard::Event::KeyPressed {
+                modified_key: keyboard::Key::Named(modified_key),
+                repeat: false,
+                ..
+            } = event
+            else {
+                return None;
+            };
+
+            match modified_key {
+                keyboard::key::Named::Escape => Some(Message::GoHome),
+                _ => None,
+            }
+        })
+    }
+
+    fn update(&mut self, message: Message) -> Task<Message> {
         #[cfg(debug_assertions)]
         println!("=> MESSAGE: {message:?}");
 
@@ -124,7 +149,7 @@ impl App {
         Task::none()
     }
 
-    pub fn view(&self) -> Element<'_, Message> {
+    fn view(&self) -> Element<'_, Message> {
         match self.selected_tool {
             Some(index) => self.tools[index].view(),
             None => {
