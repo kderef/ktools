@@ -141,8 +141,14 @@ impl Tool for PasswordGenerator {
                     self.length = new_len;
                     self.generate();
                 }
-                Message::UseNumsToggled(v) => self.use_nums = v,
-                Message::UseCharsToggled(v) => self.use_chars = v,
+                Message::UseNumsToggled(v) => {
+                    self.use_nums = v;
+                    self.generate();
+                }
+                Message::UseCharsToggled(v) => {
+                    self.use_chars = v;
+                    self.generate();
+                }
                 Message::Regenerate => {
                     self.generate();
                 }
@@ -178,7 +184,9 @@ impl Tool for PasswordGenerator {
                         blur_radius: 2.0,
                     },
                 }),
-            TextInput::new("password output...", &self.password).width(Length::FillPortion(3)),
+            TextInput::new("password output...", &self.password)
+                .width(Length::FillPortion(3))
+                .size(30),
             button(text("copy").size(14))
                 .on_press(crate::Message::PasswordGenerator(Message::Copy))
                 .style(|_theme: &Theme, status| button::Style {
@@ -220,7 +228,32 @@ impl Tool for PasswordGenerator {
         ]
         .spacing(10);
 
-        widget::column![password_row, length_row, checkboxes,]
+        let go_back = button(
+            row![icon_font::arrow_left().size(14), text("Back").size(14),]
+                .spacing(6)
+                .align_y(iced::Alignment::Center),
+        )
+        .on_press(crate::Message::GoHome)
+        .style(|_theme: &Theme, status| button::Style {
+            snap: false,
+            background: Some(Background::Color(match status {
+                button::Status::Pressed => rgb(0.85, 0.85, 0.85),
+                _ => rgb(0.93, 0.93, 0.93),
+            })),
+            text_color: rgb(0.06, 0.06, 0.06),
+            border: Border {
+                radius: 8.0.into(),
+                color: Color::TRANSPARENT,
+                width: 0.0,
+            },
+            shadow: iced::Shadow {
+                color: Color::from_rgba(0.0, 0.0, 0.0, 0.2),
+                offset: iced::Vector { x: 0.0, y: 2.0 },
+                blur_radius: 2.0,
+            },
+        });
+
+        widget::column![go_back, password_row, length_row, checkboxes,]
             .spacing(16)
             .padding(20)
             .into()

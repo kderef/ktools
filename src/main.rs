@@ -34,6 +34,7 @@ fn main() {
 pub enum Message {
     /// Go to index
     ChooseTool(usize),
+    GoHome,
     PasswordGenerator(tool::passgen::Message),
 }
 
@@ -104,6 +105,9 @@ impl App {
         println!("=> MESSAGE: {message:?}");
 
         match message {
+            Message::GoHome => {
+                self.selected_tool = None;
+            }
             Message::ChooseTool(index) => {
                 let tool = &mut self.tools[index];
                 tool.on_select();
