@@ -1,4 +1,5 @@
 use super::*;
+
 use iced::Background;
 use iced::Border;
 use iced::Length;
@@ -6,11 +7,11 @@ use iced::Task;
 use iced::clipboard;
 use iced::widget;
 use iced::widget::*;
+
 use rand::RngExt;
 use rand::seq::SliceRandom;
-use std::ops::RangeInclusive;
 
-use rand::Rng;
+use std::ops::RangeInclusive;
 
 pub struct PasswordGenerator {
     length: u32,
@@ -161,13 +162,15 @@ impl Tool for PasswordGenerator {
     }
 
     fn view(&self) -> Element<'_, crate::Message> {
+        let text_size = 25;
+
         let length_slider: Slider<'_, u32, crate::Message, Theme> =
             slider(Self::LENGTH_RANGE, self.length, |n| {
                 crate::Message::PasswordGenerator(Message::LengthChanged(n))
             });
 
         let password_row = row![
-            button(icon_font::refresh().size(18))
+            button(icon_font::refresh().size(text_size))
                 .on_press(crate::Message::PasswordGenerator(Message::Regenerate))
                 .style(|_theme: &Theme, _status| button::Style {
                     snap: false,
@@ -187,7 +190,7 @@ impl Tool for PasswordGenerator {
             TextInput::new("password output...", &self.password)
                 .width(Length::FillPortion(3))
                 .size(30),
-            button(text("copy").size(14))
+            button(text("copy").size(text_size))
                 .on_press(crate::Message::PasswordGenerator(Message::Copy))
                 .style(|_theme: &Theme, status| button::Style {
                     snap: false,
@@ -212,7 +215,7 @@ impl Tool for PasswordGenerator {
         .align_y(iced::Alignment::Center);
 
         let length_row = row![
-            text(format!("Length: {}", self.length)).size(15),
+            text(format!("Length: {}", self.length)).size(text_size),
             length_slider,
         ]
         .spacing(12)
@@ -229,9 +232,12 @@ impl Tool for PasswordGenerator {
         .spacing(10);
 
         let go_back = button(
-            row![icon_font::arrow_left().size(14), text("Back").size(14),]
-                .spacing(6)
-                .align_y(iced::Alignment::Center),
+            row![
+                icon_font::arrow_left().size(text_size),
+                text("Back").size(text_size),
+            ]
+            .spacing(6)
+            .align_y(iced::Alignment::Center),
         )
         .on_press(crate::Message::GoHome)
         .style(|_theme: &Theme, status| button::Style {
@@ -253,9 +259,16 @@ impl Tool for PasswordGenerator {
             },
         });
 
-        widget::column![go_back, password_row, length_row, checkboxes,]
-            .spacing(16)
-            .padding(20)
-            .into()
+        let title = text(self.name()).size(text_size);
+
+        widget::column![
+            widget::row![go_back, title],
+            password_row,
+            length_row,
+            checkboxes,
+        ]
+        .spacing(16)
+        .padding(20)
+        .into()
     }
 }
