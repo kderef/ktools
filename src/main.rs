@@ -99,8 +99,6 @@ impl App {
     }
 
     pub fn update(&mut self, message: Message) -> Task<Message> {
-        let current_tool = self.selected_tool.and_then(|i| Some(&mut self.tools[i]));
-
         #[cfg(debug_assertions)]
         println!("=> MESSAGE: {message:?}");
 
@@ -117,8 +115,8 @@ impl App {
                 }
             }
             other => {
-                if let Some(tool) = current_tool {
-                    return tool.update(other);
+                if let Some(index) = self.selected_tool {
+                    return self.tools[index].update(other);
                 }
             }
         }

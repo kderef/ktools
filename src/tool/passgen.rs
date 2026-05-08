@@ -49,11 +49,11 @@ impl PasswordGenerator {
         let len_upper = (self.length as f32 * Self::UPPER_WEIGHT).ceil() as u32;
         let len_lower = self.length - len_nums - len_spec - len_upper;
 
-        let mut generated = String::with_capacity(self.length as usize);
+        self.password.clear();
         let mut rng = rand::rng();
 
         for _ in 0..len_nums {
-            generated.push(
+            self.password.push(
                 (Self::NUMS
                     .chars()
                     .nth(rng.random_range(0..Self::NUMS.len())))
@@ -61,7 +61,7 @@ impl PasswordGenerator {
             );
         }
         for _ in 0..len_spec {
-            generated.push(
+            self.password.push(
                 Self::SPEC
                     .chars()
                     .nth(rng.random_range(0..Self::SPEC.len()))
@@ -69,7 +69,7 @@ impl PasswordGenerator {
             );
         }
         for _ in 0..len_lower {
-            generated.push(
+            self.password.push(
                 Self::LOWER
                     .chars()
                     .nth(rng.random_range(0..Self::LOWER.len()))
@@ -77,7 +77,7 @@ impl PasswordGenerator {
             );
         }
         for _ in 0..len_upper {
-            generated.push(
+            self.password.push(
                 Self::UPPER
                     .chars()
                     .nth(rng.random_range(0..Self::UPPER.len()))
@@ -85,7 +85,7 @@ impl PasswordGenerator {
             );
         }
 
-        let mut new = generated.clone().chars().collect::<Vec<char>>();
+        let mut new = self.password.chars().collect::<Vec<char>>();
 
         new.shuffle(&mut rng);
         if Self::SHUFFLE_TWICE {
