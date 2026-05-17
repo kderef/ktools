@@ -48,6 +48,7 @@ pub enum Message {
     GoHome,
 
     /* messages for tools */
+    TabSelected(usize),
     PasswordGenerator(tool::passgen::Message),
 }
 
