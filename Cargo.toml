@@ -22,6 +22,7 @@ winres = "0.1.12"
 static_vcruntime = "3.0.0"
 
 [dependencies]
+iced_aw = "0.14.1"
 iced_fonts = { version = "0.3.0", features = ["codicon"] }
 network-interface = "2.0.5"
 rand = "0.10.1"

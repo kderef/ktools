@@ -5,6 +5,7 @@ use iced::{
     alignment::{Horizontal, Vertical},
     widget::*,
 };
+use iced_aw::{DropDown, widget::Sidebar};
 use network_interface::{NetworkInterface, NetworkInterfaceConfig};
 
 pub struct NetworkInfo {}
@@ -32,12 +33,19 @@ impl Tool for NetworkInfo {
         Task::none()
     }
     fn view(&self) -> Element<'_, crate::Message> {
-        let netconf = NetworkInterface::show();
+        let netconf = NetworkInterface::show().unwrap(); // TODO: fix unwrap
 
-        let content: Text<'_> = match netconf {
-            Err(e) => text(format!("ERROR: {e:?}")),
-            Ok(nc) => text(format!("{nc:#?}")),
-        };
+        let mut content = row![];
+
+        for interface in netconf {
+            let overlay = text(interface.name);
+
+            let underlay =
+                Column::from_iter(interface.addr.iter().map(|i| text(format!("{i:?}")).into()));
+
+            let el = DropDown::new(overlay, underlay, false);
+            content = content.push(el);
+        }
 
         let content = container(content)
             .padding(10)
