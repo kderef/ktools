@@ -125,34 +125,31 @@ impl Tool for NetworkInfo {
     }
 
     fn view(&self) -> Element<'_, crate::Message> {
-        let sidebar = self
-            .interfaces
-            .iter()
-            .enumerate()
-            .fold(
-                SidebarWithContent::new(crate::Message::TabSelected).sidebar_style(
-                    |_theme, status| iced_aw::style::sidebar::Style {
-                        background: None,
-                        border_color: None,
-                        border_width: 0.0,
-                        tab_label_background: Background::Color(match status {
-                            iced_aw::style::Status::Active => Color::from_rgb8(60, 60, 60),
-                            iced_aw::style::Status::Hovered => Color::from_rgb8(70, 70, 70),
-                            _ => Color::TRANSPARENT,
-                        }),
-                        tab_label_border_color: Color::TRANSPARENT,
-                        tab_label_border_width: 0.0,
-                        icon_color: Color::from_rgb8(220, 220, 220),
-                        icon_background: None,
-                        icon_border_radius: 8.0.into(),
-                        text_color: Color::from_rgb8(220, 220, 220),
-                    },
-                ),
-                |sidebar, (i, iface)| {
-                    sidebar.push(i, TabLabel::Text(iface.name.clone()), iface_content(iface))
-                },
-            )
-            .set_active_tab(&self.active_tab);
+        let mut sidebar =
+            SidebarWithContent::new(crate::Message::TabSelected).sidebar_style(|_theme, status| {
+                iced_aw::style::sidebar::Style {
+                    background: None,
+                    border_color: None,
+                    border_width: 0.0,
+                    tab_label_background: Background::Color(match status {
+                        iced_aw::style::Status::Active => Color::from_rgb8(60, 60, 60),
+                        iced_aw::style::Status::Hovered => Color::from_rgb8(70, 70, 70),
+                        _ => Color::TRANSPARENT,
+                    }),
+                    tab_label_border_color: Color::TRANSPARENT,
+                    tab_label_border_width: 0.0,
+                    icon_color: Color::from_rgb8(220, 220, 220),
+                    icon_background: None,
+                    icon_border_radius: 8.0.into(),
+                    text_color: Color::from_rgb8(220, 220, 220),
+                }
+            });
+
+        for (i, iface) in self.interfaces.iter().enumerate() {
+            sidebar = sidebar.push(i, TabLabel::Text(iface.name.clone()), iface_content(iface));
+        }
+
+        sidebar = sidebar.set_active_tab(&self.active_tab);
 
         let go_back = button(
             row![icon_font::arrow_left().size(18), text("Back").size(15)]
