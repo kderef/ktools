@@ -39,7 +39,7 @@ impl PasswordGenerator {
     const LOWER: &str = "abcdefghijklmnopqrstuvwxyz";
     const UPPER: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     const NUMS: &str = "0123456789";
-    const SPEC: &str = "*+-=:()[]&";
+    const SPEC: &str = "!@#$%^&*()-_=+[]{}|;:,.?";
 
     fn generate(&mut self) {
         // generate password
@@ -269,6 +269,15 @@ impl Tool for PasswordGenerator {
                 ..Default::default()
             });
 
+        fn wrap<'a>(el: Element<'a, crate::Message>) -> Element<'a, crate::Message> {
+            widget::row![
+                space().width(Length::FillPortion(1)),
+                container(el).width(Length::FillPortion(4)),
+                space().width(Length::FillPortion(1)),
+            ]
+            .into()
+        }
+
         widget::column![
             widget::row![
                 go_back.width(Length::Shrink),
@@ -277,8 +286,8 @@ impl Tool for PasswordGenerator {
                 space().width(Length::FillPortion(2)),
             ],
             password_row,
-            length_row,
-            checkboxes,
+            wrap(length_row.into()),
+            wrap(checkboxes.into()),
         ]
         .spacing(16)
         .padding(20)
