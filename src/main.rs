@@ -43,12 +43,15 @@ fn main() {
 
 #[derive(Debug, Clone)]
 pub enum Message {
+    /* Home page messages */
     /// Go to index
     ChooseTool(usize),
     GoHome,
 
-    /* messages for tools */
+    /* Generic messages */
     TabSelected(usize),
+
+    /* messages for tools */
     PasswordGenerator(tool::passgen::Message),
 }
 
