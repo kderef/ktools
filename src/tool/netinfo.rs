@@ -1,10 +1,10 @@
 use super::*;
 use iced::{
-    Alignment, Background, Border, Font, Length, Padding,
+    Alignment, Background, Border, Font, Length,
     font::Weight,
     widget::{self, *},
 };
-use iced_aw::{sidebar::TabLabel, widget::SidebarWithContent};
+use iced_aw::sidebar::{Sidebar, TabLabel};
 use network_interface::{NetworkInterface, NetworkInterfaceConfig};
 
 pub struct NetworkInfo {
@@ -97,7 +97,7 @@ fn iface_content<'a>(iface: &'a NetworkInterface) -> Element<'a, crate::Message>
         }
     }
 
-    let card = container(scrollable(column(rows).spacing(4).padding([12, 16])))
+    container(scrollable(column(rows).spacing(4).padding([12, 16])))
         .width(Length::Fill)
         .height(Length::Fill)
         .style(|_theme: &Theme| container::Style {
@@ -108,9 +108,8 @@ fn iface_content<'a>(iface: &'a NetworkInterface) -> Element<'a, crate::Message>
                 radius: 10.0.into(),
             },
             ..Default::default()
-        });
-
-    row![space().width(12), card].height(Length::Fill).into()
+        })
+        .into()
 }
 
 impl Tool for NetworkInfo {
@@ -144,8 +143,11 @@ impl Tool for NetworkInfo {
     }
 
     fn view(&self) -> Element<'_, crate::Message> {
-        let mut sidebar = SidebarWithContent::new(crate::Message::TabSelected)
-            .sidebar_style(|_theme, status| iced_aw::style::sidebar::Style {
+        let mut sidebar = Sidebar::new(crate::Message::TabSelected)
+            .width(Length::Fixed(160.0))
+            .height(Length::Fill)
+            // .tab_label_padding([8, 8]) // uses .padding() on Sidebar
+            .style(|_theme, status| iced_aw::style::sidebar::Style {
                 background: None,
                 border_color: Some(rgb8(60, 60, 60)),
                 border_width: 2.0,
@@ -160,14 +162,19 @@ impl Tool for NetworkInfo {
                 icon_background: None,
                 icon_border_radius: 8.0.into(),
                 text_color: rgb8(220, 220, 220),
-            })
-            .tab_label_padding([8, 8]);
+            });
 
         for (i, iface) in self.interfaces.iter().enumerate() {
-            sidebar = sidebar.push(i, TabLabel::Text(iface.name.clone()), iface_content(iface));
+            sidebar = sidebar.push(i, TabLabel::Text(iface.name.clone()));
         }
 
         sidebar = sidebar.set_active_tab(&self.active_tab);
+
+        let content = if let Some(iface) = self.interfaces.get(self.active_tab) {
+            iface_content(iface)
+        } else {
+            text("No interface selected").into()
+        };
 
         let go_back = go_back_button(13);
 
@@ -178,7 +185,7 @@ impl Tool for NetworkInfo {
 
         widget::column![
             row![go_back, space().width(16), title].align_y(Alignment::Center),
-            container(sidebar).width(Length::Fill).height(Length::Fill),
+            row![sidebar, space().width(12), content,].height(Length::Fill),
         ]
         .spacing(12)
         .padding(20)
