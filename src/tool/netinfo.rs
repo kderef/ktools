@@ -60,16 +60,26 @@ fn info_row<'a>(label: &'a str, value: impl ToString) -> Element<'a, crate::Mess
 }
 
 fn iface_content<'a>(iface: &'a NetworkInterface) -> Element<'a, crate::Message> {
-    let mut rows: Vec<Element<'a, crate::Message>> = vec![
-        text(&iface.name)
-            .size(22)
-            .font(Font {
+    let top_row = row![
+        text(&iface.name).size(22).font(Font {
+            weight: Weight::Bold,
+            ..Default::default()
+        }),
+        space().width(Length::Fill),
+        {
+            let (desc, color) = match iface.internal {
+                true => ("( internal )", rgb8(253, 218, 13)),
+                false => ("( public )", rgb8(0, 180, 0)),
+            };
+            text(desc).size(20).color(color).font(Font {
                 weight: Weight::Bold,
                 ..Default::default()
             })
-            .into(),
-        rule::horizontal(1).into(),
+        }
     ];
+
+    let mut rows: Vec<Element<'a, crate::Message>> =
+        vec![top_row.into(), rule::horizontal(1).into()];
 
     if let Some(ref mac) = iface.mac_addr {
         rows.push(info_row("MAC Address", mac.clone()));
@@ -146,7 +156,6 @@ impl Tool for NetworkInfo {
         let mut sidebar = Sidebar::new(crate::Message::TabSelected)
             .width(Length::Fixed(160.0))
             .height(Length::Fill)
-            // .tab_label_padding([8, 8]) // uses .padding() on Sidebar
             .style(|_theme, status| iced_aw::style::sidebar::Style {
                 background: None,
                 border_color: Some(rgb8(60, 60, 60)),

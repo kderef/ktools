@@ -5,6 +5,7 @@ fn main() {
             let mut res = winres::WindowsResource::new();
 
             res.set_icon("icon.ico");
+            // res.set_version_info(winres::VersionInfo::PRODUCTVERSION, version);
 
             res.compile().unwrap();
         }

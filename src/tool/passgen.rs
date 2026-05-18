@@ -7,7 +7,6 @@ use iced::Font;
 use iced::Length;
 use iced::Task;
 use iced::border::Radius;
-use iced::clipboard;
 use iced::font::Weight;
 use iced::widget;
 use iced::widget::*;
@@ -30,7 +29,6 @@ pub enum Message {
     UseNumsToggled(bool),
     UseCharsToggled(bool),
     Regenerate,
-    Copy,
 }
 
 impl PasswordGenerator {
@@ -157,9 +155,6 @@ impl Tool for PasswordGenerator {
                 Message::Regenerate => {
                     self.generate();
                 }
-                Message::Copy => {
-                    return clipboard::write(self.password.clone());
-                }
             }
         }
         Task::none()
@@ -200,7 +195,7 @@ impl Tool for PasswordGenerator {
                     )
                     .center(Length::Fill)
                 )
-                .on_press(crate::Message::PasswordGenerator(Message::Copy))
+                .on_press_with(|| crate::Message::CopyToClipboard(self.password.clone()))
                 .width(Length::FillPortion(3))
                 .height(Length::Shrink),
                 button(

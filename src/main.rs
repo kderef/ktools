@@ -43,6 +43,7 @@ fn main() {
         .window_size((900, 600))
         .centered()
         .font(CODICON_FONT_BYTES)
+        .theme(App::theme)
         .subscription(App::subscription)
         .run()
         .unwrap();
@@ -122,6 +123,10 @@ impl App {
             ],
             selected_tool: None,
         }
+    }
+
+    fn theme(&self) -> Option<iced::Theme> {
+        Some(iced::Theme::Dark)
     }
 
     fn subscription(&self) -> Subscription<Message> {
