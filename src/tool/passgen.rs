@@ -245,16 +245,7 @@ impl Tool for PasswordGenerator {
         ]
         .spacing(10);
 
-        let go_back = button(
-            row![
-                icon_font::arrow_left().size(text_size),
-                text("Back").size(15),
-            ]
-            .spacing(6)
-            .align_y(iced::Alignment::Center),
-        )
-        .width(Length::Shrink)
-        .on_press(crate::Message::GoHome);
+        let go_back = go_back_button(text_size);
 
         let title = text(self.name())
             .align_x(Alignment::Center)

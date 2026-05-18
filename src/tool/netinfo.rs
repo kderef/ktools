@@ -97,19 +97,25 @@ fn iface_content<'a>(iface: &'a NetworkInterface) -> Element<'a, crate::Message>
         }
     }
 
-    container(scrollable(column(rows).spacing(4).padding([12, 16])))
-        .width(Length::Fill)
-        .height(Length::Fill)
-        .style(|_theme: &Theme| container::Style {
-            background: Some(Background::Color(rgb8(40, 40, 40))),
-            border: Border {
-                color: rgba8(255, 255, 255, 0.08),
-                width: 1.0,
-                radius: 10.0.into(),
-            },
-            ..Default::default()
-        })
-        .into()
+    let content = row![
+        // space().width(Length::Shrink),
+        container(scrollable(column(rows).spacing(4).padding([12, 16])))
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .style(|_theme: &Theme| container::Style {
+                background: Some(Background::Color(rgb8(40, 40, 40))),
+                border: Border {
+                    color: rgba8(255, 255, 255, 0.08),
+                    width: 1.0,
+                    radius: 10.0.into(),
+                },
+                ..Default::default()
+            })
+    ]
+    .width(Length::Fill)
+    .height(Length::Fill);
+
+    content.into()
 }
 
 impl Tool for NetworkInfo {
@@ -143,25 +149,24 @@ impl Tool for NetworkInfo {
     }
 
     fn view(&self) -> Element<'_, crate::Message> {
-        let mut sidebar =
-            SidebarWithContent::new(crate::Message::TabSelected).sidebar_style(|_theme, status| {
-                iced_aw::style::sidebar::Style {
-                    background: None,
-                    border_color: None,
-                    border_width: 0.0,
-                    tab_label_background: Background::Color(match status {
-                        iced_aw::style::Status::Active => rgb8(60, 60, 60),
-                        iced_aw::style::Status::Hovered => rgb8(70, 70, 70),
-                        _ => Color::TRANSPARENT,
-                    }),
-                    tab_label_border_color: Color::TRANSPARENT,
-                    tab_label_border_width: 0.0,
-                    icon_color: rgb8(220, 220, 220),
-                    icon_background: None,
-                    icon_border_radius: 8.0.into(),
-                    text_color: rgb8(220, 220, 220),
-                }
-            });
+        let mut sidebar = SidebarWithContent::new(crate::Message::TabSelected)
+            .sidebar_style(|_theme, status| iced_aw::style::sidebar::Style {
+                background: None,
+                border_color: Some(rgb8(60, 60, 60)),
+                border_width: 2.0,
+                tab_label_background: Background::Color(match status {
+                    iced_aw::style::Status::Active => rgb8(60, 60, 60),
+                    iced_aw::style::Status::Hovered => rgb8(70, 70, 70),
+                    _ => Color::TRANSPARENT,
+                }),
+                tab_label_border_color: rgb8(60, 60, 60),
+                tab_label_border_width: 1.0,
+                icon_color: rgb8(220, 220, 220),
+                icon_background: None,
+                icon_border_radius: 8.0.into(),
+                text_color: rgb8(220, 220, 220),
+            })
+            .tab_label_padding([8, 8]);
 
         for (i, iface) in self.interfaces.iter().enumerate() {
             sidebar = sidebar.push(i, TabLabel::Text(iface.name.clone()), iface_content(iface));
@@ -169,12 +174,7 @@ impl Tool for NetworkInfo {
 
         sidebar = sidebar.set_active_tab(&self.active_tab);
 
-        let go_back = button(
-            row![icon_font::arrow_left().size(18), text("Back").size(15)]
-                .spacing(6)
-                .align_y(Alignment::Center),
-        )
-        .on_press(crate::Message::GoHome);
+        let go_back = go_back_button(13);
 
         let title = text(self.name()).size(28).font(Font {
             weight: Weight::Bold,
