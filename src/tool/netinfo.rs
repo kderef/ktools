@@ -21,14 +21,40 @@ impl NetworkInfo {
     }
 }
 
+fn copy_btn(value: String) -> Element<'static, crate::Message> {
+    button(icon_font::copy().size(13))
+        .on_press(crate::Message::CopyToClipboard(value))
+        .padding([2, 6])
+        .style(|_theme: &Theme, status| button::Style {
+            snap: false,
+            background: match status {
+                button::Status::Disabled => None,
+                button::Status::Active => Some(Background::Color(rgb8(60, 60, 60))),
+                button::Status::Hovered => Some(Background::Color(rgb8(80, 80, 80))),
+                button::Status::Pressed => Some(Background::Color(rgb8(0, 100, 10))),
+            },
+            text_color: rgb8(200, 200, 200),
+            border: Border {
+                color: Color::TRANSPARENT,
+                width: 0.0,
+                radius: 4.0.into(),
+            },
+            shadow: Default::default(),
+        })
+        .into()
+}
+
 fn info_row<'a>(label: &'a str, value: impl ToString) -> Element<'a, crate::Message> {
+    let value = value.to_string();
     row![
         text(label)
             .size(15)
             .width(Length::Fixed(160.0))
-            .color(Color::from_rgb8(160, 160, 160)),
-        text(value.to_string()).size(15),
+            .color(rgb8(160, 160, 160)),
+        text(value.clone()).size(15).width(Length::Fill),
+        copy_btn(value),
     ]
+    .align_y(Alignment::Center)
     .padding([5, 0])
     .into()
 }
@@ -52,12 +78,7 @@ fn iface_content<'a>(iface: &'a NetworkInterface) -> Element<'a, crate::Message>
     for addr in &iface.addr {
         match addr {
             network_interface::Addr::V4(v4) => {
-                rows.push(
-                    text("IPv4")
-                        .size(13)
-                        .color(Color::from_rgb8(104, 157, 106))
-                        .into(),
-                );
+                rows.push(text("IPv4").size(13).color(rgb8(104, 157, 106)).into());
                 rows.push(info_row("Address", v4.ip));
                 if let Some(m) = v4.netmask {
                     rows.push(info_row("Netmask", m));
@@ -67,12 +88,7 @@ fn iface_content<'a>(iface: &'a NetworkInterface) -> Element<'a, crate::Message>
                 }
             }
             network_interface::Addr::V6(v6) => {
-                rows.push(
-                    text("IPv6")
-                        .size(13)
-                        .color(Color::from_rgb8(104, 157, 106))
-                        .into(),
-                );
+                rows.push(text("IPv6").size(13).color(rgb8(104, 157, 106)).into());
                 rows.push(info_row("Address", v6.ip));
                 if let Some(m) = v6.netmask {
                     rows.push(info_row("Netmask", m));
@@ -85,9 +101,9 @@ fn iface_content<'a>(iface: &'a NetworkInterface) -> Element<'a, crate::Message>
         .width(Length::Fill)
         .height(Length::Fill)
         .style(|_theme: &Theme| container::Style {
-            background: Some(Background::Color(Color::from_rgb8(40, 40, 40))),
+            background: Some(Background::Color(rgb8(40, 40, 40))),
             border: Border {
-                color: Color::from_rgba8(255, 255, 255, 0.08),
+                color: rgba8(255, 255, 255, 0.08),
                 width: 1.0,
                 radius: 10.0.into(),
             },
@@ -106,7 +122,7 @@ impl Tool for NetworkInfo {
     }
 
     fn background(&self) -> Color {
-        Color::from_rgb8(104, 157, 106)
+        rgb8(104, 157, 106)
     }
 
     fn text_color(&self) -> Color {
@@ -118,8 +134,10 @@ impl Tool for NetworkInfo {
     }
 
     fn update(&mut self, message: crate::Message) -> Task<crate::Message> {
-        if let crate::Message::TabSelected(i) = message {
-            self.active_tab = i;
+        match message {
+            crate::Message::TabSelected(i) => self.active_tab = i,
+            crate::Message::CopyToClipboard(v) => return iced::clipboard::write(v),
+            _ => {}
         }
         Task::none()
     }
@@ -132,16 +150,16 @@ impl Tool for NetworkInfo {
                     border_color: None,
                     border_width: 0.0,
                     tab_label_background: Background::Color(match status {
-                        iced_aw::style::Status::Active => Color::from_rgb8(60, 60, 60),
-                        iced_aw::style::Status::Hovered => Color::from_rgb8(70, 70, 70),
+                        iced_aw::style::Status::Active => rgb8(60, 60, 60),
+                        iced_aw::style::Status::Hovered => rgb8(70, 70, 70),
                         _ => Color::TRANSPARENT,
                     }),
                     tab_label_border_color: Color::TRANSPARENT,
                     tab_label_border_width: 0.0,
-                    icon_color: Color::from_rgb8(220, 220, 220),
+                    icon_color: rgb8(220, 220, 220),
                     icon_background: None,
                     icon_border_radius: 8.0.into(),
-                    text_color: Color::from_rgb8(220, 220, 220),
+                    text_color: rgb8(220, 220, 220),
                 }
             });
 

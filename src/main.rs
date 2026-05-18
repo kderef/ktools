@@ -6,6 +6,7 @@
 #[cfg(not(debug_assertions))]
 static ICON_BYTES: &[u8] = include_bytes!("../icon.ico");
 
+mod base;
 mod tool;
 
 use iced::Background;
@@ -15,17 +16,13 @@ use iced::Element;
 use iced::Length;
 use iced::Subscription;
 use iced::Task;
+use iced::clipboard;
 use iced::keyboard;
 use iced::widget::*;
-use iced::window::icon;
 
 use iced_fonts::CODICON_FONT_BYTES;
 
 use crate::tool::Tool;
-
-pub const fn rgb(r: f32, g: f32, b: f32) -> Color {
-    Color::from_rgb(r, g, b)
-}
 
 fn main() {
     iced::application(App::new, App::update, App::view)
@@ -35,7 +32,10 @@ fn main() {
                 height: 400.0,
             }),
             #[cfg(not(debug_assertions))]
-            icon: Some(icon::from_file_data(ICON_BYTES, Some(::image::ImageFormat::Ico)).unwrap()),
+            icon: Some(
+                iced::window::icon::from_file_data(ICON_BYTES, Some(::image::ImageFormat::Ico))
+                    .unwrap(),
+            ),
             ..Default::default()
         })
         .title("KTools")
@@ -57,6 +57,7 @@ pub enum Message {
 
     /* Generic messages */
     TabSelected(usize),
+    CopyToClipboard(String),
 
     /* messages for tools */
     PasswordGenerator(tool::passgen::Message),
@@ -156,6 +157,9 @@ impl App {
                 if !tool.no_view() {
                     self.selected_tool = Some(index);
                 }
+            }
+            Message::CopyToClipboard(text) => {
+                return clipboard::write(text);
             }
             other => {
                 if let Some(index) = self.selected_tool {

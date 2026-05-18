@@ -24,6 +24,15 @@ pub struct PasswordGenerator {
     use_nums: bool,
 }
 
+#[derive(Debug, Clone)]
+pub enum Message {
+    LengthChanged(u32),
+    UseNumsToggled(bool),
+    UseCharsToggled(bool),
+    Regenerate,
+    Copy,
+}
+
 impl PasswordGenerator {
     const LENGTH_RANGE: RangeInclusive<u32> = 8..=31;
     const SHUFFLE_TWICE: bool = false;
@@ -111,15 +120,6 @@ impl PasswordGenerator {
 
         new
     }
-}
-
-#[derive(Debug, Clone)]
-pub enum Message {
-    LengthChanged(u32),
-    UseNumsToggled(bool),
-    UseCharsToggled(bool),
-    Regenerate,
-    Copy,
 }
 
 impl Tool for PasswordGenerator {
