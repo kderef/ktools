@@ -57,8 +57,10 @@ pub enum Message {
     GoHome,
 
     /* Generic messages */
+    CategorySelected(usize),
     TabSelected(usize),
     CopyToClipboard(String),
+    TopTabSelected(usize),
 
     /* messages for tools */
     PasswordGenerator(tool::passgen::Message),
