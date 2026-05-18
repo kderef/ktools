@@ -1,6 +1,6 @@
 use super::*;
 use iced::{
-    Alignment, Background, Border, Font, Length,
+    Alignment, Background, Border, Font, Length, Padding,
     font::Weight,
     widget::{self, *},
 };
@@ -97,25 +97,20 @@ fn iface_content<'a>(iface: &'a NetworkInterface) -> Element<'a, crate::Message>
         }
     }
 
-    let content = row![
-        // space().width(Length::Shrink),
-        container(scrollable(column(rows).spacing(4).padding([12, 16])))
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .style(|_theme: &Theme| container::Style {
-                background: Some(Background::Color(rgb8(40, 40, 40))),
-                border: Border {
-                    color: rgba8(255, 255, 255, 0.08),
-                    width: 1.0,
-                    radius: 10.0.into(),
-                },
-                ..Default::default()
-            })
-    ]
-    .width(Length::Fill)
-    .height(Length::Fill);
+    let card = container(scrollable(column(rows).spacing(4).padding([12, 16])))
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .style(|_theme: &Theme| container::Style {
+            background: Some(Background::Color(rgb8(40, 40, 40))),
+            border: Border {
+                color: rgba8(255, 255, 255, 0.08),
+                width: 1.0,
+                radius: 10.0.into(),
+            },
+            ..Default::default()
+        });
 
-    content.into()
+    row![space().width(12), card].height(Length::Fill).into()
 }
 
 impl Tool for NetworkInfo {
