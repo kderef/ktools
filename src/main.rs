@@ -3,6 +3,9 @@
     windows_subsystem = "windows"
 )]
 
+#[cfg(not(debug_assertions))]
+static ICON_BYTES: &[u8] = include_bytes!("../icon.ico");
+
 mod tool;
 
 use iced::Background;
@@ -14,6 +17,8 @@ use iced::Subscription;
 use iced::Task;
 use iced::keyboard;
 use iced::widget::*;
+use iced::window::icon;
+
 use iced_fonts::CODICON_FONT_BYTES;
 
 use crate::tool::Tool;
@@ -29,6 +34,8 @@ fn main() {
                 width: 500.0,
                 height: 400.0,
             }),
+            #[cfg(not(debug_assertions))]
+            icon: Some(icon::from_file_data(ICON_BYTES, Some(::image::ImageFormat::Ico)).unwrap()),
             ..Default::default()
         })
         .title("KTools")

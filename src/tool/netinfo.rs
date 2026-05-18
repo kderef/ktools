@@ -21,13 +21,13 @@ impl NetworkInfo {
     }
 }
 
-fn info_row<'a>(label: &'a str, value: String) -> Element<'a, crate::Message> {
+fn info_row<'a>(label: &'a str, value: impl ToString) -> Element<'a, crate::Message> {
     row![
         text(label)
             .size(15)
             .width(Length::Fixed(160.0))
             .color(Color::from_rgb8(160, 160, 160)),
-        text(value).size(15),
+        text(value.to_string()).size(15),
     ]
     .padding([5, 0])
     .into()
@@ -58,12 +58,12 @@ fn iface_content<'a>(iface: &'a NetworkInterface) -> Element<'a, crate::Message>
                         .color(Color::from_rgb8(104, 157, 106))
                         .into(),
                 );
-                rows.push(info_row("Address", v4.ip.to_string()));
+                rows.push(info_row("Address", v4.ip));
                 if let Some(m) = v4.netmask {
-                    rows.push(info_row("Netmask", m.to_string()));
+                    rows.push(info_row("Netmask", m));
                 }
                 if let Some(b) = v4.broadcast {
-                    rows.push(info_row("Broadcast", b.to_string()));
+                    rows.push(info_row("Broadcast", b));
                 }
             }
             network_interface::Addr::V6(v6) => {
@@ -73,9 +73,9 @@ fn iface_content<'a>(iface: &'a NetworkInterface) -> Element<'a, crate::Message>
                         .color(Color::from_rgb8(104, 157, 106))
                         .into(),
                 );
-                rows.push(info_row("Address", v6.ip.to_string()));
+                rows.push(info_row("Address", v6.ip));
                 if let Some(m) = v6.netmask {
-                    rows.push(info_row("Netmask", m.to_string()));
+                    rows.push(info_row("Netmask", m));
                 }
             }
         }
