@@ -31,6 +31,7 @@ fn main() {
                 width: 500.0,
                 height: 400.0,
             }),
+            // Avoid loading icon for faster debug build runtime
             #[cfg(not(debug_assertions))]
             icon: Some(
                 iced::window::icon::from_file_data(ICON_BYTES, Some(::image::ImageFormat::Ico))
