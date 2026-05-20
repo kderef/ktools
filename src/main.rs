@@ -68,7 +68,7 @@ pub enum Message {
 }
 
 pub struct App {
-    tools: [Box<dyn Tool>; 3],
+    tools: Vec<Box<dyn Tool>>,
     selected_tool: Option<usize>,
 }
 
@@ -119,11 +119,7 @@ fn home_button<'a>(
 impl App {
     fn new() -> Self {
         Self {
-            tools: [
-                Box::new(tool::cmd::CMD),
-                Box::new(tool::passgen::PasswordGenerator::new()),
-                Box::new(tool::netinfo::NetworkInfo::new()),
-            ],
+            tools: tool::all(),
             selected_tool: None,
         }
     }

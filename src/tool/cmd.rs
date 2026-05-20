@@ -4,6 +4,12 @@ use super::*;
 
 pub struct CMD;
 
+impl CMD {
+    pub const fn new() -> Self {
+        Self
+    }
+}
+
 impl Tool for CMD {
     fn name(&self) -> &'static str {
         "CMD"

@@ -5,10 +5,6 @@ use iced::Task;
 pub use iced::{Color, Element, widget::Text};
 pub use iced_fonts::codicon as icon_font;
 
-pub mod cmd;
-pub mod netinfo;
-pub mod passgen;
-
 pub trait Tool {
     fn name(&self) -> &str;
     fn icon(&self) -> Text<'_>;
@@ -25,4 +21,24 @@ pub trait Tool {
 
     fn update(&mut self, message: crate::Message) -> Task<crate::Message>;
     fn view(&self) -> Element<'_, crate::Message>;
+}
+
+/* Macro for tools */
+macro_rules! register_tools {
+    ($($mod_name:ident :: $type:ident),* $(,)?) => {
+        $(pub mod $mod_name;)*
+
+        pub fn all() -> Vec<Box<dyn Tool>> {
+            vec![
+                $(Box::new($mod_name::$type::new()),)*
+            ]
+        }
+    };
+}
+
+register_tools! {
+    cmd::CMD,
+    ext_ip::ExternalIP,
+    netinfo::NetworkInfo,
+    passgen::PasswordGenerator,
 }
