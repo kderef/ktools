@@ -2,13 +2,8 @@ use iced::widget::text;
 
 use super::*;
 
+#[derive(Default)]
 pub struct ExternalIP {}
-
-impl ExternalIP {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 
 impl Tool for ExternalIP {
     fn name(&self) -> &str {

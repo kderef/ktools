@@ -5,6 +5,7 @@ use iced::Task;
 pub use iced::{Color, Element, widget::Text};
 pub use iced_fonts::codicon as icon_font;
 
+/// NOTE: a `Tool` implementation must also have `Default` to be used with `register_tools!` macro.
 pub trait Tool {
     fn name(&self) -> &str;
     fn icon(&self) -> Text<'_>;
@@ -23,14 +24,14 @@ pub trait Tool {
     fn view(&self) -> Element<'_, crate::Message>;
 }
 
-/* Macro for tools */
+/// Automate registering modules and aggregating into `all()` function.
 macro_rules! register_tools {
     ($($mod_name:ident :: $type:ident),* $(,)?) => {
         $(pub mod $mod_name;)*
 
         pub fn all() -> Vec<Box<dyn Tool>> {
             vec![
-                $(Box::new($mod_name::$type::new()),)*
+                $(Box::new($mod_name::$type::default()),)*
             ]
         }
     };

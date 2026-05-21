@@ -2,13 +2,8 @@ use std::os::windows::process::CommandExt;
 
 use super::*;
 
+#[derive(Default)]
 pub struct CMD;
-
-impl CMD {
-    pub const fn new() -> Self {
-        Self
-    }
-}
 
 impl Tool for CMD {
     fn name(&self) -> &'static str {

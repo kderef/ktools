@@ -23,6 +23,21 @@ pub struct PasswordGenerator {
     use_nums: bool,
 }
 
+impl Default for PasswordGenerator {
+    fn default() -> Self {
+        let mut new = Self {
+            length: 12,
+            password: String::with_capacity(32),
+            use_chars: true,
+            use_nums: true,
+        };
+
+        new.generate();
+
+        new
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum Message {
     LengthChanged(u32),
@@ -104,19 +119,6 @@ impl PasswordGenerator {
         }
 
         self.password = new.iter().collect();
-    }
-
-    pub fn new() -> Self {
-        let mut new = Self {
-            length: 12,
-            password: String::with_capacity(32),
-            use_chars: true,
-            use_nums: true,
-        };
-
-        new.generate();
-
-        new
     }
 }
 

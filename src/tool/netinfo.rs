@@ -7,18 +7,10 @@ use iced::{
 use iced_aw::sidebar::{Sidebar, TabLabel};
 use network_interface::{NetworkInterface, NetworkInterfaceConfig};
 
+#[derive(Default)]
 pub struct NetworkInfo {
     active_tab: usize,
     local_interfaces: Vec<NetworkInterface>,
-}
-
-impl NetworkInfo {
-    pub fn new() -> Self {
-        Self {
-            active_tab: 0,
-            local_interfaces: vec![],
-        }
-    }
 }
 
 fn info_row<'a>(label: &'a str, value: impl ToString) -> Element<'a, crate::Message> {
