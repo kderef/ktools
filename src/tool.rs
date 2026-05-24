@@ -41,7 +41,8 @@ macro_rules! register_tools {
 
 register_tools! {
     cmd::CMD,
-    ext_ip::ExternalIP,
-    netinfo::NetworkInfo,
     passgen::PasswordGenerator,
+    netinfo::NetworkInfo,
+    ext_ip::ExternalIP,
+    sys_info::SystemInfo,
 }

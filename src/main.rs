@@ -64,12 +64,14 @@ pub enum Message {
     CopyToClipboard(String),
     TopTabSelected(usize),
 
-    /* messages for tools */
+    /* messages for passgen */
     PasswordGenerator(tool::passgen::Message),
 
     /* messages for ext_ip */
-    /// (ipv4, ipv6)
     ExternalIpFetched(Result<json::object::Object, String>),
+
+    /* messages for sys_info */
+    SystemInfoFetched(&'static str, Result<String, String>),
 }
 
 pub struct App {
