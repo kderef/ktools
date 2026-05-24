@@ -86,39 +86,43 @@ impl Tool for ExternalIP {
             }
         }
 
-        if self.response.is_some() {
-            let bottom_row = row![
-                button(text("refresh").size(24).center())
-                    .on_press(Message::Refresh)
-                    .width(Length::Fill),
-                space().width(10),
-                button(text("copy all").size(24).center())
-                    .width(Length::Fill)
-                    .on_press_with(|| {
-                        let text = format!("");
-
-                        Message::CopyToClipboard(text)
-                    })
-            ]
-            .height(Length::Fill);
-
-            rows = rows.push(bottom_row);
-        }
-
-        let container = content_container(rows).padding(12);
+        let container = content_container(rows).padding(12).height(Length::Fill);
 
         let go_back = go_back_button(13);
         let title = title_text(self);
 
-        widget::column![
+        let mut col = widget::column![
             widget::row![go_back, space().width(16), title.align_y(Alignment::Center)]
                 .align_y(Alignment::Center),
             space().height(10),
             container
-        ]
-        .padding(12)
-        .into()
+        ];
+
+        let bottom_row = row![
+            button(text("refresh").size(24).center())
+                .on_press(Message::Refresh)
+                .width(Length::Fill),
+            space().width(10),
+            button(text("copy all").size(24).center())
+                .width(Length::Fill)
+                .on_press_with(|| {
+                    let text = match &self.response {
+                        Some(Ok(obj)) => obj_pretty(&format_obj(&obj)),
+                        _ => "".to_string(),
+                    };
+
+                    Message::CopyToClipboard(text)
+                })
+        ];
+
+        col = col.push(space().height(20)).push(bottom_row);
+
+        col.height(Length::Fill).padding(12).into()
     }
+}
+
+fn obj_pretty(obj: &Object) -> String {
+    obj.pretty(4)
 }
 
 fn format_obj(obj: &Object) -> Object {
