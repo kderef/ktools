@@ -74,7 +74,7 @@ impl Tool for ExternalIP {
                 rows = rows.push(
                     text(format!("ERROR: {e}"))
                         .size(15)
-                        .color(rgb8(160, 20, 20)),
+                        .color(rgb8(220, 20, 20)),
                 );
             }
             Some(Ok(val)) => {

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use iced::{
     Alignment, Length,
-    widget::{self, row, text},
+    widget::{self, button, row, space, text},
 };
 
 use super::*;
@@ -52,6 +52,12 @@ impl Tool for SystemInfo {
                     *val = Some(result);
                 }
             }
+            Message::Refresh => {
+                for (_, v) in &mut self.info {
+                    *v = None;
+                }
+                return self.on_activate();
+            }
             _ => {}
         }
         Task::none()
@@ -63,9 +69,46 @@ impl Tool for SystemInfo {
             rows = rows.push(info_row(k, v));
         }
 
-        let container = content_container(rows).padding(12);
+        let container = content_container(rows).padding(12).height(Length::Fill);
+        let go_back = go_back_button(13);
+        let title = title_text(self);
 
-        container.into()
+        let mut col = widget::column![
+            widget::row![go_back, space().width(16), title.align_y(Alignment::Center)]
+                .align_y(Alignment::Center),
+            space().height(10),
+            container
+        ];
+
+        if self.info.values().all(|v| v.is_some()) {
+            let bottom_row = row![
+                button(text("refresh").size(24).center())
+                    .on_press(Message::Refresh)
+                    .width(Length::Fill),
+                space().width(10),
+                button(text("copy all").size(24).center())
+                    .width(Length::Fill)
+                    .on_press_with(|| {
+                        let text = self
+                            .info
+                            .iter()
+                            .filter_map(|(k, v)| {
+                                if let Some(Ok(val)) = v {
+                                    Some(format!("{k}: {val}"))
+                                } else {
+                                    None
+                                }
+                            })
+                            .collect::<Vec<_>>()
+                            .join("\n");
+                        Message::CopyToClipboard(text)
+                    })
+            ];
+
+            col = col.push(space().height(20)).push(bottom_row);
+        }
+
+        col.height(Length::Fill).padding(12).into()
     }
 }
 
