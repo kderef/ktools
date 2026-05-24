@@ -1,9 +1,12 @@
 //! base utilities used by all tools
 
+use iced::font::Weight;
 pub use iced_fonts::codicon as icon_font;
 
-use iced::{Alignment, Background, Border, Element, widget::*};
+use iced::{Alignment, Background, Border, Element, Font, Length, widget::*};
 use iced::{Color, widget::Button};
+
+use crate::tool::Tool;
 
 pub const fn rgb(r: f32, g: f32, b: f32) -> Color {
     Color::from_rgb(r, g, b)
@@ -48,4 +51,28 @@ pub fn copy_icon_btn(value: String) -> Element<'static, crate::Message> {
             shadow: Default::default(),
         })
         .into()
+}
+
+pub fn content_container<'a, E: Into<Element<'a, crate::Message>>>(
+    inside: E,
+) -> Container<'a, crate::Message> {
+    container(scrollable(inside))
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .style(|_theme: &Theme| container::Style {
+            background: Some(Background::Color(rgb8(40, 40, 40))),
+            border: Border {
+                color: rgba8(255, 255, 255, 0.08),
+                width: 1.0,
+                radius: 10.0.into(),
+            },
+            ..Default::default()
+        })
+}
+
+pub fn title_text<'a>(t: &'a impl Tool) -> Text<'a> {
+    text(t.name()).size(28).font(Font {
+        weight: Weight::Bold,
+        ..Default::default()
+    })
 }

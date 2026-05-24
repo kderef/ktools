@@ -65,6 +65,10 @@ pub enum Message {
 
     /* messages for tools */
     PasswordGenerator(tool::passgen::Message),
+
+    /* messages for ext_ip */
+    /// (ipv4, ipv6)
+    ExternalIpFetched((Result<String, String>, Result<String, String>)),
 }
 
 pub struct App {
@@ -156,11 +160,11 @@ impl App {
             }
             Message::ChooseTool(index) => {
                 let tool = &mut self.tools[index];
-                tool.on_select();
 
                 if !tool.no_view() {
                     self.selected_tool = Some(index);
                 }
+                return tool.on_activate();
             }
             Message::CopyToClipboard(text) => {
                 return clipboard::write(text);

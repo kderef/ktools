@@ -1,6 +1,6 @@
 use super::*;
 use iced::{
-    Alignment, Background, Border, Font, Length,
+    Alignment, Background, Font, Length,
     font::Weight,
     widget::{self, *},
 };
@@ -26,23 +26,6 @@ fn info_row<'a>(label: &'a str, value: impl ToString) -> Element<'a, crate::Mess
     .align_y(Alignment::Center)
     .padding([5, 0])
     .into()
-}
-
-fn content_container<'a, E: Into<Element<'a, crate::Message>>>(
-    inside: E,
-) -> Container<'a, crate::Message> {
-    container(scrollable(inside))
-        .width(Length::Fill)
-        .height(Length::Fill)
-        .style(|_theme: &Theme| container::Style {
-            background: Some(Background::Color(rgb8(40, 40, 40))),
-            border: Border {
-                color: rgba8(255, 255, 255, 0.08),
-                width: 1.0,
-                radius: 10.0.into(),
-            },
-            ..Default::default()
-        })
 }
 
 fn iface_content<'a>(iface: &'a NetworkInterface) -> Element<'a, crate::Message> {
@@ -113,8 +96,10 @@ impl Tool for NetworkInfo {
         rgb(0.95, 0.95, 0.95)
     }
 
-    fn on_select(&mut self) {
+    fn on_activate(&mut self) -> Task<crate::Message> {
+        // TODO: create task
         self.local_interfaces = NetworkInterface::show().unwrap_or_default();
+        Task::none()
     }
 
     fn update(&mut self, message: crate::Message) -> Task<crate::Message> {
@@ -159,11 +144,7 @@ impl Tool for NetworkInfo {
         };
 
         let go_back = go_back_button(13);
-
-        let title = text(self.name()).size(28).font(Font {
-            weight: Weight::Bold,
-            ..Default::default()
-        });
+        let title = title_text(self);
 
         widget::column![
             row![go_back, space().width(16), title].align_y(Alignment::Center),

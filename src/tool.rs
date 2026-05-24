@@ -13,7 +13,9 @@ pub trait Tool {
     fn text_color(&self) -> Color;
 
     /// Run code when the tool is selected
-    fn on_select(&mut self) {}
+    fn on_activate(&mut self) -> Task<crate::Message> {
+        Task::none()
+    }
 
     /// Should the tool's view() be used?
     fn no_view(&self) -> bool {
