@@ -58,6 +58,7 @@ pub enum Message {
     GoHome,
 
     /* Generic messages */
+    Refresh,
     CategorySelected(usize),
     TabSelected(usize),
     CopyToClipboard(String),

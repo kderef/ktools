@@ -1,8 +1,8 @@
 use iced::{
     Alignment, Length,
-    widget::{self, row, space, text},
+    widget::{self, button, row, space, text},
 };
-use json::JsonValue;
+use json::{JsonValue, object::Object};
 
 use crate::Message;
 
@@ -54,10 +54,15 @@ impl Tool for ExternalIP {
             Message::ExternalIpFetched(response) => {
                 self.response = Some(response);
             }
+            Message::Refresh => {
+                self.response = None;
+                return self.on_activate();
+            }
             _ => {}
         }
         Task::none()
     }
+
     fn view(&self) -> Element<'_, crate::Message> {
         let mut rows = widget::column![];
 
@@ -73,22 +78,31 @@ impl Tool for ExternalIP {
                 );
             }
             Some(Ok(val)) => {
-                let mut val = val.clone();
-
-                val.remove("status");
-                if let Some(v) = val.remove("query") {
-                    rows = rows.push(info_row("IPv4", &v));
-                }
+                let val = format_obj(val);
 
                 for (key, value) in val.iter() {
-                    match key {
-                        "status" => {}
-                        key => {
-                            rows = rows.push(info_row(key, value));
-                        }
-                    }
+                    rows = rows.push(info_row(key, value));
                 }
             }
+        }
+
+        if self.response.is_some() {
+            let bottom_row = row![
+                button(text("refresh").size(24).center())
+                    .on_press(Message::Refresh)
+                    .width(Length::Fill),
+                space().width(10),
+                button(text("copy all").size(24).center())
+                    .width(Length::Fill)
+                    .on_press_with(|| {
+                        let text = format!("");
+
+                        Message::CopyToClipboard(text)
+                    })
+            ]
+            .height(Length::Fill);
+
+            rows = rows.push(bottom_row);
         }
 
         let container = content_container(rows).padding(12);
@@ -107,23 +121,48 @@ impl Tool for ExternalIP {
     }
 }
 
+fn format_obj(obj: &Object) -> Object {
+    let mut new = Object::with_capacity(obj.len());
+
+    if let Some(ip) = obj.get("query") {
+        new.insert("IP Address", ip.to_owned());
+    }
+
+    for (k, v) in obj.iter() {
+        match k {
+            "status" | "query" => {}
+            k => {
+                new.insert(k, v.clone());
+            }
+        }
+    }
+
+    new
+}
+
 fn info_row<'a>(key: &str, value: &JsonValue) -> Element<'a, crate::Message> {
-    let value_text = if value.is_empty() {
+    let value_empty = value.is_empty();
+
+    let value_text = if value_empty {
         "-".to_string()
     } else {
         value.to_string()
     };
 
-    row![
+    let mut row = row![
         text(key.to_string())
             .size(15)
             .width(Length::Fixed(160.0))
             .color(rgb8(160, 160, 160)),
         text(value_text.clone()).size(15).width(Length::Fill),
         // .color(res_color),
-        copy_icon_btn(value_text),
     ]
     .align_y(Alignment::Center)
-    .padding([5, 0])
-    .into()
+    .padding([5, 0]);
+
+    if !value_empty {
+        row = row.push(copy_icon_btn(value_text));
+    }
+
+    row.into()
 }
