@@ -68,7 +68,7 @@ pub enum Message {
 
     /* messages for ext_ip */
     /// (ipv4, ipv6)
-    ExternalIpFetched((Result<String, String>, Result<String, String>)),
+    ExternalIpFetched(Result<json::object::Object, String>),
 }
 
 pub struct App {
@@ -152,7 +152,7 @@ impl App {
 
     fn update(&mut self, message: Message) -> Task<Message> {
         #[cfg(debug_assertions)]
-        println!("=> MESSAGE: {message:?}");
+        println!("=> MESSAGE: {message:#?}");
 
         match message {
             Message::GoHome => {

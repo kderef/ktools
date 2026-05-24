@@ -25,9 +25,10 @@ static_vcruntime = "3.0.0"
 iced_aw = "0.14.1"
 iced_fonts = { version = "0.3.0", features = ["codicon"] }
 image = "0.25.10"
+json = "0.12.4"
 network-interface = "2.0.5"
 rand = "0.10.1"
-reqwest = "0.13.3"
+ureq = "3.3.0"
 
 [dependencies.iced]
 version = "0.14.0"
