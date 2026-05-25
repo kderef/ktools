@@ -4,17 +4,52 @@ use iced::{
     Alignment, Length,
     widget::{self, button, row, space, text},
 };
+use sysinfo::System;
 
 use super::*;
 use crate::Message;
 
-static TASKS: &[(&str, fn() -> Result<String, String>)] = &[
+#[derive(Debug, Clone)]
+struct Cpu {
+    name: String,
+    brand: String,
+    vendor_id: String,
+    frequency: u64,
+    usage: f32,
+}
+impl From<&sysinfo::Cpu> for Cpu {
+    fn from(value: &sysinfo::Cpu) -> Self {
+        Self {
+            vendor_id: value.vendor_id().to_owned(),
+            name: value.name().to_owned(),
+            brand: value.brand().to_owned(),
+            frequency: value.frequency(),
+            usage: value.cpu_usage(),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum SystemValue {
+    Text(String),
+    Cpus(Vec<Cpu>),
+    Memory {
+        total_bytes: u64,
+        free_bytes: u64,
+        used_bytes: u64,
+    },
+}
+
+static TASKS: &[(&str, fn() -> Result<SystemValue, String>)] = &[
     //
     ("hostname", fetch_hostname),
+    ("username", fetch_username),
+    ("CPU model", fetch_cpu),
+    ("Total RAM", fetch_ram),
 ];
 
 pub struct SystemInfo {
-    info: HashMap<&'static str, Option<Result<String, String>>>,
+    info: HashMap<&'static str, Option<Result<SystemValue, String>>>,
 }
 
 impl Default for SystemInfo {
@@ -94,7 +129,7 @@ impl Tool for SystemInfo {
                             .iter()
                             .filter_map(|(k, v)| {
                                 if let Some(Ok(val)) = v {
-                                    Some(format!("{k}: {val}"))
+                                    Some(format!("{k}: {val:?}")) // TODO: fix
                                 } else {
                                     None
                                 }
@@ -112,7 +147,10 @@ impl Tool for SystemInfo {
     }
 }
 
-fn info_row<'a>(key: &str, value: &Option<Result<String, String>>) -> Element<'a, crate::Message> {
+fn info_row<'a>(
+    key: &str,
+    value: &Option<Result<SystemValue, String>>,
+) -> Element<'a, crate::Message> {
     let (value_text, value_color) = match value {
         None => ("Loading...".to_string(), rgb8(140, 140, 140)),
         Some(Ok(v)) => (v.clone(), rgb8(200, 200, 200)),
@@ -139,6 +177,29 @@ fn info_row<'a>(key: &str, value: &Option<Result<String, String>>) -> Element<'a
     row.into()
 }
 
-fn fetch_hostname() -> Result<String, String> {
-    std::env::var("COMPUTERNAME").map_err(|e| e.to_string())
+fn fetch_hostname() -> Result<SystemValue, String> {
+    let val = std::env::var("COMPUTERNAME").map_err(|e| e.to_string())?;
+    Ok(SystemValue::Text(val))
+}
+fn fetch_username() -> Result<SystemValue, String> {
+    let val = std::env::var("USERNAME").map_err(|e| e.to_string())?;
+    Ok(SystemValue::Text(val))
+}
+fn fetch_cpu() -> Result<SystemValue, String> {
+    let mut sys = System::new();
+    sys.refresh_cpu_all();
+
+    let cpus: Vec<Cpu> = sys.cpus().iter().map(|c| Cpu::from(c)).collect();
+
+    Ok(SystemValue::Cpus(cpus))
+}
+fn fetch_ram() -> Result<SystemValue, String> {
+    let mut sys = System::new();
+    sys.refresh_memory();
+
+    Ok(SystemValue::Memory {
+        total_bytes: sys.total_memory(),
+        free_bytes: sys.free_memory(),
+        used_bytes: sys.free_memory(),
+    })
 }

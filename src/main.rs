@@ -71,7 +71,7 @@ pub enum Message {
     ExternalIpFetched(Result<json::object::Object, String>),
 
     /* messages for sys_info */
-    SystemInfoFetched(&'static str, Result<String, String>),
+    SystemInfoFetched(&'static str, Result<tool::sys_info::SystemValue, String>),
 }
 
 pub struct App {
