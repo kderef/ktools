@@ -4,15 +4,17 @@ use iced::{
 };
 
 use crate::Message;
-use serde_json::Value;
+use serde_json::{Map, Value};
 
 use super::*;
 
 const IP_API_URL: &str = "http://ip-api.com/json";
 
+pub type Object = Map<String, Value>;
+
 #[derive(Default)]
 pub struct ExternalIP {
-    response: Option<Result<serde_json::Map<String, Value>, String>>,
+    response: Option<Result<Object, String>>,
 }
 
 impl Tool for ExternalIP {
@@ -23,31 +25,27 @@ impl Tool for ExternalIP {
         icon_font::broadcast()
     }
     fn background(&self) -> Color {
-        rgb8(100, 100, 100) // TODO
+        rgb8(100, 100, 100)
     }
     fn text_color(&self) -> Color {
         rgb(0.95, 0.95, 0.95)
     }
     fn on_activate(&mut self) -> Task<crate::Message> {
-        fn get(url: &str) -> Result<serde_json::Value, String> {
+        fn get(url: &str) -> Result<Object, String> {
             ureq::get(url)
                 .call()
                 .and_then(|mut r| r.body_mut().read_to_string())
                 .map_err(|e| e.to_string())
-                .and_then(|t| serde_json::from_str(&t).map_err(|e| e.to_string()))
+                .and_then(|t| serde_json::from_str::<Value>(&t).map_err(|e| e.to_string()))
+                .and_then(|v| match v {
+                    Value::Object(o) if !o.is_empty() => Ok(o),
+                    _ => Err("Returned value was not an object.".to_owned()),
+                })
         }
 
-        Task::perform(
-            async {
-                match get(IP_API_URL) {
-                    Ok(serde_json::Value::Object(o)) if !o.is_empty() => Ok(o),
-                    Ok(_) => Err("Returned value was not an object.".to_owned()),
-                    Err(e) => Err(e),
-                }
-            },
-            crate::Message::ExternalIpFetched,
-        )
+        Task::perform(async { get(IP_API_URL) }, crate::Message::ExternalIpFetched)
     }
+
     fn update(&mut self, message: crate::Message) -> Task<crate::Message> {
         match message {
             Message::ExternalIpFetched(response) => {
@@ -77,16 +75,13 @@ impl Tool for ExternalIP {
                 );
             }
             Some(Ok(val)) => {
-                let val = format_obj(val);
-
-                for (key, value) in val.iter() {
+                for (key, value) in format_obj(val).iter() {
                     rows = rows.push(info_row(key, value));
                 }
             }
         }
 
         let container = content_container(rows).padding(12).height(Length::Fill);
-
         let go_back = go_back_button(13);
         let title = title_text(self);
 
@@ -106,32 +101,30 @@ impl Tool for ExternalIP {
                 .width(Length::Fill)
                 .on_press_with(|| {
                     let text = match &self.response {
-                        Some(Ok(obj)) => obj_pretty(&format_obj(&obj)),
-                        _ => "".to_string(),
+                        Some(Ok(obj)) => obj_pretty(&format_obj(obj)),
+                        _ => String::new(),
                     };
-
                     Message::CopyToClipboard(text)
                 })
         ];
 
         col = col.push(space().height(20)).push(bottom_row);
-
         col.height(Length::Fill).padding(12).into()
     }
 }
 
 fn format_obj(obj: &Object) -> Object {
-    let mut new = Object::with_capacity(obj.len());
+    let mut new = Object::new();
 
     if let Some(ip) = obj.get("query") {
-        new.insert("IP Address", ip.to_owned());
+        new.insert("IP Address".to_owned(), ip.clone());
     }
 
     for (k, v) in obj.iter() {
-        match k {
+        match k.as_str() {
             "status" | "query" => {}
-            k => {
-                new.insert(k, v.clone());
+            _ => {
+                new.insert(k.clone(), v.clone());
             }
         }
     }
@@ -139,14 +132,27 @@ fn format_obj(obj: &Object) -> Object {
     new
 }
 
-fn info_row<'a>(key: &str, value: &JsonValue) -> Element<'a, crate::Message> {
-    let value_empty = value.is_empty();
+fn obj_pretty(obj: &Object) -> String {
+    obj.iter()
+        .map(|(k, v)| {
+            let val = match v {
+                Value::String(s) => s.clone(),
+                other => other.to_string(),
+            };
+            format!("{k}: {val}")
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
 
-    let value_text = if value_empty {
-        "-".to_string()
-    } else {
-        value.to_string()
+fn info_row<'a>(key: &str, value: &Value) -> Element<'a, crate::Message> {
+    let value_text = match value {
+        Value::String(s) if !s.is_empty() => s.clone(),
+        Value::Null | Value::String(_) => "-".to_owned(),
+        other => other.to_string(),
     };
+
+    let is_empty = value_text == "-";
 
     let mut row = row![
         text(key.to_string())
@@ -154,12 +160,11 @@ fn info_row<'a>(key: &str, value: &JsonValue) -> Element<'a, crate::Message> {
             .width(Length::Fixed(160.0))
             .color(rgb8(160, 160, 160)),
         text(value_text.clone()).size(15).width(Length::Fill),
-        // .color(res_color),
     ]
     .align_y(Alignment::Center)
     .padding([5, 0]);
 
-    if !value_empty {
+    if !is_empty {
         row = row.push(copy_icon_btn(value_text));
     }
 

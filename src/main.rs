@@ -68,7 +68,7 @@ pub enum Message {
     PasswordGenerator(tool::passgen::Message),
 
     /* messages for ext_ip */
-    ExternalIpFetched(Result<json::object::Object, String>),
+    ExternalIpFetched(Result<tool::ext_ip::Object, String>),
 
     /* messages for sys_info */
     SystemInfoFetched(&'static str, Result<tool::sys_info::SystemValue, String>),
