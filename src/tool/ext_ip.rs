@@ -27,9 +27,6 @@ impl Tool for ExternalIP {
     fn background(&self) -> Color {
         rgb8(100, 100, 100)
     }
-    fn text_color(&self) -> Color {
-        rgb(0.95, 0.95, 0.95)
-    }
     fn on_activate(&mut self) -> Task<crate::Message> {
         fn get(url: &str) -> Result<Object, String> {
             ureq::get(url)

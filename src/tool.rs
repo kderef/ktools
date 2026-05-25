@@ -10,11 +10,17 @@ pub trait Tool {
     fn name(&self) -> &str;
     fn icon(&self) -> Text<'_>;
     fn background(&self) -> Color;
-    fn text_color(&self) -> Color;
+    fn text_color(&self) -> Color {
+        rgb(0.95, 0.95, 0.95)
+    }
 
+    /// Serialize the Tool's state into a JSON value to be loaded.
     fn save(&self) -> Option<serde_json::Value> {
         None
     }
+
+    /// Deserialize Tool's state from json
+    fn load(&mut self, _data: serde_json::Value) {}
 
     /// Run code when the tool is selected
     fn on_activate(&mut self) -> Task<crate::Message> {

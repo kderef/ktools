@@ -39,7 +39,7 @@ fn main() {
             ),
             ..Default::default()
         })
-        .title("KTools")
+        .title(App::title)
         .resizable(true)
         .window_size((900, 600))
         .centered()
@@ -52,6 +52,9 @@ fn main() {
 
 #[derive(Debug, Clone)]
 pub enum Message {
+    /// Runs once when the window is opened
+    Startup,
+
     /* Home page messages */
     /// Go to index
     ChooseTool(usize),
@@ -124,11 +127,17 @@ fn home_button<'a>(
 }
 
 impl App {
-    fn new() -> Self {
-        Self {
+    fn new() -> (Self, Task<Message>) {
+        let app = Self {
             tools: tool::all(),
             selected_tool: None,
-        }
+        };
+
+        (app, Task::done(Message::Startup))
+    }
+
+    fn title(&self) -> String {
+        format!("KTools v{}", env!("CARGO_PKG_VERSION"))
     }
 
     fn theme(&self) -> Option<iced::Theme> {
@@ -158,6 +167,9 @@ impl App {
         println!("=> MESSAGE: {message:#?}");
 
         match message {
+            Message::Startup => {
+                self.load_all();
+            }
             Message::GoHome => {
                 self.selected_tool = None;
             }
@@ -197,5 +209,65 @@ impl App {
                 view.into()
             }
         }
+    }
+
+    fn load_all(&mut self) {
+        let path = Self::data_path();
+        let Ok(bytes) = std::fs::read(&path) else {
+            return;
+        };
+        let Ok(serde_json::Value::Object(map)) = serde_json::from_slice(&bytes) else {
+            return;
+        };
+
+        #[cfg(debug_assertions)]
+        println!("INFO: loading data from {:?}", path);
+
+        for tool in &mut self.tools {
+            if let Some(data) = map.get(tool.name()).cloned() {
+                tool.load(data);
+            }
+        }
+    }
+
+    fn save_all(&self) {
+        let data: serde_json::Map<String, serde_json::Value> = self
+            .tools
+            .iter()
+            .filter_map(|t| t.save().map(|v| (t.name().to_owned(), v)))
+            .collect();
+
+        let data_dir = Self::data_dir();
+        let path = Self::data_path();
+
+        #[cfg(debug_assertions)]
+        println!("INFO: saving data to {path:?}");
+
+        if let Err(e) = std::fs::create_dir_all(&data_dir)
+            && cfg!(debug_assertions)
+        {
+            eprintln!("ERROR: failed to create {data_dir:?}: {e}");
+        }
+
+        if let Ok(json) = serde_json::to_string_pretty(&data) {
+            if let Err(e) = std::fs::write(&path, json)
+                && cfg!(debug_assertions)
+            {
+                eprintln!("ERROR: failed to create {path:?}: {e}");
+            }
+        }
+    }
+
+    fn data_dir() -> std::path::PathBuf {
+        dirs::data_local_dir().unwrap_or(".".into()).join("ktools")
+    }
+    fn data_path() -> std::path::PathBuf {
+        Self::data_dir().join("userdata.json")
+    }
+}
+
+impl Drop for App {
+    fn drop(&mut self) {
+        self.save_all();
     }
 }

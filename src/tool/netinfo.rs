@@ -92,10 +92,6 @@ impl Tool for NetworkInfo {
         rgb8(104, 157, 106)
     }
 
-    fn text_color(&self) -> Color {
-        rgb(0.95, 0.95, 0.95)
-    }
-
     fn on_activate(&mut self) -> Task<crate::Message> {
         // TODO: create task
         self.local_interfaces = NetworkInterface::show().unwrap_or_default();

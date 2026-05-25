@@ -19,9 +19,6 @@ impl Tool for CMD {
     fn background(&self) -> Color {
         rgb(0.08, 0.08, 0.08)
     }
-    fn text_color(&self) -> Color {
-        rgb(0.9, 0.9, 0.9)
-    }
 
     fn update(&mut self, _message: crate::Message) -> Task<crate::Message> {
         unreachable!()

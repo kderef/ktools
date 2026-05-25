@@ -269,7 +269,7 @@ fn value_widget<'a>(value: &'a SystemValue) -> Element<'a, crate::Message> {
         sys @ SystemValue::System { name, version } => row![
             text(name).size(14).color(rgb8(220, 220, 220)),
             space().width(8),
-            text(format!("({version})"))
+            text(format!("( {version} )"))
                 .size(14)
                 .color(rgb8(160, 160, 160))
                 .width(Length::Fill),

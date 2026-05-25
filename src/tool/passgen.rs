@@ -13,11 +13,15 @@ use iced::widget::*;
 
 use rand::RngExt;
 use rand::seq::SliceRandom;
+use serde::Deserialize;
+use serde::Serialize;
 
 use std::ops::RangeInclusive;
 
+#[derive(Serialize, Deserialize)]
 pub struct PasswordGenerator {
     length: u32,
+    #[serde(skip)]
     password: String,
     use_chars: bool,
     use_nums: bool,
@@ -26,7 +30,7 @@ pub struct PasswordGenerator {
 impl Default for PasswordGenerator {
     fn default() -> Self {
         let mut new = Self {
-            length: 12,
+            length: 16,
             password: String::with_capacity(32),
             use_chars: true,
             use_nums: true,
@@ -135,8 +139,16 @@ impl Tool for PasswordGenerator {
         rgb(0.0, 0.2, 0.7)
     }
 
-    fn text_color(&self) -> Color {
-        rgb(0.95, 0.95, 0.95)
+    fn save(&self) -> Option<serde_json::Value> {
+        Some(serde_json::to_value(self).unwrap()) // NOTE: unwrap is safe here
+    }
+    fn load(&mut self, data: serde_json::Value) {
+        let Ok(loaded) = serde_json::from_value(data) else {
+            return;
+        };
+
+        *self = loaded;
+        self.generate();
     }
 
     fn update(&mut self, message: crate::Message) -> Task<crate::Message> {
