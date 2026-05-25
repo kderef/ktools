@@ -2,9 +2,9 @@ use iced::{
     Alignment, Length,
     widget::{self, button, row, space, text},
 };
-use json::{JsonValue, object::Object};
 
 use crate::Message;
+use serde_json::Value;
 
 use super::*;
 
@@ -12,7 +12,7 @@ const IP_API_URL: &str = "http://ip-api.com/json";
 
 #[derive(Default)]
 pub struct ExternalIP {
-    response: Option<Result<json::object::Object, String>>,
+    response: Option<Result<serde_json::Map<String, Value>, String>>,
 }
 
 impl Tool for ExternalIP {
@@ -29,19 +29,18 @@ impl Tool for ExternalIP {
         rgb(0.95, 0.95, 0.95)
     }
     fn on_activate(&mut self) -> Task<crate::Message> {
-        fn get(url: &str) -> Result<json::JsonValue, String> {
+        fn get(url: &str) -> Result<serde_json::Value, String> {
             ureq::get(url)
                 .call()
                 .and_then(|mut r| r.body_mut().read_to_string())
                 .map_err(|e| e.to_string())
-                .and_then(|t| json::parse(&t).map_err(|e| e.to_string()))
-                .map_err(|e| e.to_string())
+                .and_then(|t| serde_json::from_str(&t).map_err(|e| e.to_string()))
         }
 
         Task::perform(
             async {
                 match get(IP_API_URL) {
-                    Ok(JsonValue::Object(o)) if !o.is_empty() => Ok(o),
+                    Ok(serde_json::Value::Object(o)) if !o.is_empty() => Ok(o),
                     Ok(_) => Err("Returned value was not an object.".to_owned()),
                     Err(e) => Err(e),
                 }
@@ -119,10 +118,6 @@ impl Tool for ExternalIP {
 
         col.height(Length::Fill).padding(12).into()
     }
-}
-
-fn obj_pretty(obj: &Object) -> String {
-    obj.pretty(4)
 }
 
 fn format_obj(obj: &Object) -> Object {

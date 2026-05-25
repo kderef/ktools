@@ -12,6 +12,10 @@ pub trait Tool {
     fn background(&self) -> Color;
     fn text_color(&self) -> Color;
 
+    fn save(&self) -> Option<serde_json::Value> {
+        None
+    }
+
     /// Run code when the tool is selected
     fn on_activate(&mut self) -> Task<crate::Message> {
         Task::none()
