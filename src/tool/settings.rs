@@ -16,7 +16,7 @@ impl Tool for Settings {
         icon_font::settings_gear()
     }
     fn background(&self) -> Color {
-        rgb8(0, 100, 210)
+        rgb8(0, 100, 180)
     }
     fn save(&self) -> Option<serde_json::Value> {
         todo!()

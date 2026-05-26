@@ -16,6 +16,7 @@ use iced::Color;
 use iced::Element;
 use iced::Font;
 use iced::Length;
+use iced::Padding;
 use iced::Subscription;
 use iced::Task;
 use iced::clipboard;
@@ -215,29 +216,39 @@ impl App {
             None => {
                 // top bar
                 let top = row![
-                    settings_button(&*self.tools[0]),
-                    space().width(Length::Fill),
-                    text("KTools")
-                        .size(35)
-                        .font(Font {
-                            weight: iced::font::Weight::Bold,
-                            ..Default::default()
-                        })
-                        .center(),
-                    space().width(Length::Fill),
+                    container(settings_button(&*self.tools[0]).height(40))
+                        .width(120)
+                        .height(Length::Fill)
+                        .align_y(Alignment::Center),
+                    container(text("KTools").size(42).font(Font {
+                        weight: iced::font::Weight::Bold,
+                        ..Default::default()
+                    }))
+                    .width(Length::FillPortion(3))
+                    .align_x(Alignment::Center)
+                    .align_y(Alignment::Center),
+                    space().width(120),
                 ]
-                .width(Length::Fill);
+                .padding(Padding {
+                    top: 0.,
+                    bottom: 0.,
+                    right: 20.0,
+                    left: 20.0,
+                })
+                .height(60)
+                .align_y(Alignment::Center);
 
                 // the grid
-                let children =
-                    self.tools
-                        .iter()
-                        .filter(|t| !t.hidden())
-                        .enumerate()
-                        .map(|(i, t)| {
+                let children = self.tools.iter().enumerate().filter_map(|(i, t)| {
+                    if t.hidden() {
+                        None
+                    } else {
+                        Some(
                             home_button(t.icon(), t.name(), t.background(), t.text_color(), i)
-                                .into()
-                        });
+                                .into(),
+                        )
+                    }
+                });
 
                 let grid = Grid::with_children(children).fluid(200).spacing(20);
 

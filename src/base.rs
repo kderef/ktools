@@ -1,5 +1,6 @@
 //! base utilities used by all tools
 
+use iced::alignment::Vertical;
 use iced::border::Radius;
 use iced::font::Weight;
 
@@ -81,12 +82,19 @@ pub fn title_text<'a>(t: &'a impl Tool) -> Text<'a> {
 }
 
 pub fn settings_button<'a>(settings: &'a dyn Tool) -> Button<'a, Message> {
-    button(row![
-        space().width(Length::Fill),
-        settings.icon(),
-        settings.name(),
-        space().width(Length::Fill)
-    ])
+    button(
+        container(
+            row![
+                space().width(Length::Fill),
+                settings.icon().size(18),
+                space().width(6),
+                text(settings.name()).size(18),
+                space().width(Length::Fill)
+            ]
+            .align_y(Alignment::Center),
+        )
+        .center(Length::Fill),
+    )
     .on_press(Message::ChooseTool(0))
     .style(|_theme, status| widget::button::Style {
         border: Border {
@@ -95,13 +103,17 @@ pub fn settings_button<'a>(settings: &'a dyn Tool) -> Button<'a, Message> {
             radius: Radius::new(6),
         },
         background: {
-            let color = match status {
-                button::Status::Hovered => rgb8(0, 130, 230),
-                button::Status::Active | _ => rgb8(0, 100, 200),
-            };
+            let mut color = settings.background();
+            match status {
+                button::Status::Hovered => {
+                    color.a = 0.8;
+                }
+                _ => {}
+            }
 
             Some(Background::Color(color))
         },
+        text_color: settings.text_color(),
         ..Default::default()
     })
 }
