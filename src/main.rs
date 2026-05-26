@@ -9,10 +9,12 @@ static ICON_BYTES: &[u8] = include_bytes!("../icon.ico");
 mod base;
 mod tool;
 
+use iced::Alignment;
 use iced::Background;
 use iced::Border;
 use iced::Color;
 use iced::Element;
+use iced::Font;
 use iced::Length;
 use iced::Subscription;
 use iced::Task;
@@ -24,6 +26,7 @@ use iced::widget::*;
 use base::ICON_FONT_BYTES;
 
 use crate::base::rgb8;
+use crate::base::settings_button;
 use crate::tool::Tool;
 
 fn main() {
@@ -210,9 +213,31 @@ impl App {
         match self.selected_tool {
             Some(index) => self.tools[index].view(),
             None => {
-                let children = self.tools.iter().enumerate().map(|(i, t)| {
-                    home_button(t.icon(), t.name(), t.background(), t.text_color(), i).into()
-                });
+                // top bar
+                let top = row![
+                    settings_button(&*self.tools[0]),
+                    space().width(Length::Fill),
+                    text("KTools")
+                        .size(35)
+                        .font(Font {
+                            weight: iced::font::Weight::Bold,
+                            ..Default::default()
+                        })
+                        .center(),
+                    space().width(Length::Fill),
+                ]
+                .width(Length::Fill);
+
+                // the grid
+                let children =
+                    self.tools
+                        .iter()
+                        .filter(|t| !t.hidden())
+                        .enumerate()
+                        .map(|(i, t)| {
+                            home_button(t.icon(), t.name(), t.background(), t.text_color(), i)
+                                .into()
+                        });
 
                 let grid = Grid::with_children(children).fluid(200).spacing(20);
 
@@ -220,6 +245,9 @@ impl App {
                 let view = Scrollable::new(content);
 
                 widget::column![
+                    top,
+                    space().height(2),
+                    row![space().width(20), rule::horizontal(2), space().width(20)],
                     view,
                     space().height(Length::Fill),
                     text("© Kian Heitkamp").size(11).color(rgb8(120, 120, 120))

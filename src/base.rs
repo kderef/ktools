@@ -1,13 +1,16 @@
 //! base utilities used by all tools
 
+use iced::border::Radius;
 use iced::font::Weight;
 
+use iced::widget;
 pub use iced_fonts::CODICON_FONT_BYTES as ICON_FONT_BYTES;
 pub use iced_fonts::codicon as icon_font;
 
 use iced::{Alignment, Background, Border, Element, Font, Length, widget::*};
 use iced::{Color, widget::Button};
 
+use crate::Message;
 use crate::tool::Tool;
 
 pub const fn rgb(r: f32, g: f32, b: f32) -> Color {
@@ -20,7 +23,7 @@ pub const fn rgba8(r: u8, g: u8, b: u8, a: f32) -> Color {
     Color::from_rgba8(r, g, b, a)
 }
 
-pub fn go_back_button<'a>(text_size: u32) -> Button<'a, crate::Message> {
+pub fn go_back_button<'a>(text_size: u32) -> Button<'a, Message> {
     button(
         row![
             icon_font::arrow_left().size(text_size + 3),
@@ -29,12 +32,12 @@ pub fn go_back_button<'a>(text_size: u32) -> Button<'a, crate::Message> {
         .spacing(6)
         .align_y(Alignment::Center),
     )
-    .on_press(crate::Message::GoHome)
+    .on_press(Message::GoHome)
 }
 
-pub fn copy_icon_btn(value: String) -> Element<'static, crate::Message> {
+pub fn copy_icon_btn(value: String) -> Element<'static, Message> {
     button(icon_font::copy().size(13))
-        .on_press(crate::Message::CopyToClipboard(value))
+        .on_press(Message::CopyToClipboard(value))
         .padding([2, 6])
         .style(|_theme: &Theme, status| button::Style {
             snap: false,
@@ -55,9 +58,7 @@ pub fn copy_icon_btn(value: String) -> Element<'static, crate::Message> {
         .into()
 }
 
-pub fn content_container<'a, E: Into<Element<'a, crate::Message>>>(
-    inside: E,
-) -> Container<'a, crate::Message> {
+pub fn content_container<'a, E: Into<Element<'a, Message>>>(inside: E) -> Container<'a, Message> {
     container(scrollable(inside))
         .width(Length::Fill)
         .height(Length::Fill)
@@ -75,6 +76,32 @@ pub fn content_container<'a, E: Into<Element<'a, crate::Message>>>(
 pub fn title_text<'a>(t: &'a impl Tool) -> Text<'a> {
     text(t.name()).size(28).font(Font {
         weight: Weight::Bold,
+        ..Default::default()
+    })
+}
+
+pub fn settings_button<'a>(settings: &'a dyn Tool) -> Button<'a, Message> {
+    button(row![
+        space().width(Length::Fill),
+        settings.icon(),
+        settings.name(),
+        space().width(Length::Fill)
+    ])
+    .on_press(Message::ChooseTool(0))
+    .style(|_theme, status| widget::button::Style {
+        border: Border {
+            color: rgb8(160, 160, 160),
+            width: 1.0,
+            radius: Radius::new(6),
+        },
+        background: {
+            let color = match status {
+                button::Status::Hovered => rgb8(0, 130, 230),
+                button::Status::Active | _ => rgb8(0, 100, 200),
+            };
+
+            Some(Background::Color(color))
+        },
         ..Default::default()
     })
 }
