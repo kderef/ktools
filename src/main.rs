@@ -29,6 +29,7 @@ use base::ICON_FONT_BYTES;
 use crate::base::rgb8;
 use crate::base::settings_button;
 use crate::tool::Tool;
+use crate::tool::settings::Settings;
 
 fn main() {
     iced::application(App::new, App::update, App::view)
@@ -56,6 +57,13 @@ fn main() {
         .unwrap();
 }
 
+#[derive(Debug, Clone)]
+enum Selection {
+    Home,
+    Settings,
+    Tool(usize),
+}
+
 /// Only message type used in the App.
 /// It has a couple of generic messages such as `GoHome`
 /// and a couple of `Tool`-specific messages such as `ExternalIpFetched()`
@@ -70,6 +78,7 @@ pub enum Message {
 
     /// Reset `current_tool` to `None`
     GoHome,
+    GoToSettings,
 
     /* Generic messages */
     Refresh,
@@ -90,7 +99,8 @@ pub enum Message {
 
 pub struct App {
     tools: Vec<Box<dyn Tool>>,
-    selected_tool: Option<usize>,
+    selected: Selection,
+    settings: Settings,
 }
 
 fn home_button<'a>(
@@ -142,7 +152,8 @@ impl App {
     fn new() -> (Self, Task<Message>) {
         let app = Self {
             tools: tool::all(),
-            selected_tool: None,
+            selected: Selection::Home,
+            settings: Settings::default(),
         };
 
         (app, Task::done(Message::Startup))
@@ -153,7 +164,7 @@ impl App {
     }
 
     fn theme(&self) -> Option<iced::Theme> {
-        Some(iced::Theme::Dark)
+        Some(self.settings.theme.into())
     }
 
     fn subscription(&self) -> Subscription<Message> {
@@ -185,13 +196,13 @@ impl App {
                 self.load_all();
             }
             Message::GoHome => {
-                self.selected_tool = None;
+                self.selected = Selection::Home;
             }
             Message::ChooseTool(index) => {
                 let tool = &mut self.tools[index];
 
                 if !tool.no_view() {
-                    self.selected_tool = Some(index);
+                    self.selected = Selection::Tool(index);
                 }
                 return tool.on_activate();
             }
@@ -199,11 +210,11 @@ impl App {
                 return clipboard::write(text);
             }
             // Globally non-relevant Messages will be relegated to the `Tool`
-            other => {
-                if let Some(index) = self.selected_tool {
-                    return self.tools[index].update(other);
-                }
-            }
+            other => match self.selected {
+                Selection::Settings => return self.settings.update(other),
+                Selection::Tool(index) => return self.tools[index].update(other),
+                _ => {}
+            },
         }
 
         Task::none()
@@ -211,12 +222,13 @@ impl App {
 
     /// Dynamic grid of squares representing tools.
     fn view(&self) -> Element<'_, Message> {
-        match self.selected_tool {
-            Some(index) => self.tools[index].view(),
-            None => {
+        match self.selected {
+            Selection::Settings => self.settings.view(),
+            Selection::Tool(index) => self.tools[index].view(),
+            Selection::Home => {
                 // top bar
                 let top = row![
-                    container(settings_button(&*self.tools[0]).height(40))
+                    container(settings_button(&self.settings).height(40))
                         .width(120)
                         .height(Length::Fill)
                         .align_y(Alignment::Center),
@@ -286,6 +298,10 @@ impl App {
                 tool.load(data);
             }
         }
+
+        if let Some(data) = map.get(self.settings.name()).cloned() {
+            self.settings.load(data);
+        }
     }
 
     /// Collect state of all the `Tool`'s and saves it in a config file
@@ -293,6 +309,8 @@ impl App {
         let data: serde_json::Map<String, serde_json::Value> = self
             .tools
             .iter()
+            .map(|t| t.as_ref())
+            .chain([&self.settings as &dyn Tool])
             .filter_map(|t| t.save().map(|v| (t.name().to_owned(), v)))
             .collect();
 

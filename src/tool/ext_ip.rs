@@ -14,6 +14,7 @@ pub type Object = Map<String, Value>;
 
 #[derive(Default)]
 pub struct ExternalIP {
+    /// `None` when still loading, `Some` when loaded.
     response: Option<Result<Object, String>>,
 }
 

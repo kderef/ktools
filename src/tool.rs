@@ -1,3 +1,5 @@
+pub mod settings;
+
 pub use crate::base::*;
 
 use iced::Task;
@@ -58,7 +60,6 @@ macro_rules! register_tools {
 }
 
 register_tools! {
-    settings::Settings,
     cmd::CMD,
     passgen::PasswordGenerator,
     netinfo::NetworkInfo,

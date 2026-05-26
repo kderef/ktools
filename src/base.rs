@@ -13,6 +13,7 @@ use iced::{Color, widget::Button};
 
 use crate::Message;
 use crate::tool::Tool;
+use crate::tool::settings::Settings;
 
 pub const fn rgb(r: f32, g: f32, b: f32) -> Color {
     Color::from_rgb(r, g, b)
@@ -81,7 +82,7 @@ pub fn title_text<'a>(t: &'a impl Tool) -> Text<'a> {
     })
 }
 
-pub fn settings_button<'a>(settings: &'a dyn Tool) -> Button<'a, Message> {
+pub fn settings_button<'a>(settings: &'a Settings) -> Button<'a, Message> {
     button(
         container(
             row![
@@ -95,7 +96,7 @@ pub fn settings_button<'a>(settings: &'a dyn Tool) -> Button<'a, Message> {
         )
         .center(Length::Fill),
     )
-    .on_press(Message::ChooseTool(0))
+    .on_press(Message::GoToSettings)
     .style(|_theme, status| widget::button::Style {
         border: Border {
             color: rgb8(160, 160, 160),
