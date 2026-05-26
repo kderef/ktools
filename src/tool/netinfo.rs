@@ -1,3 +1,6 @@
+//! Tool used for gathering **local** network information
+//! For *external* network information see `src/tool/ext_ip.rs`
+
 use super::*;
 use iced::{
     Alignment, Background, Font, Length,

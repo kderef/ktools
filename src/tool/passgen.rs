@@ -82,38 +82,18 @@ impl PasswordGenerator {
         self.password.clear();
         let mut rng = rand::rng();
 
-        for _ in 0..len_nums {
-            self.password.push(
-                (Self::NUMS
-                    .chars()
-                    .nth(rng.random_range(0..Self::NUMS.len())))
-                .unwrap(),
-            );
-        }
-        for _ in 0..len_spec {
-            self.password.push(
-                Self::SPEC
-                    .chars()
-                    .nth(rng.random_range(0..Self::SPEC.len()))
-                    .unwrap(),
-            );
-        }
-        for _ in 0..len_lower {
-            self.password.push(
-                Self::LOWER
-                    .chars()
-                    .nth(rng.random_range(0..Self::LOWER.len()))
-                    .unwrap(),
-            );
-        }
-        for _ in 0..len_upper {
-            self.password.push(
-                Self::UPPER
-                    .chars()
-                    .nth(rng.random_range(0..Self::UPPER.len()))
-                    .unwrap(),
-            );
-        }
+        // Push `len` amount of random characters from `chars`
+        let mut push_rand = |len, chars: &str| {
+            for _ in 0..len {
+                self.password
+                    .push(chars.chars().nth(rng.random_range(0..chars.len())).unwrap());
+            }
+        };
+
+        push_rand(len_nums, Self::NUMS);
+        push_rand(len_spec, Self::SPEC);
+        push_rand(len_lower, Self::LOWER);
+        push_rand(len_upper, Self::UPPER);
 
         let mut new = self.password.chars().collect::<Vec<char>>();
 
@@ -140,7 +120,7 @@ impl Tool for PasswordGenerator {
     }
 
     fn save(&self) -> Option<serde_json::Value> {
-        Some(serde_json::to_value(self).unwrap()) // NOTE: unwrap is safe here
+        Some(serde_json::to_value(self).unwrap()) // NOTE: unwrap is safe because the type is valid
     }
     fn load(&mut self, data: serde_json::Value) {
         let Ok(loaded) = serde_json::from_value(data) else {
@@ -148,7 +128,7 @@ impl Tool for PasswordGenerator {
         };
 
         *self = loaded;
-        self.generate();
+        self.generate(); // populate password field
     }
 
     fn update(&mut self, message: crate::Message) -> Task<crate::Message> {

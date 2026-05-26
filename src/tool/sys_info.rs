@@ -20,6 +20,7 @@ pub struct Cpu {
     usage: f32,
 }
 
+// sysinfo::Cpu doesn't implement `Clone` so we need this
 impl From<&sysinfo::Cpu> for Cpu {
     fn from(value: &sysinfo::Cpu) -> Self {
         Self {
@@ -120,6 +121,8 @@ impl SystemValue {
     }
 }
 
+/// Tasks that are performed simultaneously in their own `Task`'s
+/// The name is used for indexing into a `HashMap`, as well as displaying.
 static TASKS: &[(&str, fn() -> Result<SystemValue, String>)] = &[
     ("OS Version", fetch_os),
     ("Hostname", fetch_hostname),
@@ -151,10 +154,8 @@ impl Tool for SystemInfo {
     fn background(&self) -> Color {
         rgb8(66, 123, 88)
     }
-    fn text_color(&self) -> Color {
-        rgb(0.95, 0.95, 0.95)
-    }
     fn on_activate(&mut self) -> Task<crate::Message> {
+        // Launch tasks for each of the TASKS
         Task::batch(TASKS.iter().map(|(k, f)| {
             Task::perform(async move { f() }, move |r| {
                 Message::SystemInfoFetched(k, r)
@@ -314,12 +315,11 @@ fn value_widget<'a>(value: &'a SystemValue) -> Element<'a, crate::Message> {
         } => {
             let ratio = *used_bytes as f32 / (*total_bytes).max(1) as f32;
 
-            let bar_color = if ratio > 0.85 {
-                rgb8(220, 60, 60) // red when nearly full
-            } else if ratio > 0.60 {
-                rgb8(220, 160, 40) // amber when moderately used
-            } else {
-                rgb8(80, 180, 100) // green when healthy
+            // Red, amber or green for status
+            let bar_color = match ratio {
+                0.85.. => rgb8(220, 60, 60),
+                0.60.. => rgb8(220, 160, 40),
+                _ => rgb8(80, 180, 100),
             };
 
             let used_str = bytes_string(*used_bytes);
@@ -366,12 +366,10 @@ fn value_widget<'a>(value: &'a SystemValue) -> Element<'a, crate::Message> {
             for disk in disks {
                 let ratio = disk.used_bytes as f32 / disk.total_bytes.max(1) as f32;
 
-                let bar_color = if ratio > 0.90 {
-                    rgb8(220, 60, 60)
-                } else if ratio > 0.70 {
-                    rgb8(220, 160, 40)
-                } else {
-                    rgb8(80, 180, 100)
+                let bar_color = match ratio {
+                    0.90.. => rgb8(220, 60, 60),
+                    0.70.. => rgb8(220, 160, 40),
+                    _ => rgb8(80, 180, 100),
                 };
 
                 let used_str = bytes_string(disk.used_bytes);
@@ -434,12 +432,14 @@ fn fetch_cpu() -> Result<SystemValue, String> {
     let mut sys = System::new();
     sys.refresh_cpu_all();
     let cpus = sys.cpus().iter().map(Cpu::from).collect();
+
     Ok(SystemValue::Cpus(cpus))
 }
 
 fn fetch_ram() -> Result<SystemValue, String> {
     let mut sys = System::new();
     sys.refresh_memory();
+
     Ok(SystemValue::Memory {
         total_bytes: sys.total_memory(),
         free_bytes: sys.free_memory(),
@@ -457,8 +457,6 @@ fn fetch_os() -> Result<SystemValue, String> {
 fn fetch_disks() -> Result<SystemValue, String> {
     let disks = sysinfo::Disks::new_with_refreshed_list();
 
-    println!("{disks:#?}");
-
     let disks = disks
         .iter()
         .map(|d| Disk {
@@ -469,5 +467,6 @@ fn fetch_disks() -> Result<SystemValue, String> {
             used_bytes: d.total_space() - d.available_space(),
         })
         .collect();
+
     Ok(SystemValue::Disks(disks))
 }

@@ -127,6 +127,7 @@ fn home_button<'a>(
 }
 
 impl App {
+    /// Returns the empty (default) state of the app, and returns a message that will properly load data.
     fn new() -> (Self, Task<Message>) {
         let app = Self {
             tools: tool::all(),
@@ -162,6 +163,8 @@ impl App {
         })
     }
 
+    /// NOTE: only globally relevant messages such as `CopyToClipboard` will be handled here.
+    /// The rest will be relegated to the currently selected `Tool`
     fn update(&mut self, message: Message) -> Task<Message> {
         #[cfg(debug_assertions)]
         println!("=> MESSAGE: {message:#?}");
@@ -211,6 +214,7 @@ impl App {
         }
     }
 
+    /// Load saved data into all the tools
     fn load_all(&mut self) {
         let path = Self::data_path();
         let Ok(bytes) = std::fs::read(&path) else {
@@ -230,6 +234,7 @@ impl App {
         }
     }
 
+    /// Collect state of all the `Tool`'s and saves it in a config file
     fn save_all(&self) {
         let data: serde_json::Map<String, serde_json::Value> = self
             .tools
@@ -258,9 +263,11 @@ impl App {
         }
     }
 
+    /// Directory path for the app's config folder
     fn data_dir() -> std::path::PathBuf {
         dirs::data_local_dir().unwrap_or(".".into()).join("ktools")
     }
+    /// Path for the userdata file in the `data_dir` folder.
     fn data_path() -> std::path::PathBuf {
         Self::data_dir().join("userdata.json")
     }
