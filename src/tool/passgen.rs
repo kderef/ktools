@@ -165,7 +165,10 @@ impl Tool for PasswordGenerator {
         let password_output = TextInput::new("password output...", &self.password)
             // .width(Length::FillPortion(3))
             .style(|theme: &Theme, _status| text_input::Style {
-                background: Background::Color(Color::from_rgb8(100, 100, 100)),
+                background: Background::Color(match theme {
+                    Theme::Light => rgb8(200, 200, 200),
+                    _ => rgb8(100, 100, 100),
+                }),
                 border: Border {
                     color: Color::from_rgba8(255, 255, 255, 0.5),
                     width: 1.0,

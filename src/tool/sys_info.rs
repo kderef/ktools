@@ -3,7 +3,7 @@ use std::fmt;
 use std::fmt::Write;
 
 use iced::{
-    Alignment, Length,
+    Alignment, Length, Theme,
     widget::{self, button, progress_bar, row, space, text},
 };
 use sysinfo::System;
@@ -237,19 +237,14 @@ fn info_row<'a>(
     key: &str,
     value: &'a Option<Result<SystemValue, String>>,
 ) -> Element<'a, crate::Message> {
-    let label = text(key.to_string())
-        .size(14)
-        .width(Length::Fixed(120.0))
-        .color(rgb8(140, 140, 140));
+    let label = text(key.to_string()).size(14).width(Length::Fixed(120.0));
+    // .color(rgb8(140, 140, 140));
 
     let content: Element<'a, crate::Message> = match value {
-        None => text("Loading...")
-            .size(14)
-            .color(rgb8(100, 100, 100))
-            .into(),
+        None => text("Loading...").size(14).style(text::secondary).into(),
         Some(Err(e)) => text(format!("ERROR: {e}"))
             .size(14)
-            .color(rgb8(220, 10, 10))
+            .style(text::danger)
             .into(),
         Some(Ok(v)) => value_widget(v),
     };
@@ -263,20 +258,26 @@ fn info_row<'a>(
 fn value_widget<'a>(value: &'a SystemValue) -> Element<'a, crate::Message> {
     match value {
         SystemValue::Text(s) => row![
-            text(s.clone())
-                .size(14)
-                .width(Length::Fill)
-                .color(rgb8(220, 220, 220)),
+            text(s.clone()).size(14).width(Length::Fill),
+            // .color(rgb8(220, 220, 220)),
             copy_icon_btn(s.clone()),
         ]
         .align_y(Alignment::Center)
         .into(),
         sys @ SystemValue::System { name, version } => row![
-            text(name).size(14).color(rgb8(220, 220, 220)),
+            text(name).size(14),
             space().width(8),
             text(format!("( {version} )"))
                 .size(14)
-                .color(rgb8(160, 160, 160))
+                .style(|theme: &Theme| {
+                    text::Style {
+                        color: {
+                            let mut color = theme.palette().text;
+                            color.a = 0.8;
+                            Some(color)
+                        },
+                    }
+                })
                 .width(Length::Fill),
             copy_icon_btn(sys.to_string())
         ]
@@ -291,15 +292,13 @@ fn value_widget<'a>(value: &'a SystemValue) -> Element<'a, crate::Message> {
 
             let copy_val = format!("{brand} ({cores} cores, {freq} MHz)");
 
-            let brand_text = text(brand).size(14).color(rgb8(180, 210, 255)); // blue-ish for hardware
+            let brand_text = text(brand).size(14).style(text::primary);
+            // .color(rgb8(180, 210, 255)); // blue-ish for hardware
 
-            let cores_text = text(format!(" · {cores} cores"))
-                .size(14)
-                .color(rgb8(160, 160, 160));
+            let cores_text = text(format!(" · {cores} cores")).size(14);
+            // .style(text::secondary);
 
-            let freq_text = text(format!(" · {freq} MHz"))
-                .size(14)
-                .color(rgb8(120, 200, 150)); // green for frequency
+            let freq_text = text(format!(" · {freq} MHz")).size(14).style(text::success);
 
             row![
                 brand_text,

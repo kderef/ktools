@@ -63,14 +63,10 @@ impl Tool for ExternalIP {
 
         match &self.response {
             None => {
-                rows = rows.push(text("Loading...").size(15).color(rgb8(140, 140, 140)));
+                rows = rows.push(text("Loading...").size(15).style(text::secondary));
             }
             Some(Err(e)) => {
-                rows = rows.push(
-                    text(format!("ERROR: {e}"))
-                        .size(15)
-                        .color(rgb8(220, 20, 20)),
-                );
+                rows = rows.push(text(format!("ERROR: {e}")).size(15).style(text::danger));
             }
             Some(Ok(val)) => {
                 for (key, value) in format_obj(val).iter() {
@@ -156,7 +152,7 @@ fn info_row<'a>(key: &str, value: &Value) -> Element<'a, crate::Message> {
         text(key.to_string())
             .size(15)
             .width(Length::Fixed(160.0))
-            .color(rgb8(160, 160, 160)),
+            .style(text::primary),
         text(value_text.clone()).size(15).width(Length::Fill),
     ]
     .align_y(Alignment::Center)

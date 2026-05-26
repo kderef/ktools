@@ -70,7 +70,7 @@ pub fn content_container<'a, E: Into<Element<'a, Message>>>(inside: E) -> Contai
             })),
             border: Border {
                 color: match theme {
-                    Theme::Light => rgba8(0, 0, 0, 0.08),
+                    Theme::Light => rgba8(0, 0, 0, 0.3),
                     _ => rgba8(255, 255, 255, 0.08),
                 },
                 width: 1.0,
@@ -101,14 +101,14 @@ pub fn settings_button<'a>(settings: &'a Settings) -> Button<'a, Message> {
         .center(Length::Fill),
     )
     .on_press(Message::GoToSettings)
-    .style(|_theme, status| widget::button::Style {
+    .style(|theme: &Theme, status| widget::button::Style {
         border: Border {
             color: rgb8(160, 160, 160),
             width: 1.0,
             radius: Radius::new(6),
         },
         background: {
-            let mut color = settings.background();
+            let mut color = theme.extended_palette().primary.base.color;
             match status {
                 button::Status::Hovered => {
                     color.a = 0.8;
@@ -118,7 +118,7 @@ pub fn settings_button<'a>(settings: &'a Settings) -> Button<'a, Message> {
 
             Some(Background::Color(color))
         },
-        text_color: settings.text_color(),
+        text_color: theme.extended_palette().primary.base.text,
         ..Default::default()
     })
 }

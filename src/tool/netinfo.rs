@@ -22,7 +22,8 @@ fn info_row<'a>(label: &'a str, value: impl ToString) -> Element<'a, crate::Mess
         text(label)
             .size(15)
             .width(Length::Fixed(160.0))
-            .color(rgb8(160, 160, 160)),
+            .style(text::secondary),
+        // .color(rgb8(160, 160, 160)),
         text(value.clone()).size(15).width(Length::Fill),
         copy_icon_btn(value),
     ]
@@ -39,14 +40,17 @@ fn iface_content<'a>(iface: &'a NetworkInterface) -> Element<'a, crate::Message>
         }),
         space().width(Length::Fill),
         {
-            let (desc, color) = match iface.internal {
-                true => ("( internal )", rgb8(253, 218, 13)),
-                false => ("( public )", rgb8(0, 180, 0)),
+            let (desc, style): (&str, fn(&Theme) -> text::Style) = match iface.internal {
+                true => ("( internal )", text::warning),
+                false => ("( public )", text::success),
             };
-            text(desc).size(20).color(color).font(Font {
-                weight: Weight::Bold,
-                ..Default::default()
-            })
+            text(desc)
+                .size(20)
+                .font(Font {
+                    weight: Weight::Bold,
+                    ..Default::default()
+                })
+                .style(style)
         }
     ];
 
@@ -60,7 +64,7 @@ fn iface_content<'a>(iface: &'a NetworkInterface) -> Element<'a, crate::Message>
     for addr in &iface.addr {
         match addr {
             network_interface::Addr::V4(v4) => {
-                rows.push(text("IPv4").size(13).color(rgb8(104, 157, 106)).into());
+                rows.push(text("IPv4").size(13).style(text::primary).into()); // .color(rgb8(104, 157, 106)).into());
                 rows.push(info_row("Address", v4.ip));
                 if let Some(m) = v4.netmask {
                     rows.push(info_row("Netmask", m));
@@ -70,7 +74,8 @@ fn iface_content<'a>(iface: &'a NetworkInterface) -> Element<'a, crate::Message>
                 }
             }
             network_interface::Addr::V6(v6) => {
-                rows.push(text("IPv6").size(13).color(rgb8(104, 157, 106)).into());
+                rows.push(text("IPv6").size(13).style(text::primary).into()); //.color(rgb8(104, 157, 106)).into());
+
                 rows.push(info_row("Address", v6.ip));
                 if let Some(m) = v6.netmask {
                     rows.push(info_row("Netmask", m));
@@ -113,13 +118,13 @@ impl Tool for NetworkInfo {
         let mut sidebar = Sidebar::new(crate::Message::TabSelected)
             .width(Length::Fixed(160.0))
             .height(Length::Fill)
-            .style(|_theme, status| iced_aw::style::sidebar::Style {
+            .style(|theme: &Theme, status| iced_aw::style::sidebar::Style {
                 background: None,
                 border_color: Some(rgb8(60, 60, 60)),
                 border_width: 2.0,
                 tab_label_background: Background::Color(match status {
-                    iced_aw::style::Status::Active => rgb8(44, 94, 173),
-                    iced_aw::style::Status::Hovered => rgb8(44, 94, 173), // rgb8(21, 145, 220),
+                    iced_aw::style::Status::Active => theme.palette().primary,
+                    iced_aw::style::Status::Hovered => theme.palette().primary, // rgb8(21, 145, 220),
                     _ => Color::TRANSPARENT,
                 }),
                 tab_label_border_color: rgb8(60, 60, 60),
@@ -127,7 +132,7 @@ impl Tool for NetworkInfo {
                 icon_color: rgb8(220, 220, 220),
                 icon_background: None,
                 icon_border_radius: 8.0.into(),
-                text_color: rgb8(220, 220, 220),
+                text_color: theme.palette().text,
             });
 
         for (i, iface) in self.local_interfaces.iter().enumerate() {

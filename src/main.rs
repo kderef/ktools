@@ -124,7 +124,7 @@ fn home_button<'a>(
     .width(Length::Fixed(160.0))
     .height(Length::Fixed(80.0))
     .on_press(Message::ChooseTool(index))
-    .style(move |_theme: &Theme, status| {
+    .style(move |theme: &Theme, status| {
         let alpha = match status {
             button::Status::Hovered => 0.82,
             button::Status::Pressed => 0.65,
@@ -136,7 +136,10 @@ fn home_button<'a>(
             background: Some(Background::Color(tinted)),
             text_color,
             border: Border {
-                color: Color::from_rgba(1., 1., 1., 0.3),
+                color: match theme {
+                    Theme::Light => Color::from_rgba(0., 0., 0., 0.8),
+                    _ => Color::from_rgba(1., 1., 1., 0.3),
+                },
                 width: 1.0,
                 radius: 10.0.into(),
             },

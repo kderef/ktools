@@ -1,6 +1,6 @@
 use super::*;
 use iced::{
-    Alignment, Length,
+    Alignment, Length, Theme,
     widget::{self, button, row, rule, space, text},
 };
 use serde::{Deserialize, Serialize};
@@ -43,12 +43,9 @@ pub struct Settings {
 }
 
 fn section_header<'a>(label: &'a str) -> Element<'a, crate::Message> {
-    widget::column![
-        text(label).size(13).color(rgb8(140, 140, 140)),
-        rule::horizontal(1),
-    ]
-    .spacing(4)
-    .into()
+    widget::column![text(label).size(13), rule::horizontal(1),]
+        .spacing(4)
+        .into()
 }
 
 fn setting_row<'a>(
@@ -56,10 +53,8 @@ fn setting_row<'a>(
     content: impl Into<Element<'a, crate::Message>>,
 ) -> Element<'a, crate::Message> {
     row![
-        text(label)
-            .size(15)
-            .width(Length::Fixed(160.0))
-            .color(rgb8(180, 180, 180)),
+        text(label).size(15).width(Length::Fixed(160.0)),
+        // .color(rgb8(180, 180, 180)),
         content.into(),
     ]
     .align_y(Alignment::Center)
@@ -112,9 +107,9 @@ impl Tool for Settings {
                     button(text(t.label()).size(14).center())
                         .on_press(crate::Message::SetTheme(t))
                         .width(Length::Fixed(70.0))
-                        .style(move |_theme, status| widget::button::Style {
+                        .style(move |theme: &Theme, status| widget::button::Style {
                             background: Some(iced::Background::Color(if active {
-                                rgb8(0, 100, 180)
+                                theme.extended_palette().primary.strong.color
                             } else {
                                 match status {
                                     button::Status::Hovered => rgb8(60, 60, 60),
@@ -145,11 +140,11 @@ impl Tool for Settings {
                 "Version",
                 text(env!("CARGO_PKG_VERSION"))
                     .size(15)
-                    .color(rgb8(200, 200, 200))
+                    .style(text::secondary)
             ),
             setting_row(
                 "Author",
-                text("Kian Heitkamp").size(15).color(rgb8(200, 200, 200))
+                text("Kian Heitkamp").size(15).style(text::secondary)
             ),
         ]
         .spacing(4);
