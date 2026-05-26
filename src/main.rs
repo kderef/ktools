@@ -18,10 +18,12 @@ use iced::Subscription;
 use iced::Task;
 use iced::clipboard;
 use iced::keyboard;
+use iced::widget;
 use iced::widget::*;
 
 use base::ICON_FONT_BYTES;
 
+use crate::base::rgb8;
 use crate::tool::Tool;
 
 fn main() {
@@ -216,7 +218,13 @@ impl App {
 
                 let content = Container::new(grid).padding(20);
                 let view = Scrollable::new(content);
-                view.into()
+
+                widget::column![
+                    view,
+                    space().height(Length::Fill),
+                    text("© Kian Heitkamp").size(11).color(rgb8(120, 120, 120))
+                ]
+                .into()
             }
         }
     }
