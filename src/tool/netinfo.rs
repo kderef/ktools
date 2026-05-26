@@ -64,7 +64,16 @@ fn iface_content<'a>(iface: &'a NetworkInterface) -> Element<'a, crate::Message>
     for addr in &iface.addr {
         match addr {
             network_interface::Addr::V4(v4) => {
-                rows.push(text("IPv4").size(13).style(text::primary).into()); // .color(rgb8(104, 157, 106)).into());
+                rows.push(
+                    text("IPv4")
+                        .size(13)
+                        .style(text::primary)
+                        .font(Font {
+                            weight: Weight::Bold,
+                            ..Default::default()
+                        })
+                        .into(),
+                ); // .color(rgb8(104, 157, 106)).into());
                 rows.push(info_row("Address", v4.ip));
                 if let Some(m) = v4.netmask {
                     rows.push(info_row("Netmask", m));
@@ -74,7 +83,16 @@ fn iface_content<'a>(iface: &'a NetworkInterface) -> Element<'a, crate::Message>
                 }
             }
             network_interface::Addr::V6(v6) => {
-                rows.push(text("IPv6").size(13).style(text::primary).into()); //.color(rgb8(104, 157, 106)).into());
+                rows.push(
+                    text("IPv6")
+                        .size(13)
+                        .style(text::primary)
+                        .font(Font {
+                            weight: Weight::Bold,
+                            ..Default::default()
+                        })
+                        .into(),
+                ); //.color(rgb8(104, 157, 106)).into());
 
                 rows.push(info_row("Address", v6.ip));
                 if let Some(m) = v6.netmask {

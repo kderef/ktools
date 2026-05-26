@@ -43,7 +43,7 @@ pub struct Settings {
 }
 
 fn section_header<'a>(label: &'a str) -> Element<'a, crate::Message> {
-    widget::column![text(label).size(13), rule::horizontal(1),]
+    widget::column![text(label).size(13).style(text::base), rule::horizontal(1),]
         .spacing(4)
         .into()
 }
@@ -53,8 +53,10 @@ fn setting_row<'a>(
     content: impl Into<Element<'a, crate::Message>>,
 ) -> Element<'a, crate::Message> {
     row![
-        text(label).size(15).width(Length::Fixed(160.0)),
-        // .color(rgb8(180, 180, 180)),
+        text(label)
+            .size(15)
+            .width(Length::Fixed(160.0))
+            .style(text::primary),
         content.into(),
     ]
     .align_y(Alignment::Center)
@@ -93,7 +95,6 @@ impl Tool for Settings {
         Task::none()
     }
     fn view(&self) -> Element<'_, crate::Message> {
-        // --- Appearance ---
         let theme_buttons = ThemeSetting::all()
             .iter()
             .fold(row![].spacing(8), |row, &t| {
@@ -107,26 +108,33 @@ impl Tool for Settings {
                     button(text(t.label()).size(14).center())
                         .on_press(crate::Message::SetTheme(t))
                         .width(Length::Fixed(70.0))
-                        .style(move |theme: &Theme, status| widget::button::Style {
-                            background: Some(iced::Background::Color(if active {
-                                theme.extended_palette().primary.strong.color
-                            } else {
-                                match status {
-                                    button::Status::Hovered => rgb8(60, 60, 60),
-                                    _ => rgb8(40, 40, 40),
-                                }
-                            })),
-                            border: iced::Border {
-                                color: if active {
-                                    rgb8(0, 140, 220)
+                        .style(move |theme: &Theme, status| {
+                            let palette = theme.extended_palette();
+                            widget::button::Style {
+                                background: Some(iced::Background::Color(if active {
+                                    palette.primary.strong.color
                                 } else {
-                                    rgb8(70, 70, 70)
+                                    match status {
+                                        button::Status::Hovered => palette.background.weak.color,
+                                        _ => palette.background.strong.color,
+                                    }
+                                })),
+                                border: iced::Border {
+                                    color: if active {
+                                        palette.primary.base.color
+                                    } else {
+                                        palette.background.strong.color
+                                    },
+                                    width: 1.0,
+                                    radius: 6.0.into(),
                                 },
-                                width: 1.0,
-                                radius: 6.0.into(),
-                            },
-                            text_color: rgb8(220, 220, 220),
-                            ..Default::default()
+                                text_color: if active {
+                                    palette.primary.strong.text
+                                } else {
+                                    palette.background.base.text
+                                },
+                                ..Default::default()
+                            }
                         }),
                 )
             });
@@ -138,14 +146,9 @@ impl Tool for Settings {
             section_header("About"),
             setting_row(
                 "Version",
-                text(env!("CARGO_PKG_VERSION"))
-                    .size(15)
-                    .style(text::secondary)
+                text(env!("CARGO_PKG_VERSION")).size(15).style(text::base)
             ),
-            setting_row(
-                "Author",
-                text("Kian Heitkamp").size(15).style(text::secondary)
-            ),
+            setting_row("Author", text("Kian Heitkamp").size(15).style(text::base)),
         ]
         .spacing(4);
 

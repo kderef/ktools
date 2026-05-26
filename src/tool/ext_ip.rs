@@ -1,5 +1,6 @@
 use iced::{
-    Alignment, Length,
+    Alignment, Font, Length, Theme,
+    font::Weight,
     widget::{self, button, row, space, text},
 };
 
@@ -152,7 +153,9 @@ fn info_row<'a>(key: &str, value: &Value) -> Element<'a, crate::Message> {
         text(key.to_string())
             .size(15)
             .width(Length::Fixed(160.0))
-            .style(text::primary),
+            .style(|theme: &Theme| text::Style {
+                color: Some(theme.extended_palette().secondary.strong.color)
+            }),
         text(value_text.clone()).size(15).width(Length::Fill),
     ]
     .align_y(Alignment::Center)

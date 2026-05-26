@@ -170,7 +170,7 @@ impl Tool for PasswordGenerator {
                     _ => rgb8(100, 100, 100),
                 }),
                 border: Border {
-                    color: Color::from_rgba8(255, 255, 255, 0.5),
+                    color: theme.palette().text,
                     width: 1.0,
                     radius: Radius::new(5.0),
                 },
@@ -178,6 +178,10 @@ impl Tool for PasswordGenerator {
                 placeholder: Color::from_rgba8(255, 255, 255, 0.5),
                 value: theme.palette().text,
                 selection: theme.palette().primary,
+            })
+            .font(Font {
+                family: iced::font::Family::SansSerif,
+                ..Default::default()
             })
             .size(30);
 
