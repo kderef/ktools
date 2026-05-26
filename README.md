@@ -1,5 +1,5 @@
 ﻿# KTools
-KTools is a GUI application that combines many smaller tools into one app.
+KTools is a GUI application that combines many smaller tools into one app.  
 Examples of tools included are: **Password Generator** and **External IP Fetcher**
 
 ---
