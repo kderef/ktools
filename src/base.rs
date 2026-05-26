@@ -1,6 +1,5 @@
 //! base utilities used by all tools
 
-use iced::alignment::Vertical;
 use iced::border::Radius;
 use iced::font::Weight;
 
@@ -64,17 +63,22 @@ pub fn content_container<'a, E: Into<Element<'a, Message>>>(inside: E) -> Contai
     container(scrollable(inside))
         .width(Length::Fill)
         .height(Length::Fill)
-        .style(|_theme: &Theme| container::Style {
-            background: Some(Background::Color(rgb8(40, 40, 40))),
+        .style(|theme: &Theme| container::Style {
+            background: Some(Background::Color(match theme {
+                Theme::Light => rgb8(220, 220, 220),
+                _ => rgb8(40, 40, 40),
+            })),
             border: Border {
-                color: rgba8(255, 255, 255, 0.08),
+                color: match theme {
+                    Theme::Light => rgba8(0, 0, 0, 0.08),
+                    _ => rgba8(255, 255, 255, 0.08),
+                },
                 width: 1.0,
                 radius: 10.0.into(),
             },
             ..Default::default()
         })
 }
-
 pub fn title_text<'a>(t: &'a impl Tool) -> Text<'a> {
     text(t.name()).size(28).font(Font {
         weight: Weight::Bold,

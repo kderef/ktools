@@ -86,6 +86,9 @@ pub enum Message {
     CopyToClipboard(String),
     TopTabSelected(usize),
 
+    /* messages for settings */
+    SetTheme(tool::settings::ThemeSetting),
+
     /* messages for passgen */
     PasswordGenerator(tool::passgen::Message),
 
