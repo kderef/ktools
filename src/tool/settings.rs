@@ -1,4 +1,7 @@
-use iced::widget::{self, row, space, text};
+use iced::{
+    Alignment, Length,
+    widget::{self, button, row, space, text},
+};
 use serde::{Deserialize, Serialize};
 
 use super::*;
@@ -51,12 +54,19 @@ impl Tool for Settings {
         Task::none()
     }
     fn view(&self) -> Element<'_, crate::Message> {
-        let top_row = row![
-            go_back_button(13), //
-            space().width(10),
-            title_text(self)
+        let mut rows = widget::column![];
+
+        let container = content_container(rows).padding(12).height(Length::Fill);
+        let go_back = go_back_button(13);
+        let title = title_text(self);
+
+        let col = widget::column![
+            widget::row![go_back, space().width(16), title.align_y(Alignment::Center)]
+                .align_y(Alignment::Center),
+            space().height(10),
+            container
         ];
 
-        widget::column![top_row].into()
+        col.height(Length::Fill).padding(12).into()
     }
 }

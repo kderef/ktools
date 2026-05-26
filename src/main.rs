@@ -57,6 +57,7 @@ fn main() {
         .unwrap();
 }
 
+/// Represents a selection of the user (home screen, settings screen, or a tool)
 #[derive(Debug, Clone)]
 enum Selection {
     Home,
@@ -73,10 +74,8 @@ pub enum Message {
     Startup,
 
     /* Home page messages */
-    /// Go to index
+    /// Go to index of App::tools
     ChooseTool(usize),
-
-    /// Reset `current_tool` to `None`
     GoHome,
     GoToSettings,
 
@@ -197,6 +196,9 @@ impl App {
             }
             Message::GoHome => {
                 self.selected = Selection::Home;
+            }
+            Message::GoToSettings => {
+                self.selected = Selection::Settings;
             }
             Message::ChooseTool(index) => {
                 let tool = &mut self.tools[index];
