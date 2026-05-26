@@ -3,7 +3,6 @@ pub use crate::base::*;
 use iced::Task;
 
 pub use iced::{Color, Element, widget::Text};
-pub use iced_fonts::codicon as icon_font;
 
 /// NOTE: a `Tool` implementation must also have `Default` to be used with `register_tools!` macro.
 pub trait Tool {
@@ -19,7 +18,7 @@ pub trait Tool {
         None
     }
 
-    /// Deserialize Tool's state from json
+    /// Deserialize Tool's state from JSON
     fn load(&mut self, _data: serde_json::Value) {}
 
     /// Run code when the tool is selected
@@ -32,7 +31,10 @@ pub trait Tool {
         false
     }
 
+    /// This method will get the left over messages from the `main`'s `update()`
     fn update(&mut self, message: crate::Message) -> Task<crate::Message>;
+
+    /// View which will be shown when the `Tool` is selected, and `no_view()` is `false`.
     fn view(&self) -> Element<'_, crate::Message>;
 }
 

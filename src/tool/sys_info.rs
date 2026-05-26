@@ -33,6 +33,8 @@ impl From<&sysinfo::Cpu> for Cpu {
     }
 }
 
+/// Value returned from fetching info
+/// Example: `fetch_hostname()` could return `SystemValue::Text("my computer")`
 #[derive(Debug, Clone)]
 pub enum SystemValue {
     Text(String),
@@ -77,8 +79,8 @@ fn bytes_string(bytes: u64) -> String {
     s
 }
 
-impl SystemValue {
-    fn display(&self) -> String {
+impl ToString for SystemValue {
+    fn to_string(&self) -> String {
         match self {
             SystemValue::Text(s) => s.clone(),
             SystemValue::System { name, version } => format!("{name} ({version})"),
@@ -120,6 +122,8 @@ impl SystemValue {
         }
     }
 }
+
+impl SystemValue {}
 
 /// Tasks that are performed simultaneously in their own `Task`'s
 /// The name is used for indexing into a `HashMap`, as well as displaying.
@@ -211,7 +215,7 @@ impl Tool for SystemInfo {
                             .iter()
                             .filter_map(|(k, _)| {
                                 if let Some(Ok(val)) = &self.info[k] {
-                                    Some(format!("{k}: {}", val.display()))
+                                    Some(format!("{k}: {}", val.to_string()))
                                 } else {
                                     None
                                 }
@@ -274,7 +278,7 @@ fn value_widget<'a>(value: &'a SystemValue) -> Element<'a, crate::Message> {
                 .size(14)
                 .color(rgb8(160, 160, 160))
                 .width(Length::Fill),
-            copy_icon_btn(sys.display())
+            copy_icon_btn(sys.to_string())
         ]
         .width(Length::Fill)
         .into(),
@@ -366,6 +370,7 @@ fn value_widget<'a>(value: &'a SystemValue) -> Element<'a, crate::Message> {
             for disk in disks {
                 let ratio = disk.used_bytes as f32 / disk.total_bytes.max(1) as f32;
 
+                // Color changes depending on how full disk is
                 let bar_color = match ratio {
                     0.90.. => rgb8(220, 60, 60),
                     0.70.. => rgb8(220, 160, 40),

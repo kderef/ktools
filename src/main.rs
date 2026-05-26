@@ -20,7 +20,7 @@ use iced::clipboard;
 use iced::keyboard;
 use iced::widget::*;
 
-use iced_fonts::CODICON_FONT_BYTES;
+use base::ICON_FONT_BYTES;
 
 use crate::tool::Tool;
 
@@ -43,13 +43,16 @@ fn main() {
         .resizable(true)
         .window_size((900, 600))
         .centered()
-        .font(CODICON_FONT_BYTES)
+        .font(ICON_FONT_BYTES)
         .theme(App::theme)
         .subscription(App::subscription)
         .run()
         .unwrap();
 }
 
+/// Only message type used in the App.
+/// It has a couple of generic messages such as `GoHome`
+/// and a couple of `Tool`-specific messages such as `ExternalIpFetched()`
 #[derive(Debug, Clone)]
 pub enum Message {
     /// Runs once when the window is opened
@@ -58,6 +61,8 @@ pub enum Message {
     /* Home page messages */
     /// Go to index
     ChooseTool(usize),
+
+    /// Reset `current_tool` to `None`
     GoHome,
 
     /* Generic messages */
@@ -187,6 +192,7 @@ impl App {
             Message::CopyToClipboard(text) => {
                 return clipboard::write(text);
             }
+            // Globally non-relevant Messages will be relegated to the `Tool`
             other => {
                 if let Some(index) = self.selected_tool {
                     return self.tools[index].update(other);
@@ -197,6 +203,7 @@ impl App {
         Task::none()
     }
 
+    /// Dynamic grid of squares representing tools.
     fn view(&self) -> Element<'_, Message> {
         match self.selected_tool {
             Some(index) => self.tools[index].view(),
@@ -273,6 +280,7 @@ impl App {
     }
 }
 
+// IMPORTANT: we save userdata on exit (after window closes)
 impl Drop for App {
     fn drop(&mut self) {
         self.save_all();

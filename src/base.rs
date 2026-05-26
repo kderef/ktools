@@ -1,6 +1,8 @@
 //! base utilities used by all tools
 
 use iced::font::Weight;
+
+pub use iced_fonts::CODICON_FONT_BYTES as ICON_FONT_BYTES;
 pub use iced_fonts::codicon as icon_font;
 
 use iced::{Alignment, Background, Border, Element, Font, Length, widget::*};
