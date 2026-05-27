@@ -36,7 +36,7 @@ impl Default for PasswordGenerator {
             password: String::with_capacity(32),
             use_chars: true,
             use_nums: true,
-            special_chars: Self::SPEC.to_owned(),
+            special_chars: Self::DEFAULT_SPEC_CHARS.to_owned(),
         };
 
         new.generate();
@@ -67,12 +67,13 @@ impl PasswordGenerator {
 
     const NUMS_WEIGHT: f32 = 0.25;
     const UPPER_WEIGHT: f32 = 0.25;
+    const SPEC_WEIGHT: f32 = 0.25;
 
     // pools
     const LOWER: &str = "abcdefghijklmnopqrstuvwxyz";
     const UPPER: &str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     const NUMS: &str = "0123456789";
-    const SPEC: &str = "!@#$%^&*()-_=+[]{}|;:,.?";
+    const DEFAULT_SPEC_CHARS: &str = "!@#$%^&*()-_=+[]{}|;:,.?";
 
     fn generate(&mut self) {
         // generate password
@@ -188,8 +189,10 @@ impl Tool for PasswordGenerator {
                 }
 
                 Message::ResetSpecialCharacers => {
-                    self.special_chars = Self::SPEC.to_owned();
-                    self.generate();
+                    if self.special_chars != Self::DEFAULT_SPEC_CHARS {
+                        self.special_chars = Self::DEFAULT_SPEC_CHARS.to_owned();
+                        self.generate();
+                    }
                 }
             }
         }
