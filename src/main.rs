@@ -15,6 +15,7 @@ use iced::{
 };
 
 use base::ICON_FONT_BYTES;
+use network_interface::NetworkInterface;
 
 use crate::base::BOLD_DEFAULT;
 use crate::base::rgb8;
@@ -80,6 +81,9 @@ pub enum Message {
 
     /* messages for settings */
     SetTheme(tool::settings::ThemeSetting),
+
+    /* messages for netinfo */
+    NetworkInterfacesFetched(Result<Vec<NetworkInterface>, String>),
 
     /* messages for passgen */
     PasswordGenerator(tool::passgen::Message),

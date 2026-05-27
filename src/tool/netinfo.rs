@@ -18,6 +18,7 @@ use network_interface::{NetworkInterface, NetworkInterfaceConfig};
 pub struct NetworkInfo {
     active_tab: usize,
     local_interfaces: Vec<NetworkInterface>,
+    error: Option<String>,
 }
 
 fn info_row<'a>(label: &'a str, value: impl ToString) -> Element<'a, Message> {
@@ -108,13 +109,19 @@ impl Tool for NetworkInfo {
     }
 
     fn on_activate(&mut self) -> Task<Message> {
-        self.local_interfaces = NetworkInterface::show().unwrap_or_default();
-        Task::none()
+        Task::perform(
+            async { NetworkInterface::show().map_err(|e| e.to_string()) },
+            Message::NetworkInterfacesFetched,
+        )
     }
 
     fn update(&mut self, message: Message) -> Task<Message> {
         match message {
-            crate::Message::TabSelected(i) => self.active_tab = i,
+            Message::TabSelected(i) => self.active_tab = i,
+            Message::NetworkInterfacesFetched(result) => match result {
+                Err(e) => self.error = Some(e),
+                Ok(ifs) => self.local_interfaces = ifs,
+            },
             _ => {}
         }
         Task::none()
@@ -147,7 +154,9 @@ impl Tool for NetworkInfo {
 
         sidebar = sidebar.set_active_tab(&self.active_tab);
 
-        let content = if let Some(iface) = self.local_interfaces.get(self.active_tab) {
+        let content = if let Some(ref error) = self.error {
+            text(format!("ERROR: {error}")).style(text::danger).into()
+        } else if let Some(iface) = self.local_interfaces.get(self.active_tab) {
             iface_content(iface)
         } else {
             text("No interface selected").into()
