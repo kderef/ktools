@@ -26,6 +26,7 @@ pub struct PasswordGenerator {
     password: String,
     use_chars: bool,
     use_nums: bool,
+    special_chars: String,
 }
 
 impl Default for PasswordGenerator {
@@ -35,6 +36,7 @@ impl Default for PasswordGenerator {
             password: String::with_capacity(32),
             use_chars: true,
             use_nums: true,
+            special_chars: Self::SPEC.to_owned(),
         };
 
         new.generate();
@@ -49,6 +51,14 @@ pub enum Message {
     UseNumsToggled(bool),
     UseCharsToggled(bool),
     Regenerate,
+    ChangeSpecialCharacters(String),
+    ResetSpecialCharacers,
+}
+
+impl Into<crate::Message> for Message {
+    fn into(self) -> crate::Message {
+        crate::Message::PasswordGenerator(self)
+    }
 }
 
 impl PasswordGenerator {
@@ -72,7 +82,7 @@ impl PasswordGenerator {
         } else {
             0
         };
-        let len_spec = if self.use_chars {
+        let len_spec = if self.use_chars && self.special_chars.len() > 0 {
             (self.length as f32 * Self::SPEC_WEIGHT).ceil() as u32
         } else {
             0
@@ -92,7 +102,7 @@ impl PasswordGenerator {
         };
 
         push_rand(len_nums, Self::NUMS);
-        push_rand(len_spec, Self::SPEC);
+        push_rand(len_spec, &self.special_chars);
         push_rand(len_lower, Self::LOWER);
         push_rand(len_upper, Self::UPPER);
 
@@ -151,6 +161,12 @@ impl Tool for PasswordGenerator {
                 Message::Regenerate => {
                     self.generate();
                 }
+                Message::ChangeSpecialCharacters(new) => {
+                    self.special_chars = new;
+                }
+                Message::ResetSpecialCharacers => {
+                    self.special_chars = Self::SPEC.to_owned();
+                }
             }
         }
         Task::none()
@@ -161,7 +177,7 @@ impl Tool for PasswordGenerator {
 
         let length_slider: Slider<'_, u32, crate::Message, Theme> =
             slider(Self::LENGTH_RANGE, self.length, |n| {
-                crate::Message::PasswordGenerator(Message::LengthChanged(n))
+                Message::LengthChanged(n).into()
             });
 
         let password_output = TextInput::new("password output...", &self.password)
@@ -206,7 +222,7 @@ impl Tool for PasswordGenerator {
                     )
                     .center(Length::Fill)
                 )
-                .on_press(crate::Message::PasswordGenerator(Message::Regenerate))
+                .on_press(Message::Regenerate.into())
                 .width(Length::FillPortion(3))
                 .height(Length::Shrink),
             ]
@@ -233,10 +249,20 @@ impl Tool for PasswordGenerator {
         let checkboxes = widget::column![
             checkbox(self.use_nums)
                 .label("Numbers")
-                .on_toggle(|v| crate::Message::PasswordGenerator(Message::UseNumsToggled(v))),
-            checkbox(self.use_chars)
-                .label("Special Characters")
-                .on_toggle(|v| crate::Message::PasswordGenerator(Message::UseCharsToggled(v))),
+                .on_toggle(|v| Message::UseNumsToggled(v).into()),
+            widget::row![
+                checkbox(self.use_chars)
+                    .label("Special Characters")
+                    .on_toggle(|v| Message::UseCharsToggled(v).into()),
+                text_input("example: !@#$%", &self.special_chars)
+                    .size(15)
+                    .on_input_maybe(
+                        self.use_chars
+                            .then_some(|s| Message::ChangeSpecialCharacters(s).into())
+                    ),
+                button("reset").on_press(Message::ResetSpecialCharacers.into())
+            ]
+            .spacing(15)
         ]
         .spacing(10);
 
