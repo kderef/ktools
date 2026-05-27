@@ -64,10 +64,9 @@ pub fn content_container<'a, E: Into<Element<'a, Message>>>(inside: E) -> Contai
         .width(Length::Fill)
         .height(Length::Fill)
         .style(|theme: &Theme| container::Style {
-            background: Some(Background::Color(match theme {
-                Theme::Light => rgb8(235, 235, 235),
-                _ => rgb8(40, 40, 40),
-            })),
+            background: Some(Background::Color(
+                theme.extended_palette().background.weakest.color,
+            )),
             border: Border {
                 color: match theme {
                     Theme::Light => rgba8(0, 0, 0, 0.3),

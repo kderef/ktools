@@ -1,11 +1,13 @@
+use crate::Message;
+
 use super::*;
 use iced::{
-    Alignment, Length, Theme,
+    Alignment, Background, Length, Theme,
     widget::{self, button, row, rule, space, text},
 };
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq)]
 pub enum ThemeSetting {
     #[default]
     Dark,
@@ -18,7 +20,7 @@ impl Into<iced::Theme> for ThemeSetting {
         match self {
             Self::Dark => iced::Theme::Dark,
             Self::Light => iced::Theme::Light,
-            Self::Night => iced::Theme::TokyoNight,
+            Self::Night => iced::Theme::TokyoNightStorm,
         }
     }
 }
@@ -42,7 +44,7 @@ pub struct Settings {
     pub theme: ThemeSetting,
 }
 
-fn section_header<'a>(label: &'a str) -> Element<'a, crate::Message> {
+fn section_header<'a>(label: &'a str) -> Element<'a, Message> {
     widget::column![text(label).size(13).style(text::base), rule::horizontal(1),]
         .spacing(4)
         .into()
@@ -50,8 +52,8 @@ fn section_header<'a>(label: &'a str) -> Element<'a, crate::Message> {
 
 fn setting_row<'a>(
     label: &'a str,
-    content: impl Into<Element<'a, crate::Message>>,
-) -> Element<'a, crate::Message> {
+    content: impl Into<Element<'a, Message>>,
+) -> Element<'a, Message> {
     row![
         text(label)
             .size(15)
@@ -94,24 +96,20 @@ impl Tool for Settings {
         }
         Task::none()
     }
-    fn view(&self) -> Element<'_, crate::Message> {
+    fn view(&self) -> Element<'_, Message> {
         let theme_buttons = ThemeSetting::all()
             .iter()
             .fold(row![].spacing(8), |row, &t| {
-                let active = matches!(
-                    (self.theme, t),
-                    (ThemeSetting::Dark, ThemeSetting::Dark)
-                        | (ThemeSetting::Light, ThemeSetting::Light)
-                        | (ThemeSetting::Night, ThemeSetting::Night)
-                );
+                let active = t == self.theme;
+
                 row.push(
                     button(text(t.label()).size(14).center())
-                        .on_press(crate::Message::SetTheme(t))
+                        .on_press(Message::SetTheme(t))
                         .width(Length::Fixed(70.0))
                         .style(move |theme: &Theme, status| {
                             let palette = theme.extended_palette();
-                            widget::button::Style {
-                                background: Some(iced::Background::Color(if active {
+                            button::Style {
+                                background: Some(Background::Color(if active {
                                     palette.primary.strong.color
                                 } else {
                                     match status {
