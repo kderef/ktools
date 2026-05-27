@@ -81,6 +81,7 @@ pub enum Message {
 
     /* messages for settings */
     SetTheme(tool::settings::ThemeSetting),
+    ResetAllSettings,
 
     /* messages for netinfo */
     NetworkInterfacesFetched(Result<Vec<NetworkInterface>, String>),
@@ -212,6 +213,10 @@ impl App {
             }
             Message::CopyToClipboard(text) => {
                 return clipboard::write(text);
+            }
+            Message::ResetAllSettings => {
+                self.settings = Settings::default();
+                self.tools = tool::all();
             }
             // Globally non-relevant Messages will be relegated to the `Tool`
             other => match self.selected {

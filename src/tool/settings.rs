@@ -99,6 +99,10 @@ impl Tool for Settings {
         Task::none()
     }
     fn view(&self) -> Element<'_, Message> {
+        let reset_button = button("RESET ALL SETTINGS")
+            .style(button::danger)
+            .on_press(Message::ResetAllSettings);
+
         let theme_buttons = ThemeSetting::all()
             .iter()
             .fold(row![].spacing(8), |row, &t| {
@@ -142,6 +146,9 @@ impl Tool for Settings {
         let rows = widget::column![
             section_header("Appearance"),
             setting_row("Theme", theme_buttons),
+            space().height(16),
+            section_header("Tool Settings"),
+            setting_row("All Tools", reset_button),
             space().height(16),
             section_header("About"),
             setting_row(
