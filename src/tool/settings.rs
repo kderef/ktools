@@ -1,5 +1,7 @@
 use crate::Message;
 
+// TODO: allow resetting the settings (delete userdata file)
+
 use super::*;
 use iced::{
     Alignment, Background, Length, Theme,

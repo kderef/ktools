@@ -8,6 +8,9 @@ build = "build.rs"
 default = []
 nocon = [] # no console window
 
+[profile.dev.package."*"]
+opt-level = 3
+
 [profile.release]
 lto = true
 strip = true

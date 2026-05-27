@@ -1,10 +1,14 @@
 //! Tool used for gathering **local** network information
 //! For *external* network information see `src/tool/ext_ip.rs`
 
+// TODO: handle error in NetworkInfo::default (store error in NetworkInfo struct)
+// TODO: spawn task in on_activate
+
+use crate::Message;
+
 use super::*;
 use iced::{
-    Alignment, Background, Font, Length,
-    font::Weight,
+    Alignment, Background, Length,
     widget::{self, *},
 };
 use iced_aw::sidebar::{Sidebar, TabLabel};
@@ -16,7 +20,7 @@ pub struct NetworkInfo {
     local_interfaces: Vec<NetworkInterface>,
 }
 
-fn info_row<'a>(label: &'a str, value: impl ToString) -> Element<'a, crate::Message> {
+fn info_row<'a>(label: &'a str, value: impl ToString) -> Element<'a, Message> {
     let value = value.to_string();
     row![
         text(label)
@@ -32,30 +36,20 @@ fn info_row<'a>(label: &'a str, value: impl ToString) -> Element<'a, crate::Mess
     .into()
 }
 
-fn iface_content<'a>(iface: &'a NetworkInterface) -> Element<'a, crate::Message> {
+fn iface_content<'a>(iface: &'a NetworkInterface) -> Element<'a, Message> {
     let top_row = row![
-        text(&iface.name).size(22).font(Font {
-            weight: Weight::Bold,
-            ..Default::default()
-        }),
+        text(&iface.name).size(22).font(BOLD_DEFAULT),
         space().width(Length::Fill),
         {
             let (desc, style): (&str, fn(&Theme) -> text::Style) = match iface.internal {
                 true => ("( internal )", text::warning),
                 false => ("( public )", text::success),
             };
-            text(desc)
-                .size(20)
-                .font(Font {
-                    weight: Weight::Bold,
-                    ..Default::default()
-                })
-                .style(style)
+            text(desc).size(20).font(BOLD_DEFAULT).style(style)
         }
     ];
 
-    let mut rows: Vec<Element<'a, crate::Message>> =
-        vec![top_row.into(), rule::horizontal(1).into()];
+    let mut rows: Vec<Element<'a, Message>> = vec![top_row.into(), rule::horizontal(1).into()];
 
     if let Some(ref mac) = iface.mac_addr {
         rows.push(info_row("MAC Address", mac.clone()));
@@ -68,10 +62,7 @@ fn iface_content<'a>(iface: &'a NetworkInterface) -> Element<'a, crate::Message>
                     text("IPv4")
                         .size(13)
                         .style(text::primary)
-                        .font(Font {
-                            weight: Weight::Bold,
-                            ..Default::default()
-                        })
+                        .font(BOLD_DEFAULT)
                         .into(),
                 ); // .color(rgb8(104, 157, 106)).into());
                 rows.push(info_row("Address", v4.ip));
@@ -87,10 +78,7 @@ fn iface_content<'a>(iface: &'a NetworkInterface) -> Element<'a, crate::Message>
                     text("IPv6")
                         .size(13)
                         .style(text::primary)
-                        .font(Font {
-                            weight: Weight::Bold,
-                            ..Default::default()
-                        })
+                        .font(BOLD_DEFAULT)
                         .into(),
                 ); //.color(rgb8(104, 157, 106)).into());
 
@@ -119,13 +107,12 @@ impl Tool for NetworkInfo {
         theme.extended_palette().success.strong.color
     }
 
-    fn on_activate(&mut self) -> Task<crate::Message> {
-        // TODO: create task
+    fn on_activate(&mut self) -> Task<Message> {
         self.local_interfaces = NetworkInterface::show().unwrap_or_default();
         Task::none()
     }
 
-    fn update(&mut self, message: crate::Message) -> Task<crate::Message> {
+    fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             crate::Message::TabSelected(i) => self.active_tab = i,
             _ => {}
@@ -133,8 +120,8 @@ impl Tool for NetworkInfo {
         Task::none()
     }
 
-    fn view(&self) -> Element<'_, crate::Message> {
-        let mut sidebar = Sidebar::new(crate::Message::TabSelected)
+    fn view(&self) -> Element<'_, Message> {
+        let mut sidebar = Sidebar::new(Message::TabSelected)
             .width(Length::Fixed(160.0))
             .height(Length::Fill)
             .style(|theme: &Theme, status| iced_aw::style::sidebar::Style {

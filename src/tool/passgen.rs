@@ -1,5 +1,7 @@
 use super::*;
 
+// TODO: allow user to change special characters in SPEC
+
 use iced::Alignment;
 use iced::Background;
 use iced::Border;
@@ -7,7 +9,6 @@ use iced::Font;
 use iced::Length;
 use iced::Task;
 use iced::border::Radius;
-use iced::font::Weight;
 use iced::widget;
 use iced::widget::*;
 
@@ -178,7 +179,7 @@ impl Tool for PasswordGenerator {
                 selection: theme.extended_palette().primary.weak.color,
             })
             .font(Font {
-                family: iced::font::Family::SansSerif,
+                family: iced::font::Family::Serif,
                 ..Default::default()
             })
             .size(30);
@@ -246,10 +247,7 @@ impl Tool for PasswordGenerator {
             .size(40)
             .width(Length::Fill)
             .wrapping(text::Wrapping::None)
-            .font(Font {
-                weight: Weight::Bold,
-                ..Default::default()
-            });
+            .font(BOLD_DEFAULT);
 
         fn wrap<'a>(el: Element<'a, crate::Message>) -> Element<'a, crate::Message> {
             widget::row![

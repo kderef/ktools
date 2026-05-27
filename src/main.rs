@@ -9,24 +9,16 @@ static ICON_BYTES: &[u8] = include_bytes!("../icon.ico");
 mod base;
 mod tool;
 
-use iced::Alignment;
-use iced::Background;
-use iced::Border;
-use iced::Color;
-use iced::Element;
-use iced::Font;
-use iced::Length;
-use iced::Padding;
-use iced::Subscription;
-use iced::Task;
-use iced::clipboard;
-use iced::keyboard;
-use iced::widget;
-use iced::widget::*;
+use iced::{
+    Alignment, Background, Border, Color, Element, Length, Padding, Subscription, Task, clipboard,
+    keyboard, widget, widget::*,
+};
 
 use base::ICON_FONT_BYTES;
 
+use crate::base::BOLD_DEFAULT;
 use crate::base::rgb8;
+use crate::base::rgba;
 use crate::base::settings_button;
 use crate::tool::Tool;
 use crate::tool::settings::Settings;
@@ -121,8 +113,8 @@ fn home_button<'a>(
         )
         .center(Length::Fill),
     )
-    .width(Length::Fixed(160.0))
-    .height(Length::Fixed(80.0))
+    .width(160)
+    .height(80)
     .on_press(Message::ChooseTool(index))
     .style(move |theme: &Theme, status| {
         let alpha = match status {
@@ -144,7 +136,7 @@ fn home_button<'a>(
                 radius: 10.0.into(),
             },
             shadow: iced::Shadow {
-                color: Color::from_rgba(0.0, 0.0, 0.0, 0.35),
+                color: rgba(0.0, 0.0, 0.0, 0.35),
                 offset: iced::Vector { x: 0.0, y: 2.0 },
                 blur_radius: 6.0,
             },
@@ -240,13 +232,10 @@ impl App {
                         .width(120)
                         .height(Length::Fill)
                         .align_y(Alignment::Center),
-                    container(text("KTools").size(42).font(Font {
-                        weight: iced::font::Weight::Bold,
-                        ..Default::default()
-                    }))
-                    .width(Length::FillPortion(3))
-                    .align_x(Alignment::Center)
-                    .align_y(Alignment::Center),
+                    container(text("KTools").size(42).font(BOLD_DEFAULT))
+                        .width(Length::FillPortion(3))
+                        .align_x(Alignment::Center)
+                        .align_y(Alignment::Center),
                     space().width(120),
                 ]
                 .padding(Padding {

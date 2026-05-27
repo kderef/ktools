@@ -17,12 +17,22 @@ use crate::tool::settings::Settings;
 pub const fn rgb(r: f32, g: f32, b: f32) -> Color {
     Color::from_rgb(r, g, b)
 }
+pub const fn rgba(r: f32, g: f32, b: f32, a: f32) -> Color {
+    Color::from_rgba(r, g, b, a)
+}
 pub const fn rgb8(r: u8, g: u8, b: u8) -> Color {
     Color::from_rgb8(r, g, b)
 }
 pub const fn rgba8(r: u8, g: u8, b: u8, a: f32) -> Color {
     Color::from_rgba8(r, g, b, a)
 }
+
+pub const BOLD_DEFAULT: Font = Font {
+    family: iced::font::Family::SansSerif,
+    weight: Weight::Bold,
+    stretch: iced::font::Stretch::Normal,
+    style: iced::font::Style::Normal,
+};
 
 pub fn go_back_button<'a>(text_size: u32) -> Button<'a, Message> {
     button(
@@ -79,10 +89,7 @@ pub fn content_container<'a, E: Into<Element<'a, Message>>>(inside: E) -> Contai
         })
 }
 pub fn title_text<'a>(t: &'a impl Tool) -> Text<'a> {
-    text(t.name()).size(28).font(Font {
-        weight: Weight::Bold,
-        ..Default::default()
-    })
+    text(t.name()).size(28).font(BOLD_DEFAULT)
 }
 
 pub fn settings_button<'a>(settings: &'a Settings) -> Button<'a, Message> {
