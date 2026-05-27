@@ -115,8 +115,9 @@ impl Tool for PasswordGenerator {
         icon_font::lock()
     }
 
-    fn background(&self) -> Color {
-        rgb(0.0, 0.2, 0.7)
+    fn background(&self, theme: &Theme) -> Color {
+        // rgb(0.0, 0.2, 0.7)
+        theme.extended_palette().primary.strong.color
     }
 
     fn save(&self) -> Option<serde_json::Value> {

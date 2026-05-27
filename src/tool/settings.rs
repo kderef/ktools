@@ -74,7 +74,7 @@ impl Tool for Settings {
     fn icon(&self) -> Text<'_> {
         icon_font::settings_gear()
     }
-    fn background(&self) -> Color {
+    fn background(&self, _theme: &Theme) -> Color {
         rgb8(0, 100, 180)
     }
     fn save(&self) -> Option<serde_json::Value> {

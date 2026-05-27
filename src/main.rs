@@ -168,8 +168,8 @@ impl App {
         format!("KTools v{}", env!("CARGO_PKG_VERSION"))
     }
 
-    fn theme(&self) -> Option<iced::Theme> {
-        Some(self.settings.theme.into())
+    fn theme(&self) -> iced::Theme {
+        self.settings.theme.into()
     }
 
     fn subscription(&self) -> Subscription<Message> {
@@ -264,8 +264,14 @@ impl App {
                         None
                     } else {
                         Some(
-                            home_button(t.icon(), t.name(), t.background(), t.text_color(), i)
-                                .into(),
+                            home_button(
+                                t.icon(),
+                                t.name(),
+                                t.background(&self.theme()),
+                                t.text_color(),
+                                i,
+                            )
+                            .into(),
                         )
                     }
                 });

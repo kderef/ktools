@@ -155,8 +155,15 @@ impl Tool for SystemInfo {
     fn icon(&self) -> Text<'_> {
         icon_font::vm()
     }
-    fn background(&self) -> Color {
-        rgb8(66, 123, 88)
+    fn background(&self, theme: &Theme) -> Color {
+        // rgb8(66, 123, 88)
+        let pal = theme.extended_palette();
+
+        if pal.is_dark {
+            pal.warning.weak.color
+        } else {
+            pal.warning.strong.color
+        }
     }
     fn on_activate(&mut self) -> Task<crate::Message> {
         // Launch tasks for each of the TASKS

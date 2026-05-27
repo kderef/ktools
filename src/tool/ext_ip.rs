@@ -1,6 +1,5 @@
 use iced::{
-    Alignment, Font, Length, Theme,
-    font::Weight,
+    Alignment, Length, Theme,
     widget::{self, button, row, space, text},
 };
 
@@ -26,8 +25,9 @@ impl Tool for ExternalIP {
     fn icon(&self) -> Text<'_> {
         icon_font::broadcast()
     }
-    fn background(&self) -> Color {
-        rgb8(100, 100, 100)
+    fn background(&self, theme: &Theme) -> Color {
+        // rgb8(100, 100, 100)
+        theme.extended_palette().secondary.base.color
     }
     fn on_activate(&mut self) -> Task<crate::Message> {
         fn get(url: &str) -> Result<Object, String> {

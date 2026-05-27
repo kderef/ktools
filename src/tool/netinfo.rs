@@ -114,8 +114,9 @@ impl Tool for NetworkInfo {
         icon_font::globe()
     }
 
-    fn background(&self) -> Color {
-        rgb8(104, 157, 106)
+    fn background(&self, theme: &Theme) -> Color {
+        // rgb8(104, 157, 106)
+        theme.extended_palette().success.strong.color
     }
 
     fn on_activate(&mut self) -> Task<crate::Message> {

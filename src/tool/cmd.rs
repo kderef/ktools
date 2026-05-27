@@ -1,5 +1,7 @@
 use std::os::windows::process::CommandExt;
 
+use crate::Message;
+
 use super::*;
 
 #[derive(Default)]
@@ -16,19 +18,19 @@ impl Tool for CMD {
         true
     }
 
-    fn background(&self) -> Color {
+    fn background(&self, _theme: &Theme) -> Color {
         rgb(0.08, 0.08, 0.08)
     }
 
-    fn update(&mut self, _message: crate::Message) -> Task<crate::Message> {
+    fn update(&mut self, _message: Message) -> Task<crate::Message> {
         unreachable!()
     }
 
-    fn view(&self) -> Element<'_, crate::Message> {
+    fn view(&self) -> Element<'_, Message> {
         unreachable!()
     }
 
-    fn on_activate(&mut self) -> Task<crate::Message> {
+    fn on_activate(&mut self) -> Task<Message> {
         const CREATE_NEW_CONSOLE: u32 = 0x00000010;
 
         let _child = std::process::Command::new("cmd.exe")

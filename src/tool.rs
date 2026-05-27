@@ -2,7 +2,7 @@ pub mod settings;
 
 pub use crate::base::*;
 
-use iced::Task;
+use iced::{Task, Theme};
 
 pub use iced::{Color, Element, widget::Text};
 
@@ -10,7 +10,7 @@ pub use iced::{Color, Element, widget::Text};
 pub trait Tool {
     fn name(&self) -> &str;
     fn icon(&self) -> Text<'_>;
-    fn background(&self) -> Color;
+    fn background(&self, theme: &Theme) -> Color;
     fn text_color(&self) -> Color {
         rgb(0.95, 0.95, 0.95)
     }
