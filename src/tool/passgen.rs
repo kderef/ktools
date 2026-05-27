@@ -66,7 +66,6 @@ impl PasswordGenerator {
     const SHUFFLE_TWICE: bool = false;
 
     const NUMS_WEIGHT: f32 = 0.25;
-    const SPEC_WEIGHT: f32 = 0.15;
     const UPPER_WEIGHT: f32 = 0.25;
 
     // pools
@@ -161,11 +160,36 @@ impl Tool for PasswordGenerator {
                 Message::Regenerate => {
                     self.generate();
                 }
+
                 Message::ChangeSpecialCharacters(new) => {
-                    self.special_chars = new;
+                    // Keep only visible ASCII non-alphanumeric characters
+                    let filtered: String = new
+                        .chars()
+                        .filter(|c| {
+                            c.is_ascii() && !c.is_ascii_alphanumeric() && !c.is_ascii_whitespace()
+                        })
+                        .collect();
+
+                    // Remove duplicates while preserving order
+                    let mut unique = String::new();
+
+                    for c in filtered.chars() {
+                        if !unique.contains(c) {
+                            unique.push(c);
+                        }
+                    }
+
+                    let final_chars = unique;
+
+                    if self.special_chars != final_chars {
+                        self.special_chars = final_chars;
+                        self.generate();
+                    }
                 }
+
                 Message::ResetSpecialCharacers => {
                     self.special_chars = Self::SPEC.to_owned();
+                    self.generate();
                 }
             }
         }
