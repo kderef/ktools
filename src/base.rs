@@ -50,21 +50,29 @@ pub fn copy_icon_btn(value: String) -> Element<'static, Message> {
     button(icon_font::copy().size(13))
         .on_press(Message::CopyToClipboard(value))
         .padding([2, 6])
-        .style(|_theme: &Theme, status| button::Style {
-            snap: false,
-            background: match status {
-                button::Status::Disabled => None,
-                button::Status::Active => Some(Background::Color(rgb8(60, 60, 60))),
-                button::Status::Hovered => Some(Background::Color(rgb8(80, 80, 80))),
-                button::Status::Pressed => Some(Background::Color(rgb8(0, 100, 10))),
-            },
-            text_color: rgb8(200, 200, 200),
-            border: Border {
-                color: Color::TRANSPARENT,
-                width: 0.0,
-                radius: 4.0.into(),
-            },
-            shadow: Default::default(),
+        .style(|theme: &Theme, status| {
+            let pal = theme.extended_palette();
+
+            button::Style {
+                snap: false,
+                background: match status {
+                    button::Status::Disabled => None,
+                    button::Status::Active => Some(Background::Color(pal.background.weak.color)),
+                    button::Status::Hovered => {
+                        Some(Background::Color(pal.background.strongest.color))
+                    }
+                    button::Status::Pressed => {
+                        Some(Background::Color(pal.background.weakest.color))
+                    }
+                },
+                text_color: pal.background.weakest.text,
+                border: Border {
+                    color: Color::TRANSPARENT,
+                    width: 0.0,
+                    radius: 4.0.into(),
+                },
+                shadow: Default::default(),
+            }
         })
         .into()
 }

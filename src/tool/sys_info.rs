@@ -351,7 +351,7 @@ fn value_widget<'a>(value: &'a SystemValue) -> Element<'a, crate::Message> {
 
             let total_text = text(format!(" / {total_str}"))
                 .size(14)
-                .color(rgb8(160, 160, 160));
+                .style(text::secondary);
 
             let free_text = text(format!("  ({free_str} free)"))
                 .size(13)
@@ -397,7 +397,7 @@ fn value_widget<'a>(value: &'a SystemValue) -> Element<'a, crate::Message> {
                 .width(120)
                 .height(8);
 
-                let name_text = text(disk.name.clone()).size(14).color(rgb8(180, 210, 255)); // blue for device name
+                let name_text = text(disk.name.clone()).size(14).style(text::primary); // .color(rgb8(180, 210, 255)); // blue for device name
 
                 let mount_text = text(format!(" ({})", disk.mount))
                     .size(13)
