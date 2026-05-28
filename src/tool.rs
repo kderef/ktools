@@ -61,6 +61,7 @@ macro_rules! register_tools {
 
 register_tools! {
     cmd::CMD,
+    ping::Ping,
     passgen::PasswordGenerator,
     netinfo::NetworkInfo,
     ext_ip::ExternalIP,

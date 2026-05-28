@@ -41,8 +41,7 @@ pub enum SystemValue {
     System {
         name: String,
         version: String,
-        /// Architecture in bits (32 bit, 64, bit ...)
-        arch: usize,
+        arch: String,
     },
     Cpus(Vec<Cpu>),
     Memory {
@@ -89,7 +88,7 @@ impl ToString for SystemValue {
                 name,
                 version,
                 arch,
-            } => format!("{name} {arch} bit ({version})"),
+            } => format!("{name} {arch} ({version})"),
             SystemValue::Cpus(cpus) => {
                 let mut s = String::new();
                 let first = cpus.first();
@@ -138,6 +137,7 @@ static TASKS: &[(&str, fn() -> Result<SystemValue, String>)] = &[
     ("Hostname", fetch_hostname),
     ("Username", fetch_username),
     ("CPU", fetch_cpu),
+    ("Graphics Card", fetch_graphics_card),
     ("RAM", fetch_ram),
     ("Disks", fetch_disks),
 ];
@@ -284,7 +284,7 @@ fn value_widget<'a>(value: &'a SystemValue) -> Element<'a, crate::Message> {
         } => row![
             text(name).size(14),
             space().width(8),
-            text(format!("{arch} bit")).style(text::secondary).size(14),
+            text(arch).style(text::secondary).size(14),
             space().width(8),
             text(format!("( {version} )"))
                 .size(14)
@@ -471,29 +471,10 @@ fn fetch_ram() -> Result<SystemValue, String> {
 }
 
 fn fetch_os() -> Result<SystemValue, String> {
-    #[cfg(target_os = "windows")]
-    let arch = {
-        let mut is64 = windows::core::BOOL(0);
-        unsafe {
-            use windows::Win32::System::Threading::{GetCurrentProcess, IsWow64Process};
-
-            match IsWow64Process(GetCurrentProcess(), &mut is64) {
-                Ok(_) => {
-                    if is64.as_bool() {
-                        64
-                    } else {
-                        32
-                    }
-                }
-                Err(_) => 32,
-            }
-        }
-    };
-
     Ok(SystemValue::System {
         name: System::long_os_version().ok_or("unknown OS type".to_owned())?,
         version: System::kernel_long_version(),
-        arch,
+        arch: System::cpu_arch(),
     })
 }
 
@@ -512,4 +493,21 @@ fn fetch_disks() -> Result<SystemValue, String> {
         .collect();
 
     Ok(SystemValue::Disks(disks))
+}
+
+fn fetch_graphics_card() -> Result<SystemValue, String> {
+    #[cfg(windows)]
+    unsafe {
+        use windows::Win32::Graphics::Dxgi::{CreateDXGIFactory, IDXGIFactory};
+
+        let factory: IDXGIFactory = CreateDXGIFactory().map_err(|e| e.to_string())?;
+
+        let adapter = factory.EnumAdapters(0).map_err(|e| e.to_string())?;
+
+        let desc = adapter.GetDesc().map_err(|e| e.to_string())?;
+
+        let name = String::from_utf16_lossy(&desc.Description);
+
+        Ok(SystemValue::Text(name.trim_end_matches('\0').to_string()))
+    }
 }
