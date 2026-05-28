@@ -1,7 +1,5 @@
 use super::*;
 
-// TODO: allow user to change special characters in SPEC
-
 use iced::Alignment;
 use iced::Background;
 use iced::Border;
@@ -207,7 +205,7 @@ impl Tool for PasswordGenerator {
                 Message::LengthChanged(n).into()
             });
 
-        let password_output = TextInput::new("password output...", &self.password)
+        let password_output = text_input("password output...", &self.password)
             // .width(Length::FillPortion(3))
             .style(|theme: &Theme, _status| text_input::Style {
                 background: Background::Color(theme.extended_palette().background.strong.color),
@@ -216,8 +214,8 @@ impl Tool for PasswordGenerator {
                     width: 1.0,
                     radius: Radius::new(5.0),
                 },
-                icon: Color::from_rgb8(245, 245, 245),
-                placeholder: Color::from_rgba8(255, 255, 255, 0.5),
+                icon: rgb8(245, 245, 245),
+                placeholder: rgba8(255, 255, 255, 0.5),
                 value: theme.palette().text,
                 selection: theme.extended_palette().primary.weak.color,
             })

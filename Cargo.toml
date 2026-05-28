@@ -35,6 +35,7 @@ ureq = "3.3.0"
 serde_json = "1.0.150"
 serde = { version = "1.0.228", features = ["derive"] }
 dirs = "6.0.0"
+windows = "0.62.2"
 
 [dependencies.iced]
 version = "0.14.0"

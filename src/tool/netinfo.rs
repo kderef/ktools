@@ -1,9 +1,6 @@
 //! Tool used for gathering **local** network information
 //! For *external* network information see `src/tool/ext_ip.rs`
 
-// TODO: handle error in NetworkInfo::default (store error in NetworkInfo struct)
-// TODO: spawn task in on_activate
-
 use crate::Message;
 
 use super::*;
