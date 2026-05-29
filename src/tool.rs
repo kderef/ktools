@@ -20,11 +20,6 @@ pub trait Tool {
         None
     }
 
-    /// Whether the tool should be hidden from the menu screen or not.
-    fn hidden(&self) -> bool {
-        false
-    }
-
     /// Deserialize Tool's state from JSON
     fn load(&mut self, _data: serde_json::Value) {}
 

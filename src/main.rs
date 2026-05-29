@@ -81,6 +81,9 @@ pub enum Message {
 
     /* messages for settings */
     SetTheme(tool::settings::ThemeSetting),
+    ResetToolOrder,
+    MoveToolUp(usize),
+    MoveToolDown(usize),
     ResetAllSettings,
 
     /* messages for netinfo */
@@ -265,23 +268,23 @@ impl App {
                 .height(60)
                 .align_y(Alignment::Center);
 
-                // the grid
-                let children = self.tools.iter().enumerate().filter_map(|(i, t)| {
-                    if t.hidden() {
-                        None
-                    } else {
-                        Some(
-                            home_button(
-                                t.icon(),
-                                t.name(),
-                                t.background(&self.theme()),
-                                t.text_color(),
-                                i,
-                            )
-                            .into(),
+                // The grid of Tool's
+                let children = self
+                    .settings
+                    .tool_order
+                    .iter()
+                    .filter_map(|name| self.tools.iter().position(|t| t.name() == name))
+                    .map(|i| {
+                        let t = &self.tools[i];
+                        home_button(
+                            t.icon(),
+                            t.name(),
+                            t.background(&self.theme()),
+                            t.text_color(),
+                            i,
                         )
-                    }
-                });
+                        .into()
+                    });
 
                 let grid = Grid::with_children(children).fluid(200).spacing(20);
 
