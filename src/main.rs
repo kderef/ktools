@@ -94,6 +94,9 @@ pub enum Message {
 
     /* messages for sys_info */
     SystemInfoFetched(&'static str, Result<tool::sys_info::SystemValue, String>),
+
+    /* messages for ping */
+    PingAddressChanged(String),
 }
 
 pub struct App {

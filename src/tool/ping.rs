@@ -1,13 +1,16 @@
 use crate::Message;
 use iced::{
-    Alignment,
-    widget::{self, space, text},
+    Alignment, Length,
+    widget::{self, space, text, text_editor, text_input},
 };
 
 use super::*;
 
 #[derive(Default)]
-pub struct Ping {}
+pub struct Ping {
+    address: String,
+    output: text_editor::Content,
+}
 
 impl Tool for Ping {
     fn name(&self) -> &str {
@@ -28,14 +31,27 @@ impl Tool for Ping {
     }
     fn update(&mut self, message: Message) -> Task<Message> {
         match message {
+            Message::PingAddressChanged(new) => {
+                self.address = new;
+            }
             _ => {}
         }
         Task::none()
     }
     fn view(&self) -> Element<'_, Message> {
-        let content = widget::column![text("Hello")];
+        let output = text_editor(&self.output)
+            // .height(Length::Fill)
+            .placeholder("ping output...");
 
-        let container = content_container(content).padding(12);
+        let content = widget::column![
+            text_input("Address to ping...", &self.address).on_input(Message::PingAddressChanged),
+            content_container(output).width(Length::Fill)
+        ]
+        .align_x(Alignment::Center);
+
+        let container = content_container(content)
+            .padding(12)
+            .align_x(Alignment::Center);
 
         let col = widget::column![
             // top row
