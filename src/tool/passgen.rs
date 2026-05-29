@@ -130,7 +130,7 @@ impl Tool for PasswordGenerator {
     }
 
     fn save(&self) -> Option<serde_json::Value> {
-        Some(serde_json::to_value(self).unwrap()) // NOTE: unwrap is safe because the type is valid
+        serde_json::to_value(self).ok()
     }
     fn load(&mut self, data: serde_json::Value) {
         let Ok(loaded) = serde_json::from_value(data) else {
