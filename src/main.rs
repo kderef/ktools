@@ -145,10 +145,11 @@ fn home_button<'a>(
             background: Some(Background::Color(tinted)),
             text_color,
             border: Border {
-                color: match theme {
-                    Theme::Light => Color::from_rgba(0., 0., 0., 0.8),
-                    _ => Color::from_rgba(1., 1., 1., 0.3),
-                },
+                // color: match theme {
+                //     Theme::Light => Color::from_rgba(0., 0., 0., 0.8),
+                //     _ => Color::from_rgba(1., 1., 1., 0.3),
+                // },
+                color: theme.extended_palette().secondary.base.color,
                 width: 1.0,
                 radius: 10.0.into(),
             },
@@ -307,15 +308,32 @@ impl App {
     /// Load saved data into all the tools
     fn load_all(&mut self) {
         let path = Self::data_path();
-        let Ok(bytes) = std::fs::read(&path) else {
-            return;
-        };
-        let Ok(serde_json::Value::Object(map)) = serde_json::from_slice(&bytes) else {
-            return;
-        };
 
         #[cfg(debug_assertions)]
-        println!("INFO: loading data from {:?}", path);
+        println!("INFO: loading data from {path:?}");
+
+        let bytes = match std::fs::read(&path) {
+            Ok(b) => b,
+            Err(e) => {
+                #[cfg(debug_assertions)]
+                eprintln!("ERROR: failed to load save: {e}");
+                return;
+            }
+        };
+
+        let map = match serde_json::from_slice(&bytes) {
+            Ok(serde_json::Value::Object(m)) => m,
+            Ok(unexpected) => {
+                #[cfg(debug_assertions)]
+                eprintln!("ERROR: unexpected JSON value: {unexpected}");
+                return;
+            }
+            Err(e) => {
+                #[cfg(debug_assertions)]
+                eprintln!("ERROR: failed to deserialize: {e}");
+                return;
+            }
+        };
 
         for tool in &mut self.tools {
             if let Some(data) = map.get(tool.name()).cloned() {
