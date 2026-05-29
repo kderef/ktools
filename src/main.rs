@@ -15,7 +15,7 @@ use iced::{
 };
 
 use base::ICON_FONT_BYTES;
-use network_interface::NetworkInterface;
+use ipconfig::Adapter;
 
 use crate::base::BOLD_DEFAULT;
 use crate::base::rgb8;
@@ -87,7 +87,7 @@ pub enum Message {
     ResetAllSettings,
 
     /* messages for netinfo */
-    NetworkInterfacesFetched(Result<Vec<NetworkInterface>, String>),
+    NetworkInterfacesFetched(Result<Vec<Adapter>, String>),
 
     /* messages for passgen */
     PasswordGenerator(tool::passgen::Message),

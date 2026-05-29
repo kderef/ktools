@@ -1,6 +1,8 @@
 //! Tool used for gathering **local** network information
 //! For *external* network information see `src/tool/ext_ip.rs`
 
+use std::net::{IpAddr, Ipv4Addr};
+
 use crate::Message;
 
 use super::*;
@@ -9,12 +11,13 @@ use iced::{
     widget::{self, *},
 };
 use iced_aw::sidebar::{Sidebar, TabLabel};
-use network_interface::{NetworkInterface, NetworkInterfaceConfig};
+use ipconfig::{Adapter, OperStatus};
+// use network_interface::{NetworkInterface, NetworkInterfaceConfig};
 
 #[derive(Default)]
 pub struct NetworkInfo {
     active_tab: usize,
-    local_interfaces: Vec<NetworkInterface>,
+    local_interfaces: Vec<Adapter>,
     error: Option<String>,
 }
 
@@ -34,14 +37,13 @@ fn info_row<'a>(label: &'a str, value: impl ToString) -> Element<'a, Message> {
     .into()
 }
 
-fn iface_content<'a>(iface: &'a NetworkInterface) -> Element<'a, Message> {
+fn iface_content<'a>(iface: &'a Adapter) -> Element<'a, Message> {
     let top_row = row![
-        text(&iface.name).size(22).font(BOLD_DEFAULT),
+        text(iface.friendly_name()).size(22).font(BOLD_DEFAULT),
         space().width(Length::Fill),
         {
-            let (desc, style): (&str, fn(&Theme) -> text::Style) = match iface.internal {
-                true => ("( internal )", text::warning),
-                false => ("( public )", text::success),
+            let (desc, style): (&str, fn(&Theme) -> text::Style) = match iface.oper_status() {
+                OperStatus::IfOperStatusUp | _ => ("online", text::success),
             };
             text(desc).size(20).font(BOLD_DEFAULT).style(style)
         }
@@ -49,13 +51,18 @@ fn iface_content<'a>(iface: &'a NetworkInterface) -> Element<'a, Message> {
 
     let mut rows: Vec<Element<'a, Message>> = vec![top_row.into(), rule::horizontal(1).into()];
 
-    if let Some(ref mac) = iface.mac_addr {
-        rows.push(info_row("MAC Address", mac.clone()));
+    if let Some(mac) = iface.physical_address() {
+        let mac_str = match mac {
+            &[o1, o2, o3, o4] => Ipv4Addr::from_octets([o1, o2, o3, o4]).to_string(),
+            _ => String::from("unknown"),
+        };
+
+        rows.push(info_row("MAC Address", mac_str));
     }
 
-    for addr in &iface.addr {
+    for addr in iface.ip_addresses() {
         match addr {
-            network_interface::Addr::V4(v4) => {
+            IpAddr::V4(v4) => {
                 rows.push(
                     text("IPv4")
                         .size(13)
@@ -64,14 +71,14 @@ fn iface_content<'a>(iface: &'a NetworkInterface) -> Element<'a, Message> {
                         .into(),
                 ); // .color(rgb8(104, 157, 106)).into());
                 rows.push(info_row("Address", v4.ip));
-                if let Some(m) = v4.netmask {
-                    rows.push(info_row("Netmask", m));
-                }
+                // if let Some(m) = v4 {
+                //     rows.push(info_row("Netmask", m));
+                // }
                 if let Some(b) = v4.broadcast {
                     rows.push(info_row("Broadcast", b));
                 }
             }
-            network_interface::Addr::V6(v6) => {
+            IpAddr::V6(v6) => {
                 rows.push(
                     text("IPv6")
                         .size(13)
@@ -107,7 +114,7 @@ impl Tool for NetworkInfo {
 
     fn on_activate(&mut self) -> Task<Message> {
         Task::perform(
-            async { NetworkInterface::show().map_err(|e| e.to_string()) },
+            async { ipconfig::get_adapters().map_err(|e| e.to_string()) },
             Message::NetworkInterfacesFetched,
         )
     }
