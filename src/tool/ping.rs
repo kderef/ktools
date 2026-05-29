@@ -6,8 +6,10 @@ use iced::{
 use serde::{Deserialize, Serialize};
 use std::{
     io::{BufRead, BufReader},
+    os::windows::process::CommandExt,
     process::Stdio,
 };
+use windows::Win32::System::Threading::CREATE_NO_WINDOW;
 
 use super::*;
 
@@ -43,6 +45,7 @@ fn ping_stream(host: String) -> impl futures::Stream<Item = Message> {
         let mut child = match std::process::Command::new("ping")
             .arg(&host)
             .stdout(Stdio::piped())
+            .creation_flags(CREATE_NO_WINDOW.0)
             .spawn()
         {
             Ok(c) => c,

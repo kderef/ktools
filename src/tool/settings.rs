@@ -80,7 +80,7 @@ impl Tool for Settings {
         rgb8(0, 100, 180)
     }
     fn save(&self) -> Option<serde_json::Value> {
-        Some(serde_json::to_value(self).unwrap())
+        serde_json::to_value(self).ok()
     }
     fn load(&mut self, data: serde_json::Value) {
         if let Ok(s) = serde_json::from_value(data) {
