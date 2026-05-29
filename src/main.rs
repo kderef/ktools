@@ -97,6 +97,7 @@ pub enum Message {
 
     /* messages for ping */
     PingStart(Option<String>),
+    PingDefaultGateway,
     PingAddressChanged(String),
     PingEditorAction(text_editor::Action),
     PingToggleCustom,

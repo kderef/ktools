@@ -1,11 +1,12 @@
 use crate::Message;
 use iced::{
     Alignment, Font, Length, Theme, futures,
-    widget::{self, button, container, pick_list, row, rule, space, text, text_editor, text_input},
+    widget::{self, button, container, row, space, text, text_editor, text_input},
 };
 use serde::{Deserialize, Serialize};
 use std::{
     io::{BufRead, BufReader},
+    net::IpAddr,
     os::windows::process::CommandExt,
     process::Stdio,
 };
@@ -19,10 +20,32 @@ pub struct Ping {
     custom_address: bool,
 
     #[serde(skip)]
+    default_gateway: Option<Result<String, String>>,
+
+    #[serde(skip)]
     output: text_editor::Content,
 
     #[serde(skip)]
     running: bool,
+}
+
+fn get_default_gateway() -> Result<sys_info::SystemValue, String> {
+    let adapters = ipconfig::get_adapters().map_err(|e| e.to_string())?;
+
+    for adapter in adapters {
+        // Skip disconnected adapters
+        if adapter.oper_status() != ipconfig::OperStatus::IfOperStatusUp {
+            continue;
+        }
+
+        for gateway in adapter.gateways() {
+            if let IpAddr::V4(ip) = gateway {
+                return Ok(sys_info::SystemValue::Text(ip.to_string()));
+            }
+        }
+    }
+
+    Err("No default gateway found".into())
 }
 
 fn ping_stream(host: String) -> impl futures::Stream<Item = Message> {
@@ -86,9 +109,26 @@ impl Tool for Ping {
     }
     fn update(&mut self, message: Message) -> Task<Message> {
         match message {
+            Message::SystemInfoFetched(_, result) => {
+                self.default_gateway = Some(result.map(|r| r.to_string()));
+            }
+
             Message::PingAddressChanged(new) => {
                 self.address = new;
             }
+            Message::PingDefaultGateway => match &self.default_gateway {
+                Some(Ok(addr)) => return Task::done(Message::PingStart(Some(addr.clone()))),
+                _ => {
+                    self.output = Default::default(); // clear output before showing status messages
+                    return Task::chain(
+                        Task::done(Message::PingOutput("Loading default gateway...".to_owned())),
+                        Task::perform(async { get_default_gateway() }, |r| match r {
+                            Ok(addr) => Message::PingStart(Some(addr.to_string())),
+                            Err(e) => Message::PingOutput(format!("ERROR: {e}")),
+                        }),
+                    );
+                }
+            },
             Message::PingStart(addr) => {
                 let addr = match addr {
                     Some(a) => {
@@ -149,13 +189,14 @@ impl Tool for Ping {
             .placeholder("ping output...")
             .on_action(Message::PingEditorAction); // make read-only by ignoring edits
 
-        let ping_gateway_btn = custom_button(
-            "Ping gateway",
-            Message::PingStart(Some("8.8.8.8".to_owned())),
-        );
+        let ping_gateway_btn = custom_button("Ping gateway", Message::PingDefaultGateway);
         let ping_google_btn = custom_button(
-            "Ping google",
+            "Ping google.com",
             Message::PingStart(Some("google.com".to_owned())),
+        );
+        let ping_google_dns_btn = custom_button(
+            "Ping google DNS (8.8.8.8)",
+            Message::PingStart(Some("8.8.8.8".to_owned())),
         );
         let ping_custom_btn = custom_button("Ping custom address", Message::PingToggleCustom);
 
@@ -167,9 +208,14 @@ impl Tool for Ping {
             ]
             .align_y(Alignment::Center),
             space().height(25),
-            row![ping_gateway_btn, ping_google_btn, ping_custom_btn]
-                .spacing(8)
-                .align_y(Alignment::Center),
+            row![
+                ping_gateway_btn,
+                ping_google_btn,
+                ping_google_dns_btn,
+                ping_custom_btn
+            ]
+            .spacing(8)
+            .align_y(Alignment::Center),
         ]
         .height(Length::Fill);
 
