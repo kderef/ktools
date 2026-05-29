@@ -133,7 +133,7 @@ impl SystemValue {}
 /// Tasks that are performed simultaneously in their own `Task`'s
 /// The name is used for indexing into a `HashMap`, as well as displaying.
 static TASKS: &[(&str, fn() -> Result<SystemValue, String>)] = &[
-    ("OS Version", fetch_os),
+    ("System", fetch_os),
     ("Hostname", fetch_hostname),
     ("Username", fetch_username),
     ("CPU", fetch_cpu),

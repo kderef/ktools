@@ -1,7 +1,7 @@
 use crate::Message;
 use iced::{
     Alignment, Font, Length, Theme, futures,
-    widget::{self, button, container, row, space, text, text_editor, text_input},
+    widget::{self, button, container, pick_list, row, space, text, text_editor, text_input},
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -14,8 +14,13 @@ use super::*;
 #[derive(Serialize, Deserialize)]
 pub struct Ping {
     address: String,
+
+    #[serde(skip)]
+    preset_selected: Option<&'static str>,
+
     #[serde(skip)]
     output: text_editor::Content,
+
     #[serde(skip)]
     running: bool,
 }
@@ -24,6 +29,7 @@ impl Default for Ping {
     fn default() -> Self {
         Self {
             address: "8.8.8.8".to_owned(),
+            preset_selected: None,
             running: false,
             output: Default::default(),
         }
@@ -126,6 +132,12 @@ impl Tool for Ping {
             .on_input(Message::PingAddressChanged)
             .on_submit(Message::PingStart);
 
+        let options = ["8.8.8.8", "google.com"];
+        let presets = pick_list(options, self.preset_selected, |o| {
+            Message::PingAddressChanged(o.into())
+        })
+        .placeholder("pick an address...");
+
         let ping_btn = button(
             text(if self.running { "pinging..." } else { "ping" })
                 .size(15)
@@ -141,7 +153,8 @@ impl Tool for Ping {
             .on_action(Message::PingEditorAction); // make read-only by ignoring edits
 
         let content = widget::column![
-            row![input, space().width(8), ping_btn].align_y(Alignment::Center),
+            row![presets, space().width(8), input, space().width(8), ping_btn]
+                .align_y(Alignment::Center),
             space().height(8),
             output,
         ]
