@@ -96,9 +96,10 @@ pub enum Message {
     SystemInfoFetched(&'static str, Result<tool::sys_info::SystemValue, String>),
 
     /* messages for ping */
-    PingStart,
+    PingStart(Option<String>),
     PingAddressChanged(String),
     PingEditorAction(text_editor::Action),
+    PingToggleCustom,
     PingOutput(String),
     PingDone,
 }

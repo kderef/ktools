@@ -1,7 +1,7 @@
 use crate::Message;
 use iced::{
     Alignment, Font, Length, Theme, futures,
-    widget::{self, button, container, pick_list, row, space, text, text_editor, text_input},
+    widget::{self, button, container, pick_list, row, rule, space, text, text_editor, text_input},
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -13,29 +13,16 @@ use windows::Win32::System::Threading::CREATE_NO_WINDOW;
 
 use super::*;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Default, Serialize, Deserialize)]
 pub struct Ping {
     address: String,
-
-    #[serde(skip)]
-    preset_selected: Option<&'static str>,
+    custom_address: bool,
 
     #[serde(skip)]
     output: text_editor::Content,
 
     #[serde(skip)]
     running: bool,
-}
-
-impl Default for Ping {
-    fn default() -> Self {
-        Self {
-            address: "8.8.8.8".to_owned(),
-            preset_selected: None,
-            running: false,
-            output: Default::default(),
-        }
-    }
 }
 
 fn ping_stream(host: String) -> impl futures::Stream<Item = Message> {
@@ -102,13 +89,24 @@ impl Tool for Ping {
             Message::PingAddressChanged(new) => {
                 self.address = new;
             }
-            Message::PingStart => {
-                if self.address.is_empty() || self.running {
+            Message::PingStart(addr) => {
+                let addr = match addr {
+                    Some(a) => {
+                        self.custom_address = false;
+                        a
+                    }
+                    None => self.address.clone(),
+                };
+
+                if addr.is_empty() || self.running {
                     return Task::none();
                 }
                 self.running = true;
                 self.output = text_editor::Content::new();
-                return Task::run(ping_stream(self.address.clone()), |m| m);
+                return Task::run(ping_stream(addr), |m| m);
+            }
+            Message::PingToggleCustom => {
+                self.custom_address ^= true;
             }
             Message::PingOutput(line) => {
                 let mut current = self.output.text();
@@ -133,21 +131,17 @@ impl Tool for Ping {
     fn view(&self) -> Element<'_, Message> {
         let input = text_input("Address to ping...", &self.address)
             .on_input(Message::PingAddressChanged)
-            .on_submit(Message::PingStart);
+            .on_submit(Message::PingStart(None));
 
-        let options = ["8.8.8.8", "google.com"];
-        let presets = pick_list(options, self.preset_selected, |o| {
-            Message::PingAddressChanged(o.into())
-        })
-        .placeholder("pick an address...");
+        let custom_button = |txt: &'static str, message| {
+            button(text(txt).size(15).center()).on_press_maybe((!self.running).then_some(message))
+        };
 
-        let ping_btn = button(
-            text(if self.running { "pinging..." } else { "ping" })
-                .size(15)
-                .center(),
+        let ping_btn = custom_button(
+            if self.running { "pinging..." } else { "ping" },
+            Message::PingStart(None),
         )
-        .width(Length::Fixed(90.0))
-        .on_press_maybe((!self.running).then_some(Message::PingStart));
+        .width(Length::Fixed(90.0));
 
         let output = text_editor(&self.output)
             .height(Length::Fill)
@@ -155,28 +149,42 @@ impl Tool for Ping {
             .placeholder("ping output...")
             .on_action(Message::PingEditorAction); // make read-only by ignoring edits
 
-        let content = widget::column![
-            row![presets, space().width(8), input, space().width(8), ping_btn]
-                .align_y(Alignment::Center),
-            space().height(8),
-            output,
-        ]
-        .height(Length::Fill);
+        let ping_gateway_btn = custom_button(
+            "Ping gateway",
+            Message::PingStart(Some("8.8.8.8".to_owned())),
+        );
+        let ping_google_btn = custom_button(
+            "Ping google",
+            Message::PingStart(Some("google.com".to_owned())),
+        );
+        let ping_custom_btn = custom_button("Ping custom address", Message::PingToggleCustom);
 
-        let container = container(content).padding(12).height(Length::Fill);
-
-        widget::column![
+        let mut content = widget::column![
             row![
-                go_back_button(13),
+                go_back_button(15),
                 space().width(16),
                 title_text(self).align_y(Alignment::Center),
             ]
             .align_y(Alignment::Center),
-            space().height(10),
-            container,
+            space().height(25),
+            row![ping_gateway_btn, ping_google_btn, ping_custom_btn]
+                .spacing(8)
+                .align_y(Alignment::Center),
         ]
-        .padding(20)
-        .height(Length::Fill)
-        .into()
+        .height(Length::Fill);
+
+        if self.custom_address {
+            content = content
+                .push(space().height(8))
+                .push(row![input, ping_btn].spacing(8).align_y(Alignment::Center));
+        }
+
+        content = content
+            .push(space().height(8)) //
+            .push(output);
+
+        let container = container(content).padding(12).height(Length::Fill);
+
+        container.into()
     }
 }
