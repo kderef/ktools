@@ -344,7 +344,7 @@ fn value_widget<'a>(value: &'a SystemValue) -> Element<'a, crate::Message> {
                     name,
                     mount,
                     total,
-                    free,
+                    free: _,
                     used,
                 } = disk;
 

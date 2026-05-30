@@ -33,6 +33,12 @@ pub const BOLD_DEFAULT: Font = Font {
     stretch: iced::font::Stretch::Normal,
     style: iced::font::Style::Normal,
 };
+pub const MONOSPACE_DEFAULT: Font = Font {
+    family: iced::font::Family::Monospace,
+    weight: Weight::Normal,
+    stretch: iced::font::Stretch::Normal,
+    style: iced::font::Style::Normal,
+};
 
 pub fn go_back_button<'a>(text_size: u32) -> Button<'a, Message> {
     button(

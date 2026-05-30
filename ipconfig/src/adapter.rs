@@ -4,7 +4,6 @@ use std;
 use std::convert::TryFrom;
 use std::ffi::CStr;
 use std::net::IpAddr;
-use std::net::Ipv4Addr;
 
 use crate::error::*;
 use socket2;
@@ -26,6 +25,12 @@ pub enum OperStatus {
     IfOperStatusDormant = 5,
     IfOperStatusNotPresent = 6,
     IfOperStatusLowerLayerDown = 7,
+}
+
+impl OperStatus {
+    pub fn is_up(self) -> bool {
+        self == Self::IfOperStatusUp
+    }
 }
 
 /// Represent an interface type
@@ -53,6 +58,22 @@ pub enum IfType {
     /// could break existing code.)
     #[doc(hidden)]
     __Nonexhaustive,
+}
+
+impl IfType {
+    pub fn description(self) -> &'static str {
+        match self {
+            Self::Other | Self::Unsupported | Self::__Nonexhaustive => "unknown",
+            Self::EthernetCsmacd => "Ethernet adapter",
+            Self::Ppp => "Point-to-point",
+            Self::SoftwareLoopback => "Software loopback",
+            Self::Tunnel => "Tunnel",
+            Self::Atm => "ATM cell",
+            Self::Ieee80211 => "Radio spread spectrum",
+            Self::Ieee1394 => "High performance serial bus",
+            Self::Iso88025Tokenring => "Token ring",
+        }
+    }
 }
 
 /// Represent an adapter.

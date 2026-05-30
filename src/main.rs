@@ -195,6 +195,7 @@ impl App {
 
             match modified_key {
                 keyboard::key::Named::Escape => Some(Message::GoHome),
+                keyboard::key::Named::F5 => Some(Message::Refresh),
                 _ => None,
             }
         })
@@ -314,23 +315,23 @@ impl App {
 
         let bytes = match std::fs::read(&path) {
             Ok(b) => b,
-            Err(e) => {
+            Err(_e) => {
                 #[cfg(debug_assertions)]
-                eprintln!("ERROR: failed to load save: {e}");
+                eprintln!("ERROR: failed to load save: {_e}");
                 return;
             }
         };
 
         let map = match serde_json::from_slice(&bytes) {
             Ok(serde_json::Value::Object(m)) => m,
-            Ok(unexpected) => {
+            Ok(_unexpected) => {
                 #[cfg(debug_assertions)]
-                eprintln!("ERROR: unexpected JSON value: {unexpected}");
+                eprintln!("ERROR: unexpected JSON value: {_unexpected}");
                 return;
             }
-            Err(e) => {
+            Err(_e) => {
                 #[cfg(debug_assertions)]
-                eprintln!("ERROR: failed to deserialize: {e}");
+                eprintln!("ERROR: failed to deserialize: {_e}");
                 return;
             }
         };
