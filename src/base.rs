@@ -158,14 +158,13 @@ pub fn settings_button<'a>(settings: &'a Settings) -> Button<'a, Message> {
     })
 }
 
-/// Link to the app's source code
-pub fn source_link<'a>() -> Button<'a, Message> {
-    const SOURCE_LINK: &str = env!("CARGO_PKG_REPOSITORY");
-
+pub fn hyperlink<'a>(label: &'static str, link: Option<&'static str>) -> Button<'a, Message> {
     use button::Status;
 
-    button(text(SOURCE_LINK).size(15))
-        .on_press(Message::OpenURL(SOURCE_LINK))
+    let url = link.unwrap_or(label);
+
+    button(text(label).size(15))
+        .on_press(Message::OpenURL(url))
         .style(|theme: &Theme, status| {
             let pal = theme.extended_palette();
             button::Style {
@@ -185,6 +184,20 @@ pub fn source_link<'a>() -> Button<'a, Message> {
             }
         })
         .padding(0)
+}
+
+/// Link to the app's source code
+pub fn source_link<'a>() -> Button<'a, Message> {
+    const SOURCE_LINK: &str = env!("CARGO_PKG_REPOSITORY");
+    hyperlink(SOURCE_LINK, None)
+}
+
+pub fn license_link<'a>() -> Button<'a, Message> {
+    const LICENSE: &str = env!("CARGO_PKG_LICENSE");
+    hyperlink(
+        LICENSE,
+        Some("https://www.gnu.org/licenses/gpl-3.0.en.html"),
+    )
 }
 
 #[inline]

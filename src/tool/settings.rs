@@ -191,8 +191,9 @@ impl Tool for Settings {
                 "Developer",
                 text("Kian Heitkamp").size(15).style(text::base)
             ),
-            setting_row("Source Code", source_link()),
             setting_row("Version", app_version()),
+            setting_row("Source Code", source_link()),
+            setting_row("License", license_link()),
         ]
         .spacing(4);
 

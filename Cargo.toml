@@ -2,6 +2,7 @@
 name = "ktools"
 version = "1.1.1"
 authors = ["Kian Heitkamp"]
+license = "GPL-3.0"
 description = "App that makes getting system information easy"
 repository = "https://github.com/kderef/ktools"
 edition = "2024"
