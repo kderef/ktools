@@ -252,7 +252,7 @@ impl Tool for PasswordGenerator {
                     .center(Length::Fill)
                 )
                 .on_press(Message::Regenerate.into())
-                .width(Length::FillPortion(3))
+                .width(Length::FillPortion(4))
                 .height(Length::Shrink),
             ]
             .spacing(30)

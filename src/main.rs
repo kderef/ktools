@@ -3,26 +3,21 @@
     windows_subsystem = "windows"
 )]
 
-#[cfg(not(debug_assertions))]
-static ICON_BYTES: &[u8] = include_bytes!("../icon.ico");
-
 mod base;
 mod tool;
+mod window;
 
 use iced::border::Radius;
 use iced::mouse::Interaction;
 use iced::{
     Background, Border, Color, Element, Length, Subscription, Task, clipboard, keyboard,
     widget::{self, *},
-    window,
 };
 
 use base::ICON_FONT_BYTES;
 use ipconfig::Adapter;
 
 use crate::base::rgb8;
-use crate::base::set_window_rounded_corners;
-use crate::base::window_decorations;
 use crate::tool::Tool;
 use crate::tool::settings::Settings;
 
@@ -30,20 +25,16 @@ fn main() {
     iced::application(App::new, App::update, App::view)
         .window(iced::window::Settings {
             min_size: Some(iced::Size {
-                width: 600.0,
+                width: 650.0,
                 height: 500.0,
             }),
             // Avoid loading icon for faster debug build runtime
-            #[cfg(not(debug_assertions))]
-            icon: Some(
-                iced::window::icon::from_file_data(ICON_BYTES, Some(::image::ImageFormat::Ico))
-                    .unwrap(),
-            ),
+            icon: window::icon(),
             ..Default::default()
         })
         .title(App::title)
         .resizable(true)
-        .window_size((900, 600))
+        .window_size((650, 600))
         .decorations(false)
         .centered()
         .font(ICON_FONT_BYTES)
@@ -68,16 +59,7 @@ enum Selection {
 pub enum Message {
     /// Runs once when the window is opened
     Startup,
-    WindowOpened {
-        id: iced::window::Id,
-        size: iced::Size,
-    },
-    WindowGotRawID(u64),
-    WindowClose,
-    WindowMinimize,
-    WindowDrag,
-    WindowResizeDrag(iced::window::Direction),
-    WindowCursorMoved(iced::Point),
+    Window(window::Message),
 
     OpenURL(&'static str),
 
@@ -233,12 +215,14 @@ impl App {
                 }
             }
             Event::Mouse(me) => match me {
-                MouseEvent::CursorMoved { position } => Some(Message::WindowCursorMoved(position)),
+                MouseEvent::CursorMoved { position } => {
+                    Some(Message::Window(window::Message::CursorMoved(position)))
+                }
                 _ => None,
             },
             Event::Window(we) => match we {
                 WindowEvent::Opened { position: _, size } => {
-                    Some(Message::WindowOpened { id, size })
+                    Some(Message::Window(window::Message::Opened { id, size }))
                 }
                 _ => None,
             },
@@ -250,7 +234,7 @@ impl App {
     /// The rest will be relegated to the currently selected `Tool`
     fn update(&mut self, message: Message) -> Task<Message> {
         #[cfg(debug_assertions)]
-        if !matches!(message, Message::WindowCursorMoved(_)) {
+        if !matches!(message, Message::Window(window::Message::CursorMoved(_))) {
             println!("=> MESSAGE: {message:#?}");
         }
 
@@ -258,40 +242,7 @@ impl App {
             Message::Startup => {
                 self.load_all();
             }
-            /* window messages */
-            Message::WindowOpened { id, size } => {
-                self.window_id = Some(id);
-                self.window_size = size;
-                return iced::window::raw_id::<Message>(id).map(Message::WindowGotRawID);
-            }
-            Message::WindowGotRawID(raw_id) => {
-                let use_rounded = set_window_rounded_corners(raw_id);
-
-                self.window_border_radius = if use_rounded { 8 } else { 0 };
-            }
-            Message::WindowClose => {
-                if let Some(id) = self.window_id {
-                    return iced::window::close(id);
-                }
-            }
-            Message::WindowMinimize => {
-                if let Some(id) = self.window_id {
-                    return iced::window::minimize(id, true);
-                }
-            }
-            Message::WindowDrag => {
-                if let Some(id) = self.window_id {
-                    return iced::window::drag(id);
-                }
-            }
-            Message::WindowResizeDrag(direction) => {
-                if let Some(id) = self.window_id {
-                    return iced::window::drag_resize(id, direction);
-                }
-            }
-            Message::WindowCursorMoved(position) => {
-                self.cursor_position = position;
-            }
+            Message::Window(window_message) => return window::handle(self, window_message),
             /* the rest */
             Message::GoHome => {
                 self.selected = Selection::Home;
@@ -366,7 +317,7 @@ impl App {
             }
         };
 
-        let main_content = widget::column![window_decorations(self), view,]
+        let main_content = widget::column![window::decorations(self), view,]
             .height(Length::Fill)
             .width(Length::Fill);
 
@@ -395,7 +346,7 @@ impl App {
             };
 
             mouse_area(container(space()).width(w).height(h))
-                .on_press(Message::WindowResizeDrag(dir))
+                .on_press(Message::Window(window::Message::ResizeDrag(dir)))
                 .interaction(int)
         };
         let n = resize_area(window::Direction::North, Interaction::ResizingVertically);
@@ -421,7 +372,7 @@ impl App {
         );
 
         stack![
-            mouse_area(view).on_press(Message::WindowDrag),
+            mouse_area(view).on_press(Message::Window(window::Message::Drag)),
             widget::column![n, space().height(Length::Fill), s],
             widget::row![w, space().width(Length::Fill), e],
             // corners on top of everything
