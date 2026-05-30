@@ -52,8 +52,14 @@ fn ping_stream(host: String) -> impl futures::Stream<Item = Message> {
     let (tx, rx) = futures::channel::mpsc::unbounded();
 
     std::thread::spawn(move || {
+        let parts = host.trim().split_whitespace().collect::<Vec<&str>>();
+
+        let host_addr = parts[0];
+        let extra_args = &parts[1..];
+
         let mut child = match std::process::Command::new("ping")
-            .arg(&host)
+            .arg(host_addr)
+            .args(extra_args)
             .stdout(Stdio::piped())
             .creation_flags(CREATE_NO_WINDOW.0)
             .spawn()
@@ -138,7 +144,7 @@ impl Tool for Ping {
                     None => self.address.clone(),
                 };
 
-                if addr.is_empty() || self.running {
+                if addr.trim().is_empty() || self.running {
                     return Task::none();
                 }
                 self.running = true;
