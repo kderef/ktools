@@ -22,8 +22,9 @@ static ICON_BYTES: &[u8] = include_bytes!("../icon.ico");
 
 pub fn icon() -> Option<iced::window::Icon> {
     #[cfg(not(debug_assertions))]
-    return iced::window::icon::from_file_data(ICON_BYTES, Some(::image::ImageFormat::Ico))
-        .unwrap();
+    return Some(
+        iced::window::icon::from_file_data(ICON_BYTES, Some(::image::ImageFormat::Ico)).unwrap(),
+    );
 
     #[cfg(debug_assertions)]
     None
