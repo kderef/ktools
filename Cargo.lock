@@ -1839,6 +1839,7 @@ dependencies = [
  "static_vcruntime",
  "sysinfo",
  "ureq",
+ "winapi",
  "windows",
  "winres",
 ]

@@ -192,6 +192,7 @@ pub fn source_link<'a>() -> Button<'a, Message> {
     hyperlink(SOURCE_LINK, None)
 }
 
+/// hyperlink to the license
 pub fn license_link<'a>() -> Button<'a, Message> {
     const LICENSE: &str = env!("CARGO_PKG_LICENSE");
     hyperlink(
@@ -216,6 +217,7 @@ pub fn app_version<'a>() -> Row<'a, Message> {
 #[macro_export]
 macro_rules! define_themes {
     ($enum_name:ident { $($name:ident => $iced_theme:expr),* $(,)? }) => {
+        /// Setting of the global app theme
         #[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq)]
         pub enum $enum_name {
             #[default]
@@ -225,6 +227,7 @@ macro_rules! define_themes {
         }
 
         impl $enum_name {
+            /// Name of the theme to be displayed
             pub const fn label(self) -> &'static str {
                 match self {
                     $(
@@ -232,6 +235,7 @@ macro_rules! define_themes {
                     ),+
                 }
             }
+            /// List of all the themes
             pub const fn all() -> &'static [Self] {
                 &[
                     $(Self::$name),+

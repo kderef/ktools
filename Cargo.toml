@@ -22,11 +22,10 @@ panic = "abort"
 codegen-units = 1
 opt-level = "z"
 
-[build-dependencies]
-
 [target.x86_64-pc-windows-msvc.build-dependencies]
 winres = "0.1.12"
 static_vcruntime = "3.0.0"
+winapi = {version = "0.3.9", features = ["winnt"]}
 
 [dependencies]
 iced_aw = "0.14.1"

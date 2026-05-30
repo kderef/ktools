@@ -1,5 +1,8 @@
 use std::process::Command;
 
+#[cfg(windows)]
+use winapi::um::winnt::{LANG_ENGLISH, SUBLANG_ENGLISH_US};
+
 fn git_commit_hash() -> String {
     let output = Command::new("git")
         .args(["rev-parse", "--short", "HEAD"])
@@ -21,10 +24,14 @@ fn main() {
     if cfg!(target_os = "windows") {
         if std::env::var("PROFILE").unwrap() == "release" {
             static_vcruntime::metabuild();
+
+            // winres
+            let language = winapi::um::winnt::MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
+
             let mut res = winres::WindowsResource::new();
 
             res.set_icon("icon.ico");
-            // res.set_version_info(winres::VersionInfo::PRODUCTVERSION, version);
+            res.set_language(language);
 
             res.compile().unwrap();
         }
