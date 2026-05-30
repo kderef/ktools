@@ -28,8 +28,8 @@ pub enum OperStatus {
 }
 
 impl OperStatus {
-    pub fn is_up(self) -> bool {
-        self == Self::IfOperStatusUp
+    pub const fn is_up(self) -> bool {
+        matches!(self, Self::IfOperStatusUp)
     }
 }
 
@@ -41,7 +41,7 @@ impl OperStatus {
 /// `IfType::Unsupported` is used. `IfType::Other`
 /// is different from `IfType::Unsupported`, as the former
 /// one is defined by the IANA itself.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum IfType {
     Other = 1,
     EthernetCsmacd = 6,
@@ -120,12 +120,12 @@ impl Adapter {
         &self.dns_servers
     }
     /// Get the adapter's description
-    pub fn description(&self) -> &str {
-        &self.description
+    pub const fn description(&self) -> &str {
+        self.description.as_str()
     }
     /// Get the adapter's friendly name
-    pub fn friendly_name(&self) -> &str {
-        &self.friendly_name
+    pub const fn friendly_name(&self) -> &str {
+        self.friendly_name.as_str()
     }
     /// Get the adapter's physical (MAC) address
     pub fn physical_address(&self) -> Option<&[u8]> {
@@ -133,22 +133,22 @@ impl Adapter {
     }
 
     /// Get the adapter Recieve Link Speed (bits per second)
-    pub fn receive_link_speed(&self) -> u64 {
+    pub const fn receive_link_speed(&self) -> u64 {
         self.receive_link_speed
     }
 
     /// Get the Trasnmit Link Speed (bits per second)
-    pub fn transmit_link_speed(&self) -> u64 {
+    pub const fn transmit_link_speed(&self) -> u64 {
         self.transmit_link_speed
     }
 
     /// Check if the adapter is up (OperStatus is IfOperStatusUp)
-    pub fn oper_status(&self) -> OperStatus {
+    pub const fn oper_status(&self) -> OperStatus {
         self.oper_status
     }
 
     /// Get the interface type
-    pub fn if_type(&self) -> IfType {
+    pub const fn if_type(&self) -> IfType {
         self.if_type
     }
 
@@ -156,17 +156,62 @@ impl Adapter {
     ///
     /// The return value can be used as an IPv6 scope id for link-local
     /// addresses.
-    pub fn ipv6_if_index(&self) -> u32 {
+    pub const fn ipv6_if_index(&self) -> u32 {
         self.ipv6_if_index
     }
 
     /// Returns the metric used to compute route preference for IPv4
-    pub fn ipv4_metric(&self) -> u32 {
+    pub const fn ipv4_metric(&self) -> u32 {
         self.ipv4_metric
     }
     /// Returns the metric used to compute route preference for IPv6
-    pub fn ipv6_metric(&self) -> u32 {
+    pub const fn ipv6_metric(&self) -> u32 {
         self.ipv6_metric
+    }
+
+    /// Returns the 'importance' of the adapter, i.e. how relevent it is when sorting
+    pub fn importance(&self) -> u32 {
+        let mut importance = 0u32;
+
+        // Prefer UP
+        if self.oper_status.is_up() {
+            importance += 10;
+        }
+
+        // Prefer real IPv4
+        let has_real_ipv4 = self.ip_addresses.iter().any(|ip| match ip {
+            IpAddr::V4(v4) => !v4.is_loopback() && !v4.is_link_local(),
+            _ => false,
+        });
+        if has_real_ipv4 {
+            importance += 5;
+        }
+
+        // Deprioritize loopback
+        if self.ip_addresses.iter().all(|ip| ip.is_loopback()) {
+            importance = importance.saturating_sub(10);
+        }
+
+        let name = self.friendly_name.to_lowercase();
+        if name.contains("ethernet") || name.contains("wi-fi") || name.contains("wifi") {
+            importance += 3;
+        }
+
+        if name.contains("virtual")
+            || name.contains("vmware")
+            || name.contains("vethernet")
+            || name.contains("vpn")
+            || name.contains("hyper-v")
+        {
+            importance = importance.saturating_sub(5);
+        }
+
+        // Prefer adapters with a gateway (means they're the primary connection)
+        if !self.gateways.is_empty() {
+            importance += 4;
+        }
+
+        importance
     }
 }
 

@@ -183,15 +183,8 @@ impl Tool for NetworkInfo {
             Message::TabSelected(i) => self.active_tab = i,
             Message::NetworkInterfacesFetched(result) => match result {
                 Err(e) => self.error = Some(e),
-                Ok(ifs) => {
-                    // sort: up interfaces first, then by friendly name
-                    let mut ifs = ifs;
-                    ifs.sort_by(|a, b| {
-                        let a_up = a.oper_status().is_up();
-                        let b_up = b.oper_status().is_up();
-                        b_up.cmp(&a_up)
-                            .then(a.friendly_name().cmp(b.friendly_name()))
-                    });
+                Ok(mut ifs) => {
+                    ifs.sort_by(|a, b| b.importance().cmp(&a.importance()));
                     self.local_interfaces = ifs;
                 }
             },
