@@ -221,8 +221,6 @@ impl Tool for SystemInfo {
         let container = content_container_ex(rows, false)
             .padding(12)
             .height(Length::Fill);
-        let go_back = go_back_button(13);
-        let title = title_text(self);
 
         // When all info loaded, enable the buttons
         let all_loaded = self.info.values().all(Option::is_some);
@@ -250,10 +248,6 @@ impl Tool for SystemInfo {
                 }))
         ];
         let col = widget::column![
-            // top
-            widget::row![go_back, space().width(16), title.align_y(Alignment::Center)]
-                .align_y(Alignment::Center),
-            space().height(10),
             // middle
             container,
             // bottom

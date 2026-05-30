@@ -248,13 +248,6 @@ impl Tool for Ping {
 
         let mut content = widget::column![
             row![
-                go_back_button(15),
-                space().width(16),
-                title_text(self).align_y(Alignment::Center),
-            ]
-            .align_y(Alignment::Center),
-            space().height(25),
-            row![
                 ping_gateway_btn,
                 ping_google_btn,
                 ping_google_dns_btn,

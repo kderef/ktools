@@ -10,18 +10,19 @@ mod base;
 mod tool;
 
 use iced::border::Radius;
+use iced::mouse::Interaction;
 use iced::{
-    Alignment, Background, Border, Color, Element, Length, Padding, Subscription, Task, clipboard,
-    keyboard, widget, widget::*,
+    Background, Border, Color, Element, Length, Subscription, Task, clipboard, keyboard,
+    widget::{self, *},
+    window,
 };
 
 use base::ICON_FONT_BYTES;
 use ipconfig::Adapter;
 
-use crate::base::BOLD_DEFAULT;
 use crate::base::rgb8;
 use crate::base::set_window_rounded_corners;
-use crate::base::settings_button;
+use crate::base::window_decorations;
 use crate::tool::Tool;
 use crate::tool::settings::Settings;
 
@@ -67,8 +68,16 @@ enum Selection {
 pub enum Message {
     /// Runs once when the window is opened
     Startup,
-    WindowOpened(iced::window::Id),
+    WindowOpened {
+        id: iced::window::Id,
+        size: iced::Size,
+    },
     WindowGotRawID(u64),
+    WindowClose,
+    WindowMinimize,
+    WindowDrag,
+    WindowResizeDrag(iced::window::Direction),
+    WindowCursorMoved(iced::Point),
 
     OpenURL(&'static str),
 
@@ -121,6 +130,10 @@ pub struct App {
     selected: Selection,
     settings: Settings,
 
+    // stuff for window handling
+    window_id: Option<iced::window::Id>,
+    window_size: iced::Size,
+    cursor_position: iced::Point,
     window_border_radius: u32,
 }
 
@@ -179,6 +192,10 @@ impl App {
             tools: tool::all(),
             selected: Selection::Home,
             settings: Settings::default(),
+            // window stuff
+            cursor_position: iced::Point::default(),
+            window_id: None,
+            window_size: iced::Size::default(),
             window_border_radius: 0,
         };
 
@@ -194,10 +211,12 @@ impl App {
     }
 
     fn subscription(&self) -> Subscription<Message> {
+        use iced::Event;
+        use iced::mouse::Event as MouseEvent;
         use iced::window::Event as WindowEvent;
 
         iced::event::listen_with(|event, _status, id| match event {
-            iced::Event::Keyboard(e) => {
+            Event::Keyboard(e) => {
                 let keyboard::Event::KeyPressed {
                     modified_key: keyboard::Key::Named(modified_key),
                     repeat: false,
@@ -213,11 +232,14 @@ impl App {
                     _ => None,
                 }
             }
-            iced::Event::Window(we) => match we {
-                WindowEvent::Opened {
-                    position: _,
-                    size: _,
-                } => Some(Message::WindowOpened(id)),
+            Event::Mouse(me) => match me {
+                MouseEvent::CursorMoved { position } => Some(Message::WindowCursorMoved(position)),
+                _ => None,
+            },
+            Event::Window(we) => match we {
+                WindowEvent::Opened { position: _, size } => {
+                    Some(Message::WindowOpened { id, size })
+                }
                 _ => None,
             },
             _ => None,
@@ -228,13 +250,18 @@ impl App {
     /// The rest will be relegated to the currently selected `Tool`
     fn update(&mut self, message: Message) -> Task<Message> {
         #[cfg(debug_assertions)]
-        println!("=> MESSAGE: {message:#?}");
+        if !matches!(message, Message::WindowCursorMoved(_)) {
+            println!("=> MESSAGE: {message:#?}");
+        }
 
         match message {
             Message::Startup => {
                 self.load_all();
             }
-            Message::WindowOpened(id) => {
+            /* window messages */
+            Message::WindowOpened { id, size } => {
+                self.window_id = Some(id);
+                self.window_size = size;
                 return iced::window::raw_id::<Message>(id).map(Message::WindowGotRawID);
             }
             Message::WindowGotRawID(raw_id) => {
@@ -242,6 +269,30 @@ impl App {
 
                 self.window_border_radius = if use_rounded { 8 } else { 0 };
             }
+            Message::WindowClose => {
+                if let Some(id) = self.window_id {
+                    return iced::window::close(id);
+                }
+            }
+            Message::WindowMinimize => {
+                if let Some(id) = self.window_id {
+                    return iced::window::minimize(id, true);
+                }
+            }
+            Message::WindowDrag => {
+                if let Some(id) = self.window_id {
+                    return iced::window::drag(id);
+                }
+            }
+            Message::WindowResizeDrag(direction) => {
+                if let Some(id) = self.window_id {
+                    return iced::window::drag_resize(id, direction);
+                }
+            }
+            Message::WindowCursorMoved(position) => {
+                self.cursor_position = position;
+            }
+            /* the rest */
             Message::GoHome => {
                 self.selected = Selection::Home;
             }
@@ -283,27 +334,6 @@ impl App {
             Selection::Settings => self.settings.view(),
             Selection::Tool(index) => self.tools[index].view(),
             Selection::Home => {
-                // top bar
-                let top = row![
-                    container(settings_button(&self.settings).height(40))
-                        .width(120)
-                        .height(Length::Fill)
-                        .align_y(Alignment::Center),
-                    container(text("KTools").size(42).font(BOLD_DEFAULT))
-                        .width(Length::FillPortion(3))
-                        .align_x(Alignment::Center)
-                        .align_y(Alignment::Center),
-                    space().width(120),
-                ]
-                .padding(Padding {
-                    top: 0.,
-                    bottom: 0.,
-                    right: 20.0,
-                    left: 20.0,
-                })
-                .height(60)
-                .align_y(Alignment::Center);
-
                 // The grid of Tool's
                 let children = self
                     .settings
@@ -328,9 +358,6 @@ impl App {
                 let view = Scrollable::new(content);
 
                 widget::column![
-                    top,
-                    space().height(2),
-                    row![space().width(20), rule::horizontal(2), space().width(20)],
                     view,
                     space().height(Length::Fill),
                     text("© Kian Heitkamp").size(11).color(rgb8(120, 120, 120))
@@ -339,22 +366,73 @@ impl App {
             }
         };
 
+        let main_content = widget::column![window_decorations(self), view,]
+            .height(Length::Fill)
+            .width(Length::Fill);
+
+        let view = container(main_content)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .style(|_theme| container::Style {
+                text_color: None,
+                background: None,
+                border: Border {
+                    color: Color::TRANSPARENT,
+                    width: 0.0,
+                    radius: Radius::new(self.window_border_radius),
+                },
+                ..Default::default()
+            });
+
+        let resize_area = |dir, int| {
+            let f = Length::Fill;
+            let m = Length::from(self.window_border_radius / 2);
+
+            let (w, h) = match dir {
+                window::Direction::North | window::Direction::South => (f, m),
+                window::Direction::West | window::Direction::East => (m, f),
+                _ => (m, m),
+            };
+
+            mouse_area(container(space()).width(w).height(h))
+                .on_press(Message::WindowResizeDrag(dir))
+                .interaction(int)
+        };
+        let n = resize_area(window::Direction::North, Interaction::ResizingVertically);
+        let s = resize_area(window::Direction::South, Interaction::ResizingVertically);
+        let w = resize_area(window::Direction::West, Interaction::ResizingHorizontally);
+        let e = resize_area(window::Direction::East, Interaction::ResizingHorizontally);
+
+        let nw = resize_area(
+            window::Direction::NorthWest,
+            Interaction::ResizingDiagonallyUp,
+        );
+        let ne = resize_area(
+            window::Direction::NorthEast,
+            Interaction::ResizingDiagonallyUp,
+        );
+        let sw = resize_area(
+            window::Direction::SouthWest,
+            Interaction::ResizingDiagonallyDown,
+        );
+        let se = resize_area(
+            window::Direction::SouthEast,
+            Interaction::ResizingDiagonallyDown,
+        );
+
         stack![
-            view,
-            container(space())
-                .style(|_theme| container::Style {
-                    text_color: None,
-                    background: Some(Background::Color(Color::TRANSPARENT)),
-                    border: Border {
-                        radius: Radius::new(self.window_border_radius),
-                        color: rgb8(100, 100, 100),
-                        width: 2.0,
-                    },
-                    ..Default::default()
-                })
-                .width(Length::Fill)
-                .height(Length::Fill),
+            mouse_area(view).on_press(Message::WindowDrag),
+            widget::column![n, space().height(Length::Fill), s],
+            widget::row![w, space().width(Length::Fill), e],
+            // corners on top of everything
+            widget::column![
+                widget::row![nw, space().width(Length::Fill), ne],
+                space().height(Length::Fill),
+                widget::row![sw, space().width(Length::Fill), se],
+            ],
         ]
+        .width(Length::Fill)
+        .height(Length::Fill)
         .into()
     }
 

@@ -198,15 +198,8 @@ impl Tool for Settings {
         .spacing(4);
 
         let container = content_container(rows).padding(12).height(Length::Fill);
-        let go_back = go_back_button(13);
-        let title = title_text(self);
 
-        let col = widget::column![
-            widget::row![go_back, space().width(16), title.align_y(Alignment::Center)]
-                .align_y(Alignment::Center),
-            space().height(10),
-            container
-        ];
+        let col = widget::column![container];
 
         col.height(Length::Fill).padding(12).into()
     }

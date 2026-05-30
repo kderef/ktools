@@ -79,15 +79,6 @@ impl Tool for ExternalIP {
         }
 
         let container = content_container(rows).padding(12).height(Length::Fill);
-        let go_back = go_back_button(13);
-        let title = title_text(self);
-
-        let mut col = widget::column![
-            widget::row![go_back, space().width(16), title.align_y(Alignment::Center)]
-                .align_y(Alignment::Center),
-            space().height(10),
-            container
-        ];
 
         let bottom_row = row![
             button(text("refresh").size(24).center())
@@ -105,8 +96,10 @@ impl Tool for ExternalIP {
                 })
         ];
 
-        col = col.push(space().height(20)).push(bottom_row);
-        col.height(Length::Fill).padding(12).into()
+        widget::column![container, space().height(20), bottom_row]
+            .height(Length::Fill)
+            .padding(12)
+            .into()
     }
 }
 

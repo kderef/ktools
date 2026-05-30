@@ -1,6 +1,5 @@
 use super::*;
 
-use iced::Alignment;
 use iced::Background;
 use iced::Border;
 use iced::Font;
@@ -296,15 +295,6 @@ impl Tool for PasswordGenerator {
         ]
         .spacing(10);
 
-        let go_back = go_back_button(text_size);
-
-        let title = text(self.name())
-            .align_x(Alignment::Center)
-            .size(40)
-            .width(Length::Fill)
-            .wrapping(text::Wrapping::None)
-            .font(BOLD_DEFAULT);
-
         fn wrap<'a>(el: Element<'a, crate::Message>) -> Element<'a, crate::Message> {
             widget::row![
                 space().width(Length::FillPortion(1)),
@@ -315,12 +305,6 @@ impl Tool for PasswordGenerator {
         }
 
         widget::column![
-            widget::row![
-                go_back.width(Length::Shrink),
-                space().width(Length::FillPortion(1)),
-                title.width(Length::FillPortion(3)),
-                space().width(Length::FillPortion(2)),
-            ],
             password_row,
             wrap(length_row.into()),
             wrap(checkboxes.into()),

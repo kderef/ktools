@@ -240,15 +240,9 @@ impl Tool for NetworkInfo {
             text("No interface selected").into()
         };
 
-        let go_back = go_back_button(13);
-        let title = title_text(self);
-
-        widget::column![
-            row![go_back, space().width(16), title].align_y(Alignment::Center),
-            row![sidebar, space().width(12), content].height(Length::Fill),
-        ]
-        .spacing(12)
-        .padding(20)
-        .into()
+        widget::column![row![sidebar, space().width(12), content].height(Length::Fill),]
+            .spacing(12)
+            .padding(20)
+            .into()
     }
 }
