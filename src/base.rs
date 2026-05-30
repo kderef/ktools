@@ -253,3 +253,29 @@ macro_rules! define_themes {
         }
     };
 }
+
+pub fn set_window_rounded_corners(window_id: u64) -> bool {
+    #[cfg(windows)]
+    unsafe {
+        use std::ffi::c_void;
+
+        use windows::Win32::Foundation::HWND;
+        use windows::Win32::Graphics::Dwm::{
+            DWM_WINDOW_CORNER_PREFERENCE, DWMWA_WINDOW_CORNER_PREFERENCE, DWMWCP_ROUND,
+            DwmSetWindowAttribute,
+        };
+
+        let hwnd = HWND(window_id as *mut _);
+        let preference = DWMWCP_ROUND;
+
+        let succeeded = DwmSetWindowAttribute(
+            hwnd,
+            DWMWA_WINDOW_CORNER_PREFERENCE,
+            &preference as *const _ as *const c_void,
+            size_of::<DWM_WINDOW_CORNER_PREFERENCE>() as u32,
+        )
+        .is_ok();
+
+        succeeded
+    }
+}

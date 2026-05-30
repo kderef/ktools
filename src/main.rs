@@ -9,6 +9,7 @@ static ICON_BYTES: &[u8] = include_bytes!("../icon.ico");
 mod base;
 mod tool;
 
+use iced::border::Radius;
 use iced::{
     Alignment, Background, Border, Color, Element, Length, Padding, Subscription, Task, clipboard,
     keyboard, widget, widget::*,
@@ -19,6 +20,7 @@ use ipconfig::Adapter;
 
 use crate::base::BOLD_DEFAULT;
 use crate::base::rgb8;
+use crate::base::set_window_rounded_corners;
 use crate::base::settings_button;
 use crate::tool::Tool;
 use crate::tool::settings::Settings;
@@ -41,6 +43,7 @@ fn main() {
         .title(App::title)
         .resizable(true)
         .window_size((900, 600))
+        .decorations(false)
         .centered()
         .font(ICON_FONT_BYTES)
         .theme(App::theme)
@@ -64,6 +67,8 @@ enum Selection {
 pub enum Message {
     /// Runs once when the window is opened
     Startup,
+    WindowOpened(iced::window::Id),
+    WindowGotRawID(u64),
 
     OpenURL(&'static str),
 
@@ -102,6 +107,7 @@ pub enum Message {
 
     /* messages for ping */
     PingStart(Option<String>),
+    PingCancel,
     PingDefaultGateway,
     PingAddressChanged(String),
     PingEditorAction(text_editor::Action),
@@ -114,6 +120,8 @@ pub struct App {
     tools: Vec<Box<dyn Tool>>,
     selected: Selection,
     settings: Settings,
+
+    window_border_radius: u32,
 }
 
 fn home_button<'a>(
@@ -171,6 +179,7 @@ impl App {
             tools: tool::all(),
             selected: Selection::Home,
             settings: Settings::default(),
+            window_border_radius: 0,
         };
 
         (app, Task::done(Message::Startup))
@@ -185,21 +194,33 @@ impl App {
     }
 
     fn subscription(&self) -> Subscription<Message> {
-        keyboard::listen().filter_map(|event| {
-            let keyboard::Event::KeyPressed {
-                modified_key: keyboard::Key::Named(modified_key),
-                repeat: false,
-                ..
-            } = event
-            else {
-                return None;
-            };
+        use iced::window::Event as WindowEvent;
 
-            match modified_key {
-                keyboard::key::Named::Escape => Some(Message::GoHome),
-                keyboard::key::Named::F5 => Some(Message::Refresh),
-                _ => None,
+        iced::event::listen_with(|event, _status, id| match event {
+            iced::Event::Keyboard(e) => {
+                let keyboard::Event::KeyPressed {
+                    modified_key: keyboard::Key::Named(modified_key),
+                    repeat: false,
+                    ..
+                } = e
+                else {
+                    return None;
+                };
+
+                match modified_key {
+                    keyboard::key::Named::Escape => Some(Message::GoHome),
+                    keyboard::key::Named::F5 => Some(Message::Refresh),
+                    _ => None,
+                }
             }
+            iced::Event::Window(we) => match we {
+                WindowEvent::Opened {
+                    position: _,
+                    size: _,
+                } => Some(Message::WindowOpened(id)),
+                _ => None,
+            },
+            _ => None,
         })
     }
 
@@ -212,6 +233,14 @@ impl App {
         match message {
             Message::Startup => {
                 self.load_all();
+            }
+            Message::WindowOpened(id) => {
+                return iced::window::raw_id::<Message>(id).map(Message::WindowGotRawID);
+            }
+            Message::WindowGotRawID(raw_id) => {
+                let use_rounded = set_window_rounded_corners(raw_id);
+
+                self.window_border_radius = if use_rounded { 8 } else { 0 };
             }
             Message::GoHome => {
                 self.selected = Selection::Home;
@@ -250,7 +279,7 @@ impl App {
 
     /// Dynamic grid of squares representing tools.
     fn view(&self) -> Element<'_, Message> {
-        match self.selected {
+        let view = match self.selected {
             Selection::Settings => self.settings.view(),
             Selection::Tool(index) => self.tools[index].view(),
             Selection::Home => {
@@ -308,7 +337,25 @@ impl App {
                 ]
                 .into()
             }
-        }
+        };
+
+        stack![
+            view,
+            container(space())
+                .style(|_theme| container::Style {
+                    text_color: None,
+                    background: Some(Background::Color(Color::TRANSPARENT)),
+                    border: Border {
+                        radius: Radius::new(self.window_border_radius),
+                        color: rgb8(100, 100, 100),
+                        width: 2.0,
+                    },
+                    ..Default::default()
+                })
+                .width(Length::Fill)
+                .height(Length::Fill),
+        ]
+        .into()
     }
 
     /// Load saved data into all the tools

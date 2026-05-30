@@ -9,10 +9,17 @@ use std::{
     net::IpAddr,
     os::windows::process::CommandExt,
     process::Stdio,
+    sync::{Arc, Mutex, MutexGuard},
 };
 use windows::Win32::System::Threading::CREATE_NO_WINDOW;
 
 use super::*;
+
+type ChildHandle = Arc<Mutex<Option<std::process::Child>>>;
+
+fn lock(handle: &ChildHandle) -> MutexGuard<'_, Option<std::process::Child>> {
+    handle.lock().unwrap_or_else(|e| e.into_inner())
+}
 
 #[derive(Default, Serialize, Deserialize)]
 pub struct Ping {
@@ -25,8 +32,12 @@ pub struct Ping {
     #[serde(skip)]
     output: text_editor::Content,
 
+    /// Whether a ping process is currently running
     #[serde(skip)]
     running: bool,
+
+    #[serde(skip)]
+    child: Option<ChildHandle>,
 }
 
 fn get_default_gateway() -> Result<sys_info::SystemValue, String> {
@@ -48,7 +59,7 @@ fn get_default_gateway() -> Result<sys_info::SystemValue, String> {
     Err("No default gateway found".into())
 }
 
-fn ping_stream(host: String) -> impl futures::Stream<Item = Message> {
+fn ping_stream(host: String, child_handle: ChildHandle) -> impl futures::Stream<Item = Message> {
     let (tx, rx) = futures::channel::mpsc::unbounded();
 
     std::thread::spawn(move || {
@@ -73,6 +84,8 @@ fn ping_stream(host: String) -> impl futures::Stream<Item = Message> {
         };
 
         let stdout = child.stdout.take().unwrap();
+        *lock(&child_handle) = Some(child);
+
         let reader = BufReader::new(stdout);
 
         for line in reader.lines() {
@@ -86,7 +99,12 @@ fn ping_stream(host: String) -> impl futures::Stream<Item = Message> {
             }
         }
 
-        let _ = child.wait();
+        if let Some(c) = lock(&child_handle).as_mut() {
+            let _ = c.wait();
+        }
+
+        *lock(&child_handle) = None;
+
         let _ = tx.unbounded_send(Message::PingDone);
     });
 
@@ -135,6 +153,18 @@ impl Tool for Ping {
                     );
                 }
             },
+            Message::PingCancel => {
+                self.running = false;
+
+                // If a process exists, kill it.
+                if let Some(handle) = &self.child {
+                    if let Some(child) = lock(handle).as_mut() {
+                        let _ = child.kill();
+                    }
+                }
+
+                self.child = None;
+            }
             Message::PingStart(addr) => {
                 let addr = match addr {
                     Some(a) => {
@@ -147,9 +177,16 @@ impl Tool for Ping {
                 if addr.trim().is_empty() || self.running {
                     return Task::none();
                 }
+
+                // Begin the process
                 self.running = true;
                 self.output = text_editor::Content::new();
-                return Task::run(ping_stream(addr), |m| m);
+
+                // create a new child instance
+                let handle = Arc::new(Mutex::new(None));
+                self.child = Some(handle.clone());
+
+                return Task::run(ping_stream(addr, handle), |m| m);
             }
             Message::PingToggleCustom => {
                 self.custom_address ^= true;
@@ -183,10 +220,13 @@ impl Tool for Ping {
             button(text(txt).size(15).center()).on_press_maybe((!self.running).then_some(message))
         };
 
-        let ping_btn = custom_button(
-            if self.running { "pinging..." } else { "ping" },
-            Message::PingStart(None),
-        )
+        let ping_btn = if self.running {
+            custom_button("Stop Ping", Message::PingCancel)
+                .style(button::danger)
+                .on_press(Message::PingCancel)
+        } else {
+            custom_button("Ping", Message::PingStart(None)).on_press(Message::PingStart(None))
+        }
         .width(Length::Fixed(90.0));
 
         let output = text_editor(&self.output)
