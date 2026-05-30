@@ -157,3 +157,82 @@ pub fn settings_button<'a>(settings: &'a Settings) -> Button<'a, Message> {
         ..Default::default()
     })
 }
+
+/// Link to the app's source code
+pub fn source_link<'a>() -> Button<'a, Message> {
+    const SOURCE_LINK: &str = env!("CARGO_PKG_REPOSITORY");
+
+    use button::Status;
+
+    button(text(SOURCE_LINK).size(15))
+        .on_press(Message::OpenURL(SOURCE_LINK))
+        .style(|theme: &Theme, status| {
+            let pal = theme.extended_palette();
+            button::Style {
+                background: None,
+                text_color: match status {
+                    Status::Pressed => pal.primary.weak.color,
+                    Status::Active => pal.primary.base.color,
+                    Status::Hovered => pal.primary.strong.color,
+                    Status::Disabled => pal.secondary.base.text,
+                },
+                border: Border {
+                    color: Color::TRANSPARENT,
+                    width: 0.0,
+                    radius: Radius::new(0),
+                },
+                ..Default::default()
+            }
+        })
+        .padding(0)
+}
+
+#[inline]
+pub fn app_version<'a>() -> Row<'a, Message> {
+    row![
+        text(env!("CARGO_PKG_VERSION")).size(15).style(text::base),
+        space().width(10),
+        text(format!("({})", env!("GIT_HASH")))
+            .size(15)
+            .style(text::secondary)
+    ]
+}
+
+/// Macro for src/tool/settings.rs
+/// NOTE: the first element is the Default.
+#[macro_export]
+macro_rules! define_themes {
+    ($enum_name:ident { $($name:ident => $iced_theme:expr),* $(,)? }) => {
+        #[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq)]
+        pub enum $enum_name {
+            #[default]
+            $(
+                $name
+            ),+
+        }
+
+        impl $enum_name {
+            pub const fn label(self) -> &'static str {
+                match self {
+                    $(
+                        Self::$name => stringify!($name)
+                    ),+
+                }
+            }
+            pub const fn all() -> &'static [Self] {
+                &[
+                    $(Self::$name),+
+                ]
+            }
+        }
+        impl Into<iced::Theme> for $enum_name {
+            fn into(self) -> iced::Theme {
+                match self {
+                    $(
+                        Self::$name => $iced_theme
+                    ),+
+                }
+            }
+        }
+    };
+}

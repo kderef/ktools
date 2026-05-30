@@ -1,6 +1,9 @@
 [package]
 name = "ktools"
-version = "1.1.0"
+version = "1.1.1"
+authors = ["Kian Heitkamp"]
+description = "App that makes getting system information easy"
+repository = "https://github.com/kderef/ktools"
 edition = "2024"
 build = "build.rs"
 
@@ -35,6 +38,7 @@ serde_json = "1.0.150"
 serde = { version = "1.0.228", features = ["derive"] }
 dirs = "6.0.0"
 ipconfig = {path = "ipconfig"}
+open = "5.3.5"
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.62.2", features = ["Win32_Graphics", "Win32_Graphics_Dxgi"] }

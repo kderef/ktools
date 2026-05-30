@@ -1,4 +1,4 @@
-use crate::Message;
+use crate::{Message, define_themes};
 
 use super::*;
 use iced::{
@@ -7,35 +7,12 @@ use iced::{
 };
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq)]
-pub enum ThemeSetting {
-    #[default]
-    Dark,
-    Light,
-    Night,
-}
-
-impl Into<iced::Theme> for ThemeSetting {
-    fn into(self) -> iced::Theme {
-        match self {
-            Self::Dark => iced::Theme::Dark,
-            Self::Light => iced::Theme::Light,
-            Self::Night => iced::Theme::TokyoNightStorm,
-        }
-    }
-}
-
-impl ThemeSetting {
-    fn label(&self) -> &'static str {
-        match self {
-            Self::Dark => "Dark",
-            Self::Light => "Light",
-            Self::Night => "Night",
-        }
-    }
-
-    fn all() -> &'static [ThemeSetting] {
-        &[Self::Dark, Self::Light, Self::Night]
+define_themes! {
+    ThemeSetting {
+        Dark => iced::Theme::Dark,
+        Light => iced::Theme::Light,
+        Night => iced::Theme::TokyoNight,
+        Solarized => iced::Theme::SolarizedDark
     }
 }
 
@@ -211,10 +188,11 @@ impl Tool for Settings {
             //
             section_header("About"),
             setting_row(
-                "Version",
-                text(env!("CARGO_PKG_VERSION")).size(15).style(text::base)
+                "Developer",
+                text("Kian Heitkamp").size(15).style(text::base)
             ),
-            setting_row("Author", text("Kian Heitkamp").size(15).style(text::base)),
+            setting_row("Source Code", source_link()),
+            setting_row("Version", app_version()),
         ]
         .spacing(4);
 

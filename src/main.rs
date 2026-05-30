@@ -65,6 +65,8 @@ pub enum Message {
     /// Runs once when the window is opened
     Startup,
 
+    OpenURL(&'static str),
+
     /* Home page messages */
     /// Go to index of App::tools
     ChooseTool(usize),
@@ -231,6 +233,9 @@ impl App {
             Message::ResetAllSettings => {
                 self.settings = Settings::default();
                 self.tools = tool::all();
+            }
+            Message::OpenURL(url) => {
+                let _ = open::that(url);
             }
             // Globally non-relevant Messages will be relegated to the `Tool`
             other => match self.selected {
