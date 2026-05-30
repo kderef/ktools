@@ -386,7 +386,7 @@ impl App {
 
         let resize_area = |dir, int| {
             let f = Length::Fill;
-            let m = Length::from(self.window_border_radius / 2);
+            let m = Length::from(self.window_border_radius as f32 / 1.5);
 
             let (w, h) = match dir {
                 window::Direction::North | window::Direction::South => (f, m),
