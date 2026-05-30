@@ -83,8 +83,17 @@ pub fn copy_icon_btn(value: String) -> Element<'static, Message> {
         .into()
 }
 
-pub fn content_container<'a, E: Into<Element<'a, Message>>>(inside: E) -> Container<'a, Message> {
-    container(scrollable(inside))
+pub fn content_container_ex<'a, E: Into<Element<'a, Message>>>(
+    inside: E,
+    inside_scrollable: bool,
+) -> Container<'a, Message> {
+    let inside = if inside_scrollable {
+        scrollable(inside).into()
+    } else {
+        inside.into()
+    };
+
+    container(inside)
         .width(Length::Fill)
         .height(Length::Fill)
         .style(|theme: &Theme| container::Style {
@@ -102,6 +111,12 @@ pub fn content_container<'a, E: Into<Element<'a, Message>>>(inside: E) -> Contai
             ..Default::default()
         })
 }
+
+#[inline]
+pub fn content_container<'a, E: Into<Element<'a, Message>>>(inside: E) -> Container<'a, Message> {
+    content_container_ex(inside, true)
+}
+
 pub fn title_text<'a>(t: &'a impl Tool) -> Text<'a> {
     text(t.name()).size(28).font(BOLD_DEFAULT)
 }

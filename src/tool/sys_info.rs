@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 use std::fmt;
 
-// TODO: add buttons for printers, etc. at bottom of view()
-
 use iced::{
     Alignment, Background, Border, Length, Theme,
-    widget::{self, button, progress_bar, row, space, text},
+    border::Radius,
+    widget::{self, Button, button, progress_bar, row, space, text},
 };
 use sysinfo::System;
 
@@ -45,6 +44,7 @@ pub struct Disk {
     pub used: Bytes,
 }
 
+/// newtype to make it easy to print bytes (automatically formats as GB, MB, etc)
 #[derive(Debug, Clone)]
 pub struct Bytes(u64);
 
@@ -59,6 +59,33 @@ impl fmt::Display for Bytes {
             MB.. => write!(f, "{:.1} MB", self.0 as f64 / MB as f64),
             KB.. => write!(f, "{:.1} KB", self.0 as f64 / KB as f64),
             _ => write!(f, "{} B", self.0),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum ProcessOpen {
+    ConfigPanel,
+    Printers,
+    AdminTools,
+    Features,
+}
+
+impl ProcessOpen {
+    pub const fn command(self) -> &'static [&'static str] {
+        match self {
+            Self::ConfigPanel => &["control"],
+            Self::Printers => &["control", "printers"],
+            Self::AdminTools => &["control", "/name", "Microsoft.AdministrativeTools"],
+            Self::Features => &["rundll32", "shell32.dll,Control_RunDLL", "appwiz.cpl,,2"],
+        }
+    }
+    pub fn icon(self) -> Text<'static> {
+        match self {
+            Self::ConfigPanel => icon_font::settings_gear(),
+            Self::Printers => icon_font::preview(),
+            Self::AdminTools => icon_font::account(),
+            Self::Features => icon_font::tools(),
         }
     }
 }
@@ -110,13 +137,14 @@ static TASKS: &[(&str, fn() -> Result<SystemValue, String>)] = &[
 ];
 
 pub struct SystemInfo {
+    /// `None` means loading, `Some(Result<...>)` will be received upon `Message::SystemInfoFetched`
     info: HashMap<&'static str, Option<Result<SystemValue, String>>>,
 }
 
 impl Default for SystemInfo {
     fn default() -> Self {
         Self {
-            info: HashMap::from_iter(TASKS.iter().map(|(k, _)| (*k, None))),
+            info: TASKS.iter().map(|(k, _)| (*k, None)).collect(),
         }
     }
 }
@@ -159,56 +187,79 @@ impl Tool for SystemInfo {
                 }
                 return self.on_activate();
             }
+            Message::SystemInfoOpen(proc) => {
+                let cmd = proc.command();
+                let prog = cmd[0];
+                let args = &cmd[1..];
+
+                let _ = std::process::Command::new(prog).args(args).spawn();
+            }
             _ => {}
         }
         Task::none()
     }
     fn view(&self) -> Element<'_, crate::Message> {
-        let mut rows = widget::column![].spacing(2);
+        let mut rows = widget::column![].spacing(2).height(Length::Fill);
 
+        // Iterate through TASKS instead of self.info to preserve order
         for (key, _) in TASKS {
             let value = &self.info[key];
             rows = rows.push(info_row(key, value));
         }
 
-        let container = content_container(rows).padding(12).height(Length::Fill);
+        rows = rows.push(space().height(Length::Fill)).push(
+            row![
+                proc_button("Configuration Panel", ProcessOpen::ConfigPanel),
+                proc_button("Printers", ProcessOpen::Printers),
+                proc_button("Admin Tools", ProcessOpen::AdminTools),
+                proc_button("Windows Features", ProcessOpen::Features),
+            ]
+            .spacing(10)
+            .align_y(Alignment::End),
+        );
+
+        let container = content_container_ex(rows, false)
+            .padding(12)
+            .height(Length::Fill);
         let go_back = go_back_button(13);
         let title = title_text(self);
 
-        let mut col = widget::column![
+        // When all info loaded, enable the buttons
+        let all_loaded = self.info.values().all(Option::is_some);
+
+        let bottom_row = row![
+            button(text("refresh").size(24).center())
+                .on_press_maybe(all_loaded.then_some(Message::Refresh))
+                .width(Length::Fill),
+            space().width(10),
+            button(text("copy all").size(24).center())
+                .width(Length::Fill)
+                .on_press_maybe(all_loaded.then_some({
+                    let text = TASKS
+                        .iter()
+                        .filter_map(|(k, _)| {
+                            if let Some(Ok(val)) = &self.info[k] {
+                                Some(format!("{k}: {}", val.to_string()))
+                            } else {
+                                None
+                            }
+                        })
+                        .collect::<Vec<_>>()
+                        .join("\n");
+                    Message::CopyToClipboard(text)
+                }))
+        ];
+        let col = widget::column![
+            // top
             widget::row![go_back, space().width(16), title.align_y(Alignment::Center)]
                 .align_y(Alignment::Center),
             space().height(10),
-            container
+            // middle
+            container,
+            // bottom
+            space().height(20),
+            bottom_row
         ];
-
-        if self.info.values().all(|v| v.is_some()) {
-            let bottom_row = row![
-                button(text("refresh").size(24).center())
-                    .on_press(Message::Refresh)
-                    .width(Length::Fill),
-                space().width(10),
-                button(text("copy all").size(24).center())
-                    .width(Length::Fill)
-                    .on_press_with(|| {
-                        let text = TASKS
-                            .iter()
-                            .filter_map(|(k, _)| {
-                                if let Some(Ok(val)) = &self.info[k] {
-                                    Some(format!("{k}: {}", val.to_string()))
-                                } else {
-                                    None
-                                }
-                            })
-                            .collect::<Vec<_>>()
-                            .join("\n");
-                        Message::CopyToClipboard(text)
-                    })
-            ];
-
-            col = col.push(space().height(20)).push(bottom_row);
-        }
-
         col.height(Length::Fill).padding(12).into()
     }
 }
@@ -235,7 +286,37 @@ fn info_row<'a>(
         .into()
 }
 
-fn value_widget<'a>(value: &'a SystemValue) -> Element<'a, crate::Message> {
+fn proc_button<'a>(label: &'a str, kind: ProcessOpen) -> Button<'a, Message> {
+    use button::Status;
+
+    let icon = kind.icon();
+
+    button(row![
+        icon.size(15).center(),
+        space().width(5),
+        text(label).size(15).center()
+    ])
+    .on_press(Message::SystemInfoOpen(kind))
+    .style(|theme: &Theme, status| {
+        let pal = theme.extended_palette();
+        button::Style {
+            background: Some(match status {
+                Status::Active => Background::Color(pal.background.weakest.color),
+                Status::Hovered => Background::Color(pal.background.strong.color),
+                Status::Pressed | _ => Background::Color(pal.background.strongest.color),
+            }),
+            text_color: pal.background.weakest.text,
+            border: Border {
+                color: pal.background.base.text.scale_alpha(0.5),
+                width: 1.0,
+                radius: Radius::new(5.0),
+            },
+            ..Default::default()
+        }
+    })
+}
+
+fn value_widget<'a>(value: &'a SystemValue) -> Element<'a, Message> {
     match value {
         SystemValue::Text(s) => row![
             text(s.clone()).size(14).width(Length::Fill),

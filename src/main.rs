@@ -19,7 +19,6 @@ use ipconfig::Adapter;
 
 use crate::base::BOLD_DEFAULT;
 use crate::base::rgb8;
-use crate::base::rgba;
 use crate::base::settings_button;
 use crate::tool::Tool;
 use crate::tool::settings::Settings;
@@ -28,8 +27,8 @@ fn main() {
     iced::application(App::new, App::update, App::view)
         .window(iced::window::Settings {
             min_size: Some(iced::Size {
-                width: 500.0,
-                height: 400.0,
+                width: 600.0,
+                height: 500.0,
             }),
             // Avoid loading icon for faster debug build runtime
             #[cfg(not(debug_assertions))]
@@ -97,6 +96,7 @@ pub enum Message {
 
     /* messages for sys_info */
     SystemInfoFetched(&'static str, Result<tool::sys_info::SystemValue, String>),
+    SystemInfoOpen(tool::sys_info::ProcessOpen),
 
     /* messages for ping */
     PingStart(Option<String>),
