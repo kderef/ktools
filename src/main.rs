@@ -316,12 +316,20 @@ impl App {
         let view = container(main_content)
             .width(Length::Fill)
             .height(Length::Fill)
-            .style(|_theme| container::Style {
+            .style(|theme: &Theme| container::Style {
                 text_color: None,
                 background: None,
                 border: Border {
-                    color: Color::TRANSPARENT,
-                    width: 0.0,
+                    color: if cfg!(feature = "window-border-colored") {
+                        theme.extended_palette().background.strongest.text
+                    } else {
+                        Color::TRANSPARENT
+                    },
+                    width: if cfg!(feature = "window-border-colored") {
+                        1.0
+                    } else {
+                        0.0
+                    },
                     radius: Radius::new(self.window_handler.window_border_radius),
                 },
                 ..Default::default()
