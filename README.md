@@ -12,7 +12,7 @@ Then click *assets* and download the executable!
 This project is licensed under [GPL-3.0](https://www.gnu.org/licenses/gpl-3.0.en.html).  
 A link to this source code is included inside the compiled application.  
 
-This project includes a modified version of the [ipconfig](https://github.com/liranringel/ipconfig) crate, originally licensed under MIT.
+This project includes a modified version of the [ipconfig](https://github.com/liranringel/ipconfig) crate, originally licensed under MIT.  
 See [ipconfig/LICENSE](ipconfig/LICENSE)` for details.  
 
 ---
