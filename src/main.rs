@@ -352,8 +352,8 @@ impl App {
         let data: serde_json::Map<String, serde_json::Value> = self
             .tools
             .iter()
-            .map(|t| t.as_ref())
-            .chain([&self.settings as &dyn Tool])
+            .map(|t| t.as_ref()) // unbox
+            .chain([&self.settings as &dyn Tool]) // add settings
             .filter_map(|t| t.save().map(|v| (t.name().to_owned(), v)))
             .collect();
 

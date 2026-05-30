@@ -33,7 +33,9 @@ impl Tool for ExternalIP {
         fn get(url: &str) -> Result<Object, String> {
             ureq::get(url)
                 .call()
-                .and_then(|mut r| r.body_mut().read_to_string())
+                .map_err(|e| e.to_string())?
+                .body_mut()
+                .read_to_string()
                 .map_err(|e| e.to_string())
                 .and_then(|t| serde_json::from_str::<Value>(&t).map_err(|e| e.to_string()))
                 .and_then(|v| match v {
@@ -129,25 +131,22 @@ fn format_obj(obj: &Object) -> Object {
 
 fn obj_pretty(obj: &Object) -> String {
     obj.iter()
-        .map(|(k, v)| {
-            let val = match v {
-                Value::String(s) => s.clone(),
-                other => other.to_string(),
-            };
-            format!("{k}: {val}")
-        })
+        .map(|(k, v)| format!("{k}: {}", v.to_string()))
         .collect::<Vec<_>>()
         .join("\n")
 }
 
 fn info_row<'a>(key: &str, value: &Value) -> Element<'a, crate::Message> {
+    let mut is_empty = false;
+
     let value_text = match value {
         Value::String(s) if !s.is_empty() => s.clone(),
-        Value::Null | Value::String(_) => "-".to_owned(),
+        Value::Null | Value::String(_) => {
+            is_empty = true;
+            "-".to_owned()
+        }
         other => other.to_string(),
     };
-
-    let is_empty = value_text == "-";
 
     let mut row = row![
         text(key.to_string())

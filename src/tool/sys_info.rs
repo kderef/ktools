@@ -1,8 +1,10 @@
 use std::collections::HashMap;
 use std::fmt;
 
+// TODO: add buttons for printers, etc. at bottom of view()
+
 use iced::{
-    Alignment, Length, Theme,
+    Alignment, Background, Border, Length, Theme,
     widget::{self, button, progress_bar, row, space, text},
 };
 use sysinfo::System;
@@ -308,8 +310,8 @@ fn value_widget<'a>(value: &'a SystemValue) -> Element<'a, crate::Message> {
             let bar = widget::container(progress_bar(0.0..=1.0, ratio).style(move |_theme| {
                 iced::widget::progress_bar::Style {
                     background: iced::Background::Color(rgb8(50, 50, 50)),
-                    bar: iced::Background::Color(bar_color),
-                    border: iced::Border::default(),
+                    bar: Background::Color(bar_color),
+                    border: Border::default(),
                 }
             }))
             .width(120)
@@ -360,14 +362,14 @@ fn value_widget<'a>(value: &'a SystemValue) -> Element<'a, crate::Message> {
                 let bar = widget::container(progress_bar(0.0..=1.0, ratio).style(move |_theme| {
                     iced::widget::progress_bar::Style {
                         background: iced::Background::Color(rgb8(50, 50, 50)),
-                        bar: iced::Background::Color(bar_color),
-                        border: iced::Border::default(),
+                        bar: Background::Color(bar_color),
+                        border: Border::default(),
                     }
                 }))
                 .width(120)
                 .height(8);
 
-                let name_text = text(disk.name.clone()).size(14).style(text::primary); // .color(rgb8(180, 210, 255)); // blue for device name
+                let name_text = text(name.clone()).size(14).style(text::primary); // .color(rgb8(180, 210, 255)); // blue for device name
 
                 let mount_text = text(format!(" ({mount})"))
                     .size(13)
@@ -397,12 +399,12 @@ fn value_widget<'a>(value: &'a SystemValue) -> Element<'a, crate::Message> {
 fn fetch_hostname() -> Result<SystemValue, String> {
     System::host_name()
         .map(SystemValue::Text)
-        .ok_or_else(|| "unavailable".to_string())
+        .ok_or("unavailable".to_string())
 }
 
 fn fetch_username() -> Result<SystemValue, String> {
     std::env::var("USERNAME")
-        .or_else(|_| std::env::var("USER"))
+        .or(std::env::var("USER"))
         .map(SystemValue::Text)
         .map_err(|e| e.to_string())
 }

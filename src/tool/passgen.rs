@@ -142,8 +142,12 @@ impl Tool for PasswordGenerator {
     }
 
     fn update(&mut self, message: crate::Message) -> Task<crate::Message> {
-        if let crate::Message::PasswordGenerator(message) = message {
-            match message {
+        match message {
+            crate::Message::Refresh => {
+                self.generate();
+            }
+
+            crate::Message::PasswordGenerator(pmessage) => match pmessage {
                 Message::LengthChanged(new_len) => {
                     self.length = new_len;
                     self.generate();
@@ -192,7 +196,8 @@ impl Tool for PasswordGenerator {
                         self.generate();
                     }
                 }
-            }
+            },
+            _ => {}
         }
         Task::none()
     }
