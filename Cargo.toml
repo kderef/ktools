@@ -8,6 +8,12 @@ repository = "https://github.com/kderef/ktools"
 edition = "2024"
 build = "build.rs"
 
+# Embedded in windows exe
+[package.metadata.winres]
+LegalCopyright = "Copyright © 2026 Kian Heitkamp"
+FileDescription = "App that makes getting system information easy"
+
+
 [features]
 default = []
 nocon = [] # no console window
