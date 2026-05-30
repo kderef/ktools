@@ -153,11 +153,11 @@ fn home_button<'a>(
                 width: 1.0,
                 radius: 10.0.into(),
             },
-            shadow: iced::Shadow {
-                color: rgba(0.0, 0.0, 0.0, 0.35),
-                offset: iced::Vector { x: 0.0, y: 2.0 },
-                blur_radius: 6.0,
-            },
+            ..Default::default() // shadow: iced::Shadow {
+                                 //     color: rgba(0.0, 0.0, 0.0, 0.35),
+                                 //     offset: iced::Vector { x: 0.0, y: 2.0 },
+                                 //     blur_radius: 6.0,
+                                 // },
         }
     })
 }
