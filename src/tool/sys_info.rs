@@ -22,7 +22,8 @@ pub enum SystemValue {
     },
     Cpu {
         brand: String,
-        frequency: u64,
+        /// Frequency in GHz
+        frequency: f32,
         cores: usize,
     },
     Memory {
@@ -74,7 +75,7 @@ impl ToString for SystemValue {
                 frequency,
                 cores,
             } => {
-                format!("{brand} ({cores}, {frequency} MHz)")
+                format!("{brand} ({cores}, {frequency:.2} GHz)")
             }
             SystemValue::Memory {
                 total: total_bytes,
@@ -272,22 +273,23 @@ fn value_widget<'a>(value: &'a SystemValue) -> Element<'a, crate::Message> {
             frequency,
             cores,
         } => {
-            let copy_val = format!("{brand} ({cores} cores, {frequency} MHz)");
-
             let brand_text = text(brand).size(14).style(text::primary);
 
             let cores_text = text(format!(" · {cores} cores")).size(14);
 
-            let freq_text = text(format!(" · {frequency} MHz"))
-                .size(14)
-                .style(text::success);
+            let freq_text =
+                text(format!(" · {frequency:.2} GHz"))
+                    .size(14)
+                    .style(|theme: &Theme| text::Style {
+                        color: Some(theme.extended_palette().success.strong.color),
+                    });
 
             row![
                 brand_text,
                 cores_text,
                 freq_text,
                 space().width(Length::Fill),
-                copy_icon_btn(copy_val),
+                copy_icon_btn(value.to_string()),
             ]
             .align_y(Alignment::Center)
             .into()
@@ -302,8 +304,6 @@ fn value_widget<'a>(value: &'a SystemValue) -> Element<'a, crate::Message> {
                 0.60.. => rgb8(220, 160, 40),
                 _ => rgb8(80, 180, 100),
             };
-
-            let copy_val = format!("{used} used / {total} total ({free} free)");
 
             let bar = widget::container(progress_bar(0.0..=1.0, ratio).style(move |_theme| {
                 iced::widget::progress_bar::Style {
@@ -330,7 +330,7 @@ fn value_widget<'a>(value: &'a SystemValue) -> Element<'a, crate::Message> {
                 total_text,
                 free_text,
                 space().width(Length::Fill),
-                copy_icon_btn(copy_val),
+                copy_icon_btn(value.to_string()),
             ]
             .align_y(Alignment::Center)
             .into()
@@ -356,8 +356,6 @@ fn value_widget<'a>(value: &'a SystemValue) -> Element<'a, crate::Message> {
                     0.70.. => rgb8(220, 160, 40),
                     _ => rgb8(80, 180, 100),
                 };
-
-                let copy_val = format!("{name} ({mount}): {used} / {total}");
 
                 let bar = widget::container(progress_bar(0.0..=1.0, ratio).style(move |_theme| {
                     iced::widget::progress_bar::Style {
@@ -385,7 +383,7 @@ fn value_widget<'a>(value: &'a SystemValue) -> Element<'a, crate::Message> {
                         mount_text,
                         usage_text,
                         space().width(Length::Fill),
-                        copy_icon_btn(copy_val),
+                        copy_icon_btn(value.to_string()),
                     ]
                     .align_y(Alignment::Center),
                 );
@@ -418,7 +416,7 @@ fn fetch_cpu() -> Result<SystemValue, String> {
 
     Ok(SystemValue::Cpu {
         brand: cpu.brand().trim().to_owned(),
-        frequency: cpu.frequency(),
+        frequency: cpu.frequency() as f32 / 1000.0,
         cores: cpus.len(),
     })
 }

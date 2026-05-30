@@ -71,11 +71,11 @@ fn format_mac(mac: &[u8]) -> String {
 fn iface_content<'a>(iface: &'a Adapter) -> Element<'a, Message> {
     let (status_label, status_style): (&str, fn(&Theme) -> text::Style) = match iface.oper_status()
     {
-        OperStatus::IfOperStatusUp => ("up", text::success),
-        OperStatus::IfOperStatusDown => ("down", text::danger),
-        OperStatus::IfOperStatusTesting => ("testing", text::warning),
-        OperStatus::IfOperStatusDormant => ("dormant", text::secondary),
-        _ => ("unknown", text::secondary),
+        OperStatus::IfOperStatusUp => ("status: up", text::success),
+        OperStatus::IfOperStatusDown => ("status: down", text::danger),
+        OperStatus::IfOperStatusTesting => ("status: testing", text::warning),
+        OperStatus::IfOperStatusDormant => ("status: dormant", text::secondary),
+        _ => ("status: unknown", text::secondary),
     };
 
     let top_row = row![
