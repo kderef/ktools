@@ -75,7 +75,11 @@ impl ProcessOpen {
     pub const fn command(self) -> &'static [&'static str] {
         match self {
             Self::ConfigPanel => &["control"],
-            Self::Printers => &["control", "printers"],
+            Self::Printers => &[
+                "Rundll32.exe",
+                "shell32.dll,SHHelpShortcuts_RunDLL",
+                "PrintersFolder",
+            ],
             Self::AdminTools => &["control", "/name", "Microsoft.AdministrativeTools"],
             Self::Features => &["rundll32", "shell32.dll,Control_RunDLL", "appwiz.cpl,,2"],
         }
