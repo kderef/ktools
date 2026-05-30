@@ -3,11 +3,11 @@
 use iced::{
     Alignment, Background, Border, Color, Element, Length, Task, Theme,
     border::Radius,
-    widget::{Button, button, container, mouse_area, row, space, stack, text},
+    mouse::Interaction,
+    widget::{self, Button, button, container, mouse_area, row, space, stack, text},
 };
 
 use crate::base::*;
-
 pub use iced::window::Direction;
 
 use crate::{
@@ -49,75 +49,130 @@ impl Into<crate::Message> for Message {
     }
 }
 
-pub fn handle(app: &mut crate::App, message: Message) -> Task<crate::Message> {
-    match message {
-        Message::Opened { id, size } => {
-            app.window_id = Some(id);
-            app.window_size = size;
-            return iced::window::raw_id::<crate::Message>(id)
-                .map(Message::GotRawID)
-                .map(crate::Message::Window);
-        }
-        Message::GotRawID(raw_id) => {
-            let use_rounded = set_rounded_corners(raw_id);
-
-            app.window_border_radius = if use_rounded { 8 } else { 0 };
-        }
-        Message::Close => {
-            if let Some(id) = app.window_id {
-                return iced::window::close(id);
-            }
-        }
-        Message::Minimize => {
-            if let Some(id) = app.window_id {
-                return iced::window::minimize(id, true);
-            }
-        }
-        Message::Drag => {
-            if let Some(id) = app.window_id {
-                return iced::window::drag(id);
-            }
-        }
-        Message::ResizeDrag(direction) => {
-            if let Some(id) = app.window_id {
-                return iced::window::drag_resize(id, direction);
-            }
-        }
-        Message::CursorMoved(position) => {
-            app.cursor_position = position;
-        }
-    }
-    Task::none()
+pub struct WindowHandler {
+    window_id: Option<iced::window::Id>,
+    window_size: iced::Size,
+    pub window_border_radius: f32,
+    cursor_position: iced::Point,
 }
 
-pub fn set_rounded_corners(window_id: u64) -> bool {
-    #[cfg(windows)]
-    unsafe {
-        use std::ffi::c_void;
+impl WindowHandler {
+    pub fn new() -> Self {
+        Self {
+            window_id: None,
+            window_size: iced::Size::default(),
+            window_border_radius: 0.,
+            cursor_position: iced::Point::default(),
+        }
+    }
+    pub fn handle(&mut self, message: Message) -> Task<crate::Message> {
+        match message {
+            Message::Opened { id, size } => {
+                self.window_id = Some(id);
+                self.window_size = size;
+                return iced::window::raw_id::<crate::Message>(id)
+                    .map(Message::GotRawID)
+                    .map(crate::Message::Window);
+            }
+            Message::GotRawID(raw_id) => {
+                let use_rounded = self.set_rounded_corners(raw_id);
 
-        use windows::Win32::Foundation::HWND;
-        use windows::Win32::Graphics::Dwm::*;
-        use windows::Win32::UI::Controls::MARGINS;
+                self.window_border_radius = if use_rounded { 8.0 } else { 0.0 };
+            }
+            Message::Close => {
+                if let Some(id) = self.window_id {
+                    return iced::window::close(id);
+                }
+            }
+            Message::Minimize => {
+                if let Some(id) = self.window_id {
+                    return iced::window::minimize(id, true);
+                }
+            }
+            Message::Drag => {
+                if let Some(id) = self.window_id {
+                    return iced::window::drag(id);
+                }
+            }
+            Message::ResizeDrag(direction) => {
+                if let Some(id) = self.window_id {
+                    return iced::window::drag_resize(id, direction);
+                }
+            }
+            Message::CursorMoved(position) => {
+                self.cursor_position = position;
+            }
+        }
+        Task::none()
+    }
 
-        let hwnd = HWND(window_id as *mut _);
-        let preference = DWMWCP_ROUND;
+    pub fn set_rounded_corners(&self, window_id: u64) -> bool {
+        #[cfg(windows)]
+        unsafe {
+            use std::ffi::c_void;
 
-        let succeeded = DwmSetWindowAttribute(
-            hwnd,
-            DWMWA_WINDOW_CORNER_PREFERENCE,
-            &preference as *const _ as *const c_void,
-            size_of::<DWM_WINDOW_CORNER_PREFERENCE>() as u32,
-        )
-        .is_ok();
+            use windows::Win32::Foundation::HWND;
+            use windows::Win32::Graphics::Dwm::*;
+            use windows::Win32::UI::Controls::MARGINS;
 
-        let margins = MARGINS {
-            cxLeftWidth: 1,
-            cxRightWidth: 1,
-            cyTopHeight: 0, // hides title bar
-            cyBottomHeight: 1,
+            let hwnd = HWND(window_id as *mut _);
+            let preference = DWMWCP_ROUND;
+
+            let succeeded = DwmSetWindowAttribute(
+                hwnd,
+                DWMWA_WINDOW_CORNER_PREFERENCE,
+                &preference as *const _ as *const c_void,
+                size_of::<DWM_WINDOW_CORNER_PREFERENCE>() as u32,
+            )
+            .is_ok();
+
+            let margins = MARGINS {
+                cxLeftWidth: 1,
+                cxRightWidth: 1,
+                cyTopHeight: 0, // hides title bar
+                cyBottomHeight: 1,
+            };
+            let _ = DwmExtendFrameIntoClientArea(hwnd, &margins);
+            succeeded
+        }
+    }
+    /// Creates the margins around the windows where the user can drag to resize
+    pub fn resize_areas(&self) -> [Element<'_, crate::Message>; 3] {
+        let resize_area = |dir, int| {
+            let f = Length::Fill;
+            let m = Length::from(self.window_border_radius / 1.5);
+
+            let (w, h) = match dir {
+                Direction::North | Direction::South => (f, m),
+                Direction::West | Direction::East => (m, f),
+                _ => (m, m),
+            };
+
+            mouse_area(container(space()).width(w).height(h))
+                .on_press(Message::ResizeDrag(dir).into())
+                .interaction(int)
         };
-        let _ = DwmExtendFrameIntoClientArea(hwnd, &margins);
-        succeeded
+        let n = resize_area(Direction::North, Interaction::ResizingVertically);
+        let s = resize_area(Direction::South, Interaction::ResizingVertically);
+        let w = resize_area(Direction::West, Interaction::ResizingHorizontally);
+        let e = resize_area(Direction::East, Interaction::ResizingHorizontally);
+
+        let nw = resize_area(Direction::NorthWest, Interaction::ResizingDiagonallyUp);
+        let ne = resize_area(Direction::NorthEast, Interaction::ResizingDiagonallyUp);
+        let sw = resize_area(Direction::SouthWest, Interaction::ResizingDiagonallyDown);
+        let se = resize_area(Direction::SouthEast, Interaction::ResizingDiagonallyDown);
+
+        [
+            widget::column![n, space().height(Length::Fill), s].into(),
+            widget::row![w, space().width(Length::Fill), e].into(),
+            // corners on top of everything
+            widget::column![
+                widget::row![nw, space().width(Length::Fill), ne],
+                space().height(Length::Fill),
+                widget::row![sw, space().width(Length::Fill), se],
+            ]
+            .into(),
+        ]
     }
 }
 

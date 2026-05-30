@@ -8,7 +8,6 @@ mod tool;
 mod window;
 
 use iced::border::Radius;
-use iced::mouse::Interaction;
 use iced::{
     Background, Border, Color, Element, Length, Subscription, Task, clipboard, keyboard,
     widget::{self, *},
@@ -20,6 +19,7 @@ use ipconfig::Adapter;
 use crate::base::rgb8;
 use crate::tool::Tool;
 use crate::tool::settings::Settings;
+use crate::window::WindowHandler;
 
 fn main() {
     iced::application(App::new, App::update, App::view)
@@ -112,11 +112,7 @@ pub struct App {
     selected: Selection,
     settings: Settings,
 
-    // stuff for window handling
-    window_id: Option<iced::window::Id>,
-    window_size: iced::Size,
-    cursor_position: iced::Point,
-    window_border_radius: u32,
+    window_handler: WindowHandler,
 }
 
 fn home_button<'a>(
@@ -174,11 +170,7 @@ impl App {
             tools: tool::all(),
             selected: Selection::Home,
             settings: Settings::default(),
-            // window stuff
-            cursor_position: iced::Point::default(),
-            window_id: None,
-            window_size: iced::Size::default(),
-            window_border_radius: 0,
+            window_handler: WindowHandler::new(),
         };
 
         (app, Task::done(Message::Startup))
@@ -242,7 +234,7 @@ impl App {
             Message::Startup => {
                 self.load_all();
             }
-            Message::Window(window_message) => return window::handle(self, window_message),
+            Message::Window(window_message) => return self.window_handler.handle(window_message),
             /* the rest */
             Message::GoHome => {
                 self.selected = Selection::Home;
@@ -330,61 +322,18 @@ impl App {
                 border: Border {
                     color: Color::TRANSPARENT,
                     width: 0.0,
-                    radius: Radius::new(self.window_border_radius),
+                    radius: Radius::new(self.window_handler.window_border_radius),
                 },
                 ..Default::default()
             });
 
-        let resize_area = |dir, int| {
-            let f = Length::Fill;
-            let m = Length::from(self.window_border_radius as f32 / 1.5);
+        let resize_areas = self.window_handler.resize_areas();
 
-            let (w, h) = match dir {
-                window::Direction::North | window::Direction::South => (f, m),
-                window::Direction::West | window::Direction::East => (m, f),
-                _ => (m, m),
-            };
-
-            mouse_area(container(space()).width(w).height(h))
-                .on_press(Message::Window(window::Message::ResizeDrag(dir)))
-                .interaction(int)
-        };
-        let n = resize_area(window::Direction::North, Interaction::ResizingVertically);
-        let s = resize_area(window::Direction::South, Interaction::ResizingVertically);
-        let w = resize_area(window::Direction::West, Interaction::ResizingHorizontally);
-        let e = resize_area(window::Direction::East, Interaction::ResizingHorizontally);
-
-        let nw = resize_area(
-            window::Direction::NorthWest,
-            Interaction::ResizingDiagonallyUp,
-        );
-        let ne = resize_area(
-            window::Direction::NorthEast,
-            Interaction::ResizingDiagonallyUp,
-        );
-        let sw = resize_area(
-            window::Direction::SouthWest,
-            Interaction::ResizingDiagonallyDown,
-        );
-        let se = resize_area(
-            window::Direction::SouthEast,
-            Interaction::ResizingDiagonallyDown,
-        );
-
-        stack![
-            mouse_area(view).on_press(Message::Window(window::Message::Drag)),
-            widget::column![n, space().height(Length::Fill), s],
-            widget::row![w, space().width(Length::Fill), e],
-            // corners on top of everything
-            widget::column![
-                widget::row![nw, space().width(Length::Fill), ne],
-                space().height(Length::Fill),
-                widget::row![sw, space().width(Length::Fill), se],
-            ],
-        ]
-        .width(Length::Fill)
-        .height(Length::Fill)
-        .into()
+        stack![mouse_area(view).on_press(Message::Window(window::Message::Drag)),]
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .extend(resize_areas.into_iter())
+            .into()
     }
 
     /// Load saved data into all the tools

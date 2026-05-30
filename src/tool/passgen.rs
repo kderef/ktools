@@ -241,7 +241,7 @@ impl Tool for PasswordGenerator {
                     .center(Length::Fill)
                 )
                 .on_press_with(|| crate::Message::CopyToClipboard(self.password.clone()))
-                .width(Length::FillPortion(3))
+                .width(Length::FillPortion(4))
                 .height(Length::Shrink),
                 button(
                     container(
@@ -258,7 +258,7 @@ impl Tool for PasswordGenerator {
             .spacing(30)
         ]
         .spacing(15)
-        .width(Length::FillPortion(4));
+        .width(Length::FillPortion(8));
 
         let password_row = row![
             space().width(Length::FillPortion(1)),
@@ -298,7 +298,7 @@ impl Tool for PasswordGenerator {
         fn wrap<'a>(el: Element<'a, crate::Message>) -> Element<'a, crate::Message> {
             widget::row![
                 space().width(Length::FillPortion(1)),
-                container(el).width(Length::FillPortion(4)),
+                container(el).width(Length::FillPortion(7)),
                 space().width(Length::FillPortion(1)),
             ]
             .into()
