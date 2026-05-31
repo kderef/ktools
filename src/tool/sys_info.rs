@@ -79,10 +79,10 @@ impl ProcessOpen {
     pub const fn command(self) -> &'static [&'static str] {
         match self {
             Self::ConfigPanel => &["control"],
-            Self::Printers => &["explorer", "ms-settings:"],
+            Self::Printers => &["explorer", "ms-settings:printers"],
             Self::AdminTools => &["control", "/name", "Microsoft.AdministrativeTools"],
-            // Self::Features => &["rundll32", "shell32.dll,Control_RunDLL", "appwiz.cpl,,2"],
-            Self::Features => &["control", "appwiz.cpl"],
+            Self::Features => &["rundll32", "shell32.dll,Control_RunDLL", "appwiz.cpl,,2"],
+            // Self::Features => &["control", "appwiz.cpl"],
             Self::ComputerManagement => &["cmd", "/C", "compmgmt.msc"],
             Self::PowerOptions => &["explorer", "ms-settings:powersleep"],
             Self::DeviceManager => &["cmd", "/C", "devmgmt.msc"],
