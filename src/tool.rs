@@ -6,11 +6,20 @@ use iced::{Task, Theme};
 
 pub use iced::{Color, Element, widget::Text};
 
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+pub enum Category {
+    Application,
+    Utility,
+    System,
+    Network,
+}
+
 /// NOTE: a `Tool` implementation must also have `Default` to be used with `register_tools!` macro.
 pub trait Tool {
     fn name(&self) -> &str;
     fn icon(&self) -> Text<'_>;
     fn background(&self, theme: &Theme) -> Color;
+    fn category(&self) -> Category;
 
     /// Serialize the Tool's state into a JSON value to be loaded.
     fn save(&self) -> Option<serde_json::Value> {

@@ -48,6 +48,9 @@ impl Tool for ExternalIP {
     fn name(&self) -> &str {
         "External IP"
     }
+    fn category(&self) -> Category {
+        Category::Network
+    }
     fn icon(&self) -> Text<'_> {
         icon_font::broadcast()
     }

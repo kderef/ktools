@@ -11,6 +11,9 @@ impl Tool for CMD {
     fn name(&self) -> &'static str {
         "CMD"
     }
+    fn category(&self) -> Category {
+        Category::Application
+    }
     fn icon(&self) -> Text<'_> {
         icon_font::terminal()
     }

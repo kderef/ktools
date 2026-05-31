@@ -61,6 +61,9 @@ impl Tool for Settings {
     fn name(&self) -> &str {
         "Settings"
     }
+    fn category(&self) -> Category {
+        Category::System
+    }
     fn icon(&self) -> Text<'_> {
         icon_font::settings_gear()
     }

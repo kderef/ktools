@@ -114,6 +114,9 @@ impl Tool for Ping {
     fn name(&self) -> &str {
         "Ping"
     }
+    fn category(&self) -> Category {
+        Category::Network
+    }
     fn icon(&self) -> Text<'_> {
         icon_font::debug_disconnect()
     }
