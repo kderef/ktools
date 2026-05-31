@@ -17,14 +17,16 @@ use crate::{
 
 pub const DECORATIONS_HEIGHT: f32 = 40.0;
 
-#[cfg(not(debug_assertions))]
-static ICON_BYTES: &[u8] = include_bytes!("../icon.ico");
-
 pub fn icon() -> Option<iced::window::Icon> {
     #[cfg(not(debug_assertions))]
-    return Some(
-        iced::window::icon::from_file_data(ICON_BYTES, Some(::image::ImageFormat::Ico)).unwrap(),
-    );
+    return Some({
+        static RAW_DATA: &[u8] = include_bytes!("../icon_raw_rgba");
+
+        let width = env!("ICON_RGBA_WIDTH").parse().unwrap();
+        let height = env!("ICON_RGBA_HEIGHT").parse().unwrap();
+
+        iced::window::icon::from_rgba(RAW_DATA.to_vec(), width, height).unwrap()
+    });
 
     #[cfg(debug_assertions)]
     None

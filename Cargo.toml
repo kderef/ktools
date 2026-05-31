@@ -1,6 +1,6 @@
 [package]
 name = "ktools"
-version = "1.2.2"
+version = "1.2.3"
 authors = ["Kian Heitkamp"]
 license = "GPL-3.0"
 description = "App that makes getting system information easy"
@@ -29,6 +29,9 @@ panic = "abort"
 codegen-units = 1
 opt-level = "z"
 
+[build-dependencies]
+ico = "0.5.0"
+
 [target.x86_64-pc-windows-msvc.build-dependencies]
 winres = "0.1.12"
 static_vcruntime = "3.0.0"
@@ -37,7 +40,6 @@ winapi = {version = "0.3.9", features = ["winnt"]}
 [dependencies]
 iced_aw = "0.14.1"
 iced_fonts = { version = "0.3.0", features = ["codicon"] }
-image = "0.25.10"
 rand = "0.10.1"
 sysinfo = "0.39.2"
 serde_json = "1.0.150"
@@ -63,5 +65,5 @@ features = [
   "linux-theme-detection",
   "x11",
   "wayland",
-  "image"
+  "image-without-codecs"
 ]

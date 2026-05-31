@@ -1,4 +1,4 @@
-use std::process::Command;
+use std::{path::Path, process::Command};
 
 #[cfg(windows)]
 use winapi::um::winnt::{LANG_ENGLISH, SUBLANG_ENGLISH_US};
@@ -12,6 +12,19 @@ fn git_commit_hash() -> String {
     String::from_utf8(output.stdout).unwrap()
 }
 
+fn write_icon_rgba<P: AsRef<Path>>(input: P, output: P) {
+    let bytes = std::fs::read(input).unwrap();
+
+    let cursor = std::io::Cursor::new(bytes);
+    let dir = ico::IconDir::read(cursor).unwrap();
+    let entry = dir.entries()[0].decode().unwrap();
+
+    println!("cargo:rustc-env=ICON_RGBA_WIDTH={}", entry.width());
+    println!("cargo:rustc-env=ICON_RGBA_HEIGHT={}", entry.height());
+
+    std::fs::write(output, entry.rgba_data()).unwrap();
+}
+
 fn main() {
     // We ignore running this build script on dev builds for faster compile times.
     // On release, an icon is baked into the exe, as well as static vcruntime.
@@ -21,8 +34,12 @@ fn main() {
     // env!() vars
     println!("cargo:rustc-env=GIT_HASH={git_hash}");
 
-    if cfg!(target_os = "windows") {
-        if std::env::var("PROFILE").unwrap() == "release" {
+    // set icon
+    println!("cargo:rerun-if-changed=icon.ico");
+    write_icon_rgba("icon.ico", "icon_raw_rgba");
+
+    if std::env::var("PROFILE").unwrap() == "release" {
+        if cfg!(target_os = "windows") {
             static_vcruntime::metabuild();
 
             // winres
