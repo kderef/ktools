@@ -31,11 +31,10 @@ impl Tool for ExternalIP {
     }
     fn on_activate(&mut self) -> Task<crate::Message> {
         fn get(url: &str) -> Result<Object, String> {
-            ureq::get(url)
-                .call()
+            minreq::get(url)
+                .send()
                 .map_err(|e| e.to_string())?
-                .body_mut()
-                .read_to_string()
+                .as_str()
                 .map_err(|e| e.to_string())
                 .and_then(|t| serde_json::from_str::<Value>(&t).map_err(|e| e.to_string()))
                 .and_then(|v| match v {

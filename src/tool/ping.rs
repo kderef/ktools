@@ -164,6 +164,8 @@ impl Tool for Ping {
                 }
 
                 self.child = None;
+
+                return Task::done(Message::PingOutput("Ping canceled".to_owned()));
             }
             Message::PingStart(addr) => {
                 let addr = match addr {
