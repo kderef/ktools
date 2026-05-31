@@ -1,6 +1,9 @@
 ﻿# KTools
 KTools is a GUI application that combines many smaller tools into one app.  
-Examples of tools included are: **Password Generator** and **External IP Fetcher**
+
+![showcase of the app](showcase/showcase-home.png)
+
+---
 
 ### How to install
 Head on over to the [releases tab](https://github.com/kderef/ktools/releases) and select the latest version.

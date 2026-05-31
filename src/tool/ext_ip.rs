@@ -1,6 +1,6 @@
 use iced::{
     Alignment, Length, Theme,
-    widget::{self, button, pick_list, row, space, text},
+    widget::{self, pick_list, row, space, text},
 };
 
 use crate::Message;
