@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use std::fmt;
+use std::{collections::HashMap, os::windows::process::CommandExt};
 
 use iced::{
     Alignment, Background, Border, Length, Theme,
@@ -69,19 +69,24 @@ pub enum ProcessOpen {
     Printers,
     AdminTools,
     Features,
+    ComputerManagement,
+    PowerOptions,
+    DeviceManager,
+    InstalledApps,
 }
 
 impl ProcessOpen {
     pub const fn command(self) -> &'static [&'static str] {
         match self {
             Self::ConfigPanel => &["control"],
-            Self::Printers => &[
-                "Rundll32.exe",
-                "shell32.dll,SHHelpShortcuts_RunDLL",
-                "PrintersFolder",
-            ],
+            Self::Printers => &["explorer", "ms-settings:"],
             Self::AdminTools => &["control", "/name", "Microsoft.AdministrativeTools"],
-            Self::Features => &["rundll32", "shell32.dll,Control_RunDLL", "appwiz.cpl,,2"],
+            // Self::Features => &["rundll32", "shell32.dll,Control_RunDLL", "appwiz.cpl,,2"],
+            Self::Features => &["control", "appwiz.cpl"],
+            Self::ComputerManagement => &["cmd", "/C", "compmgmt.msc"],
+            Self::PowerOptions => &["explorer", "ms-settings:powersleep"],
+            Self::DeviceManager => &["cmd", "/C", "devmgmt.msc"],
+            Self::InstalledApps => &["explorer", "ms-settings:appsfeatures"],
         }
     }
     pub fn icon(self) -> Text<'static> {
@@ -90,6 +95,10 @@ impl ProcessOpen {
             Self::Printers => icon_font::preview(),
             Self::AdminTools => icon_font::account(),
             Self::Features => icon_font::tools(),
+            Self::ComputerManagement => icon_font::vm(),
+            Self::PowerOptions => icon_font::plug(),
+            Self::DeviceManager => icon_font::server(),
+            Self::InstalledApps => icon_font::multiple_windows(),
         }
     }
 }
@@ -196,7 +205,16 @@ impl Tool for SystemInfo {
                 let prog = cmd[0];
                 let args = &cmd[1..];
 
-                let _ = std::process::Command::new(prog).args(args).spawn();
+                #[cfg(windows)]
+                use windows::Win32::System::Threading::CREATE_NO_WINDOW;
+
+                let _result = std::process::Command::new(prog)
+                    .creation_flags(CREATE_NO_WINDOW.0)
+                    .args(args)
+                    .spawn();
+
+                #[cfg(debug_assertions)]
+                println!("$ {prog} {args:?} -> {_result:?}");
             }
             _ => {}
         }
@@ -211,16 +229,30 @@ impl Tool for SystemInfo {
             rows = rows.push(info_row(key, value));
         }
 
-        rows = rows.push(space().height(Length::Fill)).push(
-            row![
-                proc_button("Configuration Panel", ProcessOpen::ConfigPanel),
-                proc_button("Printers", ProcessOpen::Printers),
-                proc_button("Admin Tools", ProcessOpen::AdminTools),
-                proc_button("Windows Features", ProcessOpen::Features),
-            ]
-            .spacing(10)
-            .align_y(Alignment::End),
-        );
+        let spacing = 10;
+
+        rows = rows
+            .push(space().height(Length::Fill))
+            .push(
+                row![
+                    proc_button("Configuration Panel", ProcessOpen::ConfigPanel),
+                    proc_button("Printers", ProcessOpen::Printers),
+                    proc_button("Admin Tools", ProcessOpen::AdminTools),
+                    proc_button("Windows Features", ProcessOpen::Features),
+                ]
+                .spacing(spacing)
+                .align_y(Alignment::End),
+            )
+            .push(space().height(spacing - 2))
+            .push(
+                row![
+                    proc_button("Computer Management", ProcessOpen::ComputerManagement),
+                    proc_button("Power Management", ProcessOpen::PowerOptions),
+                    proc_button("Installed Apps", ProcessOpen::InstalledApps),
+                ]
+                .spacing(spacing)
+                .align_y(Alignment::End),
+            );
 
         let container = content_container_ex(rows, false)
             .padding(12)
