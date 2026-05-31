@@ -16,8 +16,7 @@ FileDescription = "App that makes getting system information easy"
 
 [features]
 default = []
-window-border-colored = []
-nocon = [] # no console window
+nocon = [] # no console window, useful for testing
 
 [profile.dev.package."*"]
 opt-level = 3

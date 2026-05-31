@@ -7,13 +7,14 @@
 // TODO: revamp main home screen UI to have sections (network: [ext_ip, netinfo], ...)
 
 mod base;
+mod homescreen;
 mod message;
 mod tool;
 mod window;
 
 use iced::border::Radius;
 use iced::{
-    Background, Border, Color, Element, Length, Subscription, Task, clipboard, keyboard,
+    Border, Color, Element, Length, Subscription, Task, clipboard, keyboard,
     widget::{self, *},
 };
 
@@ -34,7 +35,6 @@ fn main() {
                 width: 650.0,
                 height: 500.0,
             }),
-            // Avoid loading icon for faster debug build runtime
             icon: window::icon(),
             ..Default::default()
         })
@@ -64,48 +64,6 @@ pub struct App {
     settings: Settings,
 
     window_handler: WindowHandler,
-}
-
-fn home_button<'a>(icon: Text<'a>, name: &'a str, bg: Color, index: usize) -> Button<'a, Message> {
-    let icon = icon.size(28);
-    button(
-        container(
-            iced::widget::column![icon, text(name).size(16),]
-                .align_x(iced::Alignment::Center)
-                .spacing(8),
-        )
-        .center(Length::Fill),
-    )
-    .width(160)
-    .height(80)
-    .on_press(Message::ChooseTool(index))
-    .style(move |theme: &Theme, status| {
-        let alpha = match status {
-            button::Status::Hovered => 0.82,
-            button::Status::Pressed => 0.65,
-            _ => 1.0,
-        };
-        let tinted = Color { a: alpha, ..bg };
-        button::Style {
-            snap: false,
-            background: Some(Background::Color(tinted)),
-            text_color: rgb8(255, 255, 255),
-            border: Border {
-                // color: match theme {
-                //     Theme::Light => Color::from_rgba(0., 0., 0., 0.8),
-                //     _ => Color::from_rgba(1., 1., 1., 0.3),
-                // },
-                color: theme.extended_palette().secondary.base.color,
-                width: 1.0,
-                radius: 10.0.into(),
-            },
-            ..Default::default() // shadow: iced::Shadow {
-                                 //     color: rgba(0.0, 0.0, 0.0, 0.35),
-                                 //     offset: iced::Vector { x: 0.0, y: 2.0 },
-                                 //     blur_radius: 6.0,
-                                 // },
-        }
-    })
 }
 
 impl App {
@@ -230,7 +188,13 @@ impl App {
                     .filter_map(|name| self.tools.iter().position(|t| t.name() == name))
                     .map(|i| {
                         let t = &self.tools[i];
-                        home_button(t.icon(), t.name(), t.background(&self.theme()), i).into()
+                        homescreen::tool_button_simple(
+                            t.icon(),
+                            t.name(),
+                            t.background(&self.theme()),
+                            i,
+                        )
+                        .into()
                     });
 
                 let grid = Grid::with_children(children).fluid(200).spacing(20);
@@ -254,20 +218,12 @@ impl App {
         let view = container(main_content)
             .width(Length::Fill)
             .height(Length::Fill)
-            .style(|theme: &Theme| container::Style {
+            .style(|_theme: &Theme| container::Style {
                 text_color: None,
                 background: None,
                 border: Border {
-                    color: if cfg!(feature = "window-border-colored") {
-                        theme.extended_palette().background.strongest.text
-                    } else {
-                        Color::TRANSPARENT
-                    },
-                    width: if cfg!(feature = "window-border-colored") {
-                        1.0
-                    } else {
-                        0.0
-                    },
+                    color: Color::TRANSPARENT,
+                    width: 0.0,
                     radius: Radius::new(self.window_handler.window_border_radius),
                 },
                 ..Default::default()
