@@ -207,8 +207,8 @@ impl Tool for NetworkInfo {
                 border_color: Some(rgb8(60, 60, 60)),
                 border_width: 2.0,
                 tab_label_background: Background::Color(match status {
-                    AwStatus::Active | AwStatus::Hovered => theme.palette().primary,
-                    // iced_aw::style::Status::Hovered => theme.palette().primary,
+                    AwStatus::Active => theme.palette().primary,
+                    iced_aw::style::Status::Hovered => theme.extended_palette().primary.weak.color,
                     _ => Color::TRANSPARENT,
                 }),
                 tab_label_border_color: rgb8(60, 60, 60),
