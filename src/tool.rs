@@ -11,9 +11,6 @@ pub trait Tool {
     fn name(&self) -> &str;
     fn icon(&self) -> Text<'_>;
     fn background(&self, theme: &Theme) -> Color;
-    fn text_color(&self) -> Color {
-        rgb(0.95, 0.95, 0.95)
-    }
 
     /// Serialize the Tool's state into a JSON value to be loaded.
     fn save(&self) -> Option<serde_json::Value> {

@@ -119,17 +119,11 @@ pub struct App {
     window_handler: WindowHandler,
 }
 
-fn home_button<'a>(
-    icon: Text<'a>,
-    name: &'a str,
-    bg: Color,
-    text_color: Color,
-    index: usize,
-) -> Button<'a, Message> {
-    let icon = icon.size(28).color(text_color);
+fn home_button<'a>(icon: Text<'a>, name: &'a str, bg: Color, index: usize) -> Button<'a, Message> {
+    let icon = icon.size(28);
     button(
         container(
-            iced::widget::column![icon, text(name).size(16).color(text_color),]
+            iced::widget::column![icon, text(name).size(16),]
                 .align_x(iced::Alignment::Center)
                 .spacing(8),
         )
@@ -148,7 +142,7 @@ fn home_button<'a>(
         button::Style {
             snap: false,
             background: Some(Background::Color(tinted)),
-            text_color,
+            text_color: rgb8(255, 255, 255),
             border: Border {
                 // color: match theme {
                 //     Theme::Light => Color::from_rgba(0., 0., 0., 0.8),
@@ -289,14 +283,7 @@ impl App {
                     .filter_map(|name| self.tools.iter().position(|t| t.name() == name))
                     .map(|i| {
                         let t = &self.tools[i];
-                        home_button(
-                            t.icon(),
-                            t.name(),
-                            t.background(&self.theme()),
-                            t.text_color(),
-                            i,
-                        )
-                        .into()
+                        home_button(t.icon(), t.name(), t.background(&self.theme()), i).into()
                     });
 
                 let grid = Grid::with_children(children).fluid(200).spacing(20);

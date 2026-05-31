@@ -313,7 +313,7 @@ fn info_row<'a>(
         Some(Ok(v)) => value_widget(v),
     };
 
-    row![label, content]
+    row![label, content, space().width(20)]
         .align_y(Alignment::Center)
         .padding([6, 0])
         .into()
