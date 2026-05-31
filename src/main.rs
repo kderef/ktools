@@ -23,7 +23,7 @@ use ipconfig::Adapter;
 
 use crate::base::rgb8;
 use crate::tool::Tool;
-use crate::tool::settings::Settings;
+use crate::tool::settings::{HomescreenStyle, Settings};
 use crate::window::WindowHandler;
 
 pub use message::Message;
@@ -180,27 +180,10 @@ impl App {
             Selection::Settings => self.settings.view(),
             Selection::Tool(index) => self.tools[index].view(),
             Selection::Home => {
-                // The grid of Tool's
-                let children = self
-                    .settings
-                    .tool_order
-                    .iter()
-                    .filter_map(|name| self.tools.iter().position(|t| t.name() == name))
-                    .map(|i| {
-                        let t = &self.tools[i];
-                        homescreen::tool_button_simple(
-                            t.icon(),
-                            t.name(),
-                            t.background(&self.theme()),
-                            i,
-                        )
-                        .into()
-                    });
-
-                let grid = Grid::with_children(children).fluid(200).spacing(20);
-
-                let content = Container::new(grid).padding(20);
-                let view = Scrollable::new(content);
+                let view = match self.settings.homescreen_style {
+                    HomescreenStyle::Simple => homescreen::view_simple(self),
+                    HomescreenStyle::List => homescreen::view_advanced(self),
+                };
 
                 widget::column![
                     view,

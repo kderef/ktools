@@ -16,6 +16,7 @@ pub enum Message {
     ChooseTool(usize),
     GoHome,
     GoToSettings,
+    SetHomescreenStyle(tool::settings::HomescreenStyle),
 
     /* Generic messages */
     Refresh,

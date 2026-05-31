@@ -3,7 +3,7 @@ use crate::{Message, define_themes};
 use super::*;
 use iced::{
     Alignment, Background, Length, Theme,
-    widget::{self, button, container, row, rule, space, text},
+    widget::{self, button, container, pick_list, row, rule, space, text},
 };
 use serde::{Deserialize, Serialize};
 
@@ -16,6 +16,27 @@ define_themes! {
     }
 }
 
+#[derive(Default, Debug, Clone, Copy, Serialize, Deserialize, PartialEq, PartialOrd)]
+pub enum HomescreenStyle {
+    #[default]
+    Simple,
+    List,
+}
+impl HomescreenStyle {
+    fn all() -> &'static [Self] {
+        &[Self::Simple, Self::List]
+    }
+}
+impl ToString for HomescreenStyle {
+    fn to_string(&self) -> String {
+        match self {
+            Self::Simple => "simple",
+            Self::List => "list (advanced)",
+        }
+        .to_owned()
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct Settings {
     pub theme: ThemeSetting,
@@ -23,6 +44,7 @@ pub struct Settings {
     tools: Vec<Box<dyn Tool>>,
 
     pub tool_order: Vec<String>,
+    pub homescreen_style: HomescreenStyle,
 }
 impl Default for Settings {
     fn default() -> Self {
@@ -31,6 +53,7 @@ impl Default for Settings {
             theme: ThemeSetting::default(),
             tool_order: tools.iter().map(|t| t.name().to_string()).collect(),
             tools,
+            homescreen_style: HomescreenStyle::default(),
         }
     }
 }
@@ -121,6 +144,9 @@ impl Tool for Settings {
                     self.tool_order.swap(i, i + 1);
                 }
             }
+            Message::SetHomescreenStyle(style) => {
+                self.homescreen_style = style;
+            }
             _ => {}
         }
         Task::none()
@@ -174,10 +200,17 @@ impl Tool for Settings {
             .on_press(Message::ResetToolOrder)
             .width(300);
 
+        let pick_homescreen_style = pick_list(
+            HomescreenStyle::all(),
+            Some(&self.homescreen_style),
+            Message::SetHomescreenStyle,
+        );
+
         let rows = widget::column![
             section_header("Appearance"),
             setting_row("Theme", theme_buttons),
-            space().height(16),
+            setting_row("Homescreen style", pick_homescreen_style),
+            // space().height(16),
             //
             section_header("Tool Order"),
             self.tool_order_list(),

@@ -1,8 +1,11 @@
 //! The UI of the home page.
 
-use iced::{Background, Border, Color, Length, widget::*};
+use iced::{
+    Background, Border, Color, Element, Length,
+    widget::{self, *},
+};
 
-use crate::{Message, base::rgb8};
+use crate::{App, Message, base::rgb8};
 
 pub fn tool_button_simple<'a>(
     icon: Text<'a>,
@@ -49,4 +52,34 @@ pub fn tool_button_simple<'a>(
                                  // },
         }
     })
+}
+
+const PADDING: u16 = 20;
+
+pub fn view_simple<'a>(app: &'a App) -> Element<'a, Message> {
+    // The grid of Tool's
+    let children = app
+        .settings
+        .tool_order
+        .iter()
+        .filter_map(|name| app.tools.iter().position(|t| t.name() == name))
+        .map(|i| {
+            let t = &app.tools[i];
+            tool_button_simple(t.icon(), t.name(), t.background(&app.theme()), i).into()
+        });
+
+    let grid = grid(children).fluid(200).spacing(20);
+
+    let content = container(grid).padding(PADDING);
+    let view = scrollable(content);
+
+    view.into()
+}
+pub fn view_advanced<'a>(app: &'a App) -> Element<'a, Message> {
+    let content = widget::column![];
+
+    let content = container(content).padding(PADDING);
+    let view = scrollable(content);
+
+    view.into()
 }
