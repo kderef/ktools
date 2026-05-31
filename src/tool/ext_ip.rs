@@ -17,7 +17,7 @@ pub enum Api {
 }
 impl ToString for Api {
     fn to_string(&self) -> String {
-        self.url().to_owned()
+        self.url().split('/').nth(2).unwrap().to_owned()
     }
 }
 
