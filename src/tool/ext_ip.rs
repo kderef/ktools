@@ -157,6 +157,7 @@ fn obj_pretty(obj: &Object) -> String {
         .map(|(k, v)| format!("{k}: {}", v.to_string()))
         .collect::<Vec<_>>()
         .join("\n")
+        .replace('"', "")
 }
 
 fn info_row<'a>(key: &str, value: &Value) -> Element<'a, crate::Message> {
