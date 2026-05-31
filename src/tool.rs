@@ -14,6 +14,25 @@ pub enum Category {
     Network,
 }
 
+impl Category {
+    pub const fn name(self) -> &'static str {
+        match self {
+            Self::Application => "applications",
+            Self::Utility => "utility",
+            Self::System => "system",
+            Self::Network => "network",
+        }
+    }
+    pub const fn all() -> &'static [Self] {
+        &[
+            Self::Application,
+            Self::Utility,
+            Self::System,
+            Self::Network,
+        ]
+    }
+}
+
 /// NOTE: a `Tool` implementation must also have `Default` to be used with `register_tools!` macro.
 pub trait Tool {
     fn name(&self) -> &str;

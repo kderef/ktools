@@ -23,7 +23,7 @@ pub enum HomescreenStyle {
     List,
 }
 impl HomescreenStyle {
-    fn all() -> &'static [Self] {
+    pub const fn all() -> &'static [Self] {
         &[Self::Simple, Self::List]
     }
 }

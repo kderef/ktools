@@ -5,7 +5,11 @@ use iced::{
     widget::{self, *},
 };
 
-use crate::{App, Message, base::rgb8};
+use crate::{
+    App, Message,
+    base::{BOLD_DEFAULT, rgb8},
+    tool::{Category, Tool, settings::HomescreenStyle},
+};
 
 pub fn tool_button_simple<'a>(
     icon: Text<'a>,
@@ -75,8 +79,62 @@ pub fn view_simple<'a>(app: &'a App) -> Element<'a, Message> {
 
     view.into()
 }
+
+fn tool_small_button<'a>(t: &'a dyn Tool, index: usize) -> Button<'a, Message> {
+    use button::Status;
+
+    button(widget::row![t.icon(), space().width(5), t.name()])
+        .on_press(Message::ChooseTool(index))
+        .padding(0)
+        .style(|theme, status| {
+            let ex = theme.extended_palette();
+            let pal = theme.palette();
+            button::Style {
+                background: Some(Background::Color(Color::TRANSPARENT)),
+                text_color: match status {
+                    Status::Active => pal.text,
+                    Status::Hovered => ex.primary.weak.text,
+                    Status::Disabled => ex.secondary.base.text,
+                    Status::Pressed => ex.primary.base.text,
+                },
+                ..Default::default()
+            }
+        })
+}
+
 pub fn view_advanced<'a>(app: &'a App) -> Element<'a, Message> {
-    let content = widget::column![];
+    let tools_by_category = Category::all().iter().map(|c| {
+        (
+            c,
+            app.tools
+                .iter()
+                .enumerate()
+                .filter(|(_, t)| t.category() == *c),
+        )
+    });
+
+    let children = tools_by_category.map(|(c, tools)| {
+        widget::column![
+            text(c.name()).size(17).font(BOLD_DEFAULT),
+            rule::horizontal(2), //
+        ]
+        .extend(tools.map(|(i, t)| {
+            widget::row![
+                container(space().width(6).height(Length::Fill)).style(|theme| container::Style {
+                    background: Some(Background::Color(t.background(theme))),
+                    ..Default::default()
+                }),
+                tool_small_button(t.as_ref(), i)
+            ]
+            .spacing(5)
+            .height(20)
+            .into()
+        }))
+        .spacing(5)
+        .into()
+    });
+
+    let content = grid(children).fluid(200).spacing(20);
 
     let content = container(content).padding(PADDING);
     let view = scrollable(content);
