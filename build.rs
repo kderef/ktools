@@ -26,6 +26,9 @@ fn write_icon_rgba<P: AsRef<Path>>(input: P, output: P) {
 }
 
 fn main() {
+    let profile = std::env::var("PROFILE").unwrap();
+    let is_release = profile == "release";
+
     // We ignore running this build script on dev builds for faster compile times.
     // On release, an icon is baked into the exe, as well as static vcruntime.
 
@@ -36,9 +39,11 @@ fn main() {
 
     // set icon
     println!("cargo:rerun-if-changed=icon.ico");
-    write_icon_rgba("icon.ico", "icon_raw_rgba");
+    if is_release {
+        write_icon_rgba("icon.ico", "icon_raw_rgba");
+    }
 
-    if std::env::var("PROFILE").unwrap() == "release" {
+    if is_release {
         if cfg!(target_os = "windows") {
             static_vcruntime::metabuild();
 

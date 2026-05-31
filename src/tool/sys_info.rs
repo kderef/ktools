@@ -3,8 +3,7 @@ use std::{collections::HashMap, os::windows::process::CommandExt};
 
 use iced::{
     Alignment, Background, Border, Length, Theme,
-    border::Radius,
-    widget::{self, Button, button, progress_bar, row, space, text},
+    widget::{self, button, progress_bar, row, space, text},
 };
 use sysinfo::System;
 
