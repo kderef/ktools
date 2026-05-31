@@ -17,7 +17,7 @@ fn get_value<T: FromRegValue>(
     value_name: &str,
     default: T,
 ) -> ::std::io::Result<T> {
-    let key = RegKey::predef(predef);
+    let key = RegKey::predef(predef as *mut _);
 
     let value: T = match key.open_subkey_with_flags(subkey, KEY_READ) {
         Ok(key) => match key.get_value(value_name) {
@@ -73,7 +73,7 @@ pub fn get_domain() -> Result<Option<String>> {
 /// Otherwise, returns `false`.
 pub fn is_round_robin_enabled() -> Result<bool> {
     let rotate: u32 = get_value(
-        HKEY_LOCAL_MACHINE,
+        HKEY_LOCAL_MACHINE as isize,
         "SYSTEM\\CurrentControlSet\\Services\\DNS\\Parameters",
         "RoundRobin",
         1, // The default is 1 according to msdn
