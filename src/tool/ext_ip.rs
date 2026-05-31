@@ -1,6 +1,6 @@
 use iced::{
     Alignment, Length, Theme,
-    widget::{self, button, row, space, text},
+    widget::{self, button, pick_list, row, space, text},
 };
 
 use crate::Message;
@@ -8,7 +8,31 @@ use serde_json::{Map, Value};
 
 use super::*;
 
-const IP_API_URL: &str = "http://ip-api.com/json";
+#[derive(Default, Clone, Copy, Debug, PartialEq, PartialOrd)]
+pub enum Api {
+    #[default]
+    IpApi,
+    Ipify,
+    IpApiCo,
+}
+impl ToString for Api {
+    fn to_string(&self) -> String {
+        self.url().to_owned()
+    }
+}
+
+impl Api {
+    const fn url(self) -> &'static str {
+        match self {
+            Self::IpApi => "http://ip-api.com/json",
+            Self::Ipify => "https://api.ipify.org/?format=json",
+            Self::IpApiCo => "https://ipapi.co/json",
+        }
+    }
+    const fn all() -> &'static [Self] {
+        &[Self::IpApi, Self::Ipify, Self::IpApiCo]
+    }
+}
 
 pub type Object = Map<String, Value>;
 
@@ -16,6 +40,8 @@ pub type Object = Map<String, Value>;
 pub struct ExternalIP {
     /// `None` when still loading, `Some` when loaded.
     response: Option<Result<Object, String>>,
+
+    api: Api,
 }
 
 impl Tool for ExternalIP {
@@ -30,8 +56,8 @@ impl Tool for ExternalIP {
         theme.extended_palette().secondary.base.color
     }
     fn on_activate(&mut self) -> Task<crate::Message> {
-        fn get(url: &str) -> Result<Object, String> {
-            minreq::get(url)
+        fn get(api: Api) -> Result<Object, String> {
+            minreq::get(api.url())
                 .send()
                 .map_err(|e| e.to_string())?
                 .as_str()
@@ -43,13 +69,18 @@ impl Tool for ExternalIP {
                 })
         }
 
-        Task::perform(async { get(IP_API_URL) }, crate::Message::ExternalIpFetched)
+        let api = self.api;
+        Task::perform(async move { get(api) }, crate::Message::ExternalIpFetched)
     }
 
     fn update(&mut self, message: crate::Message) -> Task<crate::Message> {
         match message {
             Message::ExternalIpFetched(response) => {
                 self.response = Some(response);
+            }
+            Message::ExternalIpPick(api) => {
+                self.api = api;
+                return self.on_activate();
             }
             Message::Refresh => {
                 self.response = None;
@@ -79,6 +110,12 @@ impl Tool for ExternalIP {
 
         let container = content_container(rows).padding(12).height(Length::Fill);
 
+        let top_row = row![pick_list(
+            Api::all(),
+            Some(&self.api),
+            Message::ExternalIpPick
+        )];
+
         let bottom_row = row![
             button(text("refresh").size(24).center())
                 .on_press(Message::Refresh)
@@ -95,9 +132,10 @@ impl Tool for ExternalIP {
                 })
         ];
 
-        widget::column![container, space().height(20), bottom_row]
+        widget::column![top_row, container, bottom_row]
             .height(Length::Fill)
             .padding(12)
+            .spacing(20)
             .into()
     }
 }
@@ -155,6 +193,8 @@ fn info_row<'a>(key: &str, value: &Value) -> Element<'a, crate::Message> {
     if !is_empty {
         row = row.push(copy_icon_btn(value_text));
     }
+
+    row = row.push(space().width(20));
 
     row.into()
 }

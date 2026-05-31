@@ -22,4 +22,4 @@ computer = ["winreg"]
 windows-sys = { version = "0.52.0", features = ["Win32_Foundation", "Win32_Networking_WinSock", "Win32_System_Registry"] }
 widestring = "1.0.2"
 socket2 = "0.5.1"
-winreg = { version = "0.55.0", optional = true }
+winreg = { version = "0.54.0", optional = true }

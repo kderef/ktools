@@ -3,6 +3,8 @@
     windows_subsystem = "windows"
 )]
 
+// TODO: add port scanning tool
+
 mod base;
 mod tool;
 mod window;
@@ -91,6 +93,7 @@ pub enum Message {
 
     /* messages for ext_ip */
     ExternalIpFetched(Result<tool::ext_ip::Object, String>),
+    ExternalIpPick(tool::ext_ip::Api),
 
     /* messages for sys_info */
     SystemInfoFetched(&'static str, Result<tool::sys_info::SystemValue, String>),
