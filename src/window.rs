@@ -158,9 +158,9 @@ impl WindowHandler {
         let w = resize_area(Direction::West, Interaction::ResizingHorizontally);
         let e = resize_area(Direction::East, Interaction::ResizingHorizontally);
 
-        let nw = resize_area(Direction::NorthWest, Interaction::ResizingDiagonallyUp);
+        let nw = resize_area(Direction::NorthWest, Interaction::ResizingDiagonallyDown);
         let ne = resize_area(Direction::NorthEast, Interaction::ResizingDiagonallyUp);
-        let sw = resize_area(Direction::SouthWest, Interaction::ResizingDiagonallyDown);
+        let sw = resize_area(Direction::SouthWest, Interaction::ResizingDiagonallyUp);
         let se = resize_area(Direction::SouthEast, Interaction::ResizingDiagonallyDown);
 
         [
