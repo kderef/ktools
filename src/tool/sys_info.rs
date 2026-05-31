@@ -229,6 +229,10 @@ impl Tool for SystemInfo {
             rows = rows.push(info_row(key, value));
         }
 
+        let proc_button = |label, msg: ProcessOpen| {
+            simple_button(label, msg.icon()).on_press(Message::SystemInfoOpen(msg))
+        };
+
         let spacing = 10;
 
         rows = rows
@@ -314,36 +318,6 @@ fn info_row<'a>(
         .align_y(Alignment::Center)
         .padding([6, 0])
         .into()
-}
-
-fn proc_button<'a>(label: &'a str, kind: ProcessOpen) -> Button<'a, Message> {
-    use button::Status;
-
-    let icon = kind.icon();
-
-    button(row![
-        icon.size(15).center(),
-        space().width(5),
-        text(label).size(15).center()
-    ])
-    .on_press(Message::SystemInfoOpen(kind))
-    .style(|theme: &Theme, status| {
-        let pal = theme.extended_palette();
-        button::Style {
-            background: Some(match status {
-                Status::Active => Background::Color(pal.background.weakest.color),
-                Status::Hovered => Background::Color(pal.background.strong.color),
-                Status::Pressed | _ => Background::Color(pal.background.strongest.color),
-            }),
-            text_color: pal.background.weakest.text,
-            border: Border {
-                color: pal.background.base.text.scale_alpha(0.5),
-                width: 1.0,
-                radius: Radius::new(5.0),
-            },
-            ..Default::default()
-        }
-    })
 }
 
 fn value_widget<'a>(value: &'a SystemValue) -> Element<'a, Message> {

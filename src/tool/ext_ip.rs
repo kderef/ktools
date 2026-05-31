@@ -110,29 +110,22 @@ impl Tool for ExternalIP {
 
         let container = content_container(rows).padding(12).height(Length::Fill);
 
-        let top_row = row![pick_list(
-            Api::all(),
-            Some(&self.api),
-            Message::ExternalIpPick
-        )];
-
-        let bottom_row = row![
-            button(text("refresh").size(24).center())
+        let top_row = row![
+            pick_list(Api::all(), Some(&self.api), Message::ExternalIpPick)
+                .width(Length::FillPortion(2)),
+            simple_button("refresh", icon_font::refresh())
                 .on_press(Message::Refresh)
-                .width(Length::Fill),
-            space().width(10),
-            button(text("copy all").size(24).center())
-                .width(Length::Fill)
-                .on_press_with(|| {
-                    let text = match &self.response {
-                        Some(Ok(obj)) => obj_pretty(&format_obj(obj)),
-                        _ => String::new(),
-                    };
-                    Message::CopyToClipboard(text)
-                })
-        ];
+                .width(Length::FillPortion(1)),
+            simple_button("copy all", icon_font::copy())
+                .on_press(Message::CopyToClipboard(match &self.response {
+                    Some(Ok(obj)) => obj_pretty(&format_obj(obj)),
+                    _ => String::new(),
+                }))
+                .width(Length::FillPortion(1))
+        ]
+        .spacing(10);
 
-        widget::column![top_row, container, bottom_row]
+        widget::column![top_row, container]
             .height(Length::Fill)
             .padding(12)
             .spacing(20)
