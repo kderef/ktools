@@ -3,7 +3,7 @@ use crate::{Message, define_themes};
 use super::*;
 use iced::{
     Alignment, Background, Length, Theme,
-    widget::{self, button, container, pick_list, row, rule, space, text},
+    widget::{self, button, container, row, rule, space, text},
 };
 use serde::{Deserialize, Serialize};
 
@@ -25,15 +25,6 @@ pub enum HomescreenStyle {
 impl HomescreenStyle {
     pub const fn all() -> &'static [Self] {
         &[Self::Simple, Self::List]
-    }
-}
-impl ToString for HomescreenStyle {
-    fn to_string(&self) -> String {
-        match self {
-            Self::Simple => "simple",
-            Self::List => "list (advanced)",
-        }
-        .to_owned()
     }
 }
 
@@ -200,17 +191,10 @@ impl Tool for Settings {
             .on_press(Message::ResetToolOrder)
             .width(300);
 
-        let pick_homescreen_style = pick_list(
-            HomescreenStyle::all(),
-            Some(&self.homescreen_style),
-            Message::SetHomescreenStyle,
-        );
-
         let rows = widget::column![
             section_header("Appearance"),
             setting_row("Theme", theme_buttons),
-            setting_row("Homescreen style", pick_homescreen_style),
-            // space().height(16),
+            space().height(16),
             //
             section_header("Tool Order"),
             self.tool_order_list(),

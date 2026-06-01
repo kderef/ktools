@@ -1,6 +1,6 @@
 [package]
 name = "ktools"
-version = "1.2.4"
+version = "1.2.5"
 authors = ["Kian Heitkamp"]
 license = "GPL-3.0"
 description = "App that makes getting system information easy"
