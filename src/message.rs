@@ -17,6 +17,7 @@ pub enum Message {
     GoHome,
     GoToSettings,
     SetHomescreenStyle(tool::settings::HomescreenStyle),
+    Search(String),
 
     /* Generic messages */
     Refresh,

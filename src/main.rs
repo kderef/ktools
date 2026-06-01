@@ -12,6 +12,8 @@ mod message;
 mod tool;
 mod window;
 
+use fuzzy_matcher::FuzzyMatcher;
+use fuzzy_matcher::skim::SkimMatcherV2;
 use iced::border::Radius;
 use iced::{
     Border, Color, Element, Length, Subscription, Task, clipboard, keyboard,
@@ -63,17 +65,24 @@ pub struct App {
     selected: Selection,
     settings: Settings,
 
+    // searching
+    search: String,
+    search_matches: Vec<usize>,
+
     window_handler: WindowHandler,
 }
 
 impl App {
     /// Returns the empty (default) state of the app, and returns a message that will properly load data.
     fn new() -> (Self, Task<Message>) {
+        let tools = tool::all();
         let app = Self {
-            tools: tool::all(),
             selected: Selection::Home,
             settings: Settings::default(),
+            search: String::new(),
+            search_matches: tools.iter().enumerate().map(|(i, _)| i).collect(),
             window_handler: WindowHandler::new(),
+            tools,
         };
 
         (app, Task::done(Message::Startup))
@@ -138,7 +147,6 @@ impl App {
                 self.load_all();
             }
             Message::Window(window_message) => return self.window_handler.handle(window_message),
-            /* the rest */
             Message::GoHome => {
                 self.selected = Selection::Home;
             }
@@ -163,6 +171,29 @@ impl App {
             Message::OpenURL(url) => {
                 let _ = open::that(url);
             }
+            Message::Search(query) => {
+                let query_lower = query.to_lowercase();
+
+                let matcher = SkimMatcherV2::default();
+
+                let tool_indices = self.tools.iter().enumerate().map(|(i, t)| (i, t.name()));
+
+                let mut matches: Vec<(usize, i64)> = tool_indices
+                    .filter_map(|(i, tn)| {
+                        matcher
+                            .fuzzy_match(&tn.to_lowercase(), &query_lower)
+                            .map(|score| (i, score))
+                    })
+                    .collect();
+
+                matches.sort_by(|a, b| b.1.cmp(&a.1));
+
+                self.search = query;
+                self.search_matches = matches.iter().map(|(i, _)| *i).collect();
+            }
+            Message::SetHomescreenStyle(style) => {
+                self.settings.homescreen_style = style;
+            }
             // Globally non-relevant Messages will be relegated to the `Tool`
             other => match self.selected {
                 Selection::Settings => return self.settings.update(other),
@@ -185,7 +216,19 @@ impl App {
                     HomescreenStyle::List => homescreen::view_advanced(self),
                 };
 
+                let top_row = widget::row![
+                    space().width(Length::FillPortion(1)),
+                    homescreen::search_bar(&self.search).width(Length::FillPortion(2)),
+                    homescreen::switch_view_button(&self.settings.homescreen_style),
+                    space().width(Length::FillPortion(1))
+                ]
+                .spacing(8)
+                .height(30);
+
                 widget::column![
+                    space().height(10),
+                    top_row,
+                    space().height(10),
                     view,
                     space().height(Length::Fill),
                     text("© Kian Heitkamp").size(11).color(rgb8(120, 120, 120))
