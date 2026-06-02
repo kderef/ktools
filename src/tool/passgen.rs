@@ -52,9 +52,10 @@ pub enum Message {
     ResetSpecialCharacers,
 }
 
-pub fn background(theme: &Theme) -> Color {
-    // rgb(0.0, 0.2, 0.7)
-    theme.extended_palette().primary.strong.color
+impl Into<crate::Message> for Message {
+    fn into(self) -> crate::Message {
+        crate::Message::PasswordGenerator(self)
+    }
 }
 
 impl PasswordGenerator {
@@ -111,67 +112,99 @@ impl PasswordGenerator {
 
         self.password = new.iter().collect();
     }
+}
 
-    pub fn on_activate(&mut self) -> Task<Message> {
-        self.generate();
-        Task::none()
+impl Tool for PasswordGenerator {
+    fn name(&self) -> &'static str {
+        "Password Generator"
+    }
+    fn category(&self) -> Category {
+        Category::Utility
     }
 
-    pub fn update(&mut self, message: Message) -> Task<Message> {
+    fn icon(&self) -> Text<'_> {
+        icon_font::lock()
+    }
+
+    fn background(&self, theme: &Theme) -> Color {
+        // rgb(0.0, 0.2, 0.7)
+        theme.extended_palette().primary.strong.color
+    }
+
+    fn save(&self) -> Option<serde_json::Value> {
+        serde_json::to_value(self).ok()
+    }
+    fn load(&mut self, data: serde_json::Value) {
+        let Ok(loaded) = serde_json::from_value(data) else {
+            return;
+        };
+
+        *self = loaded;
+        self.generate(); // populate password field
+    }
+
+    fn update(&mut self, message: crate::Message) -> Task<crate::Message> {
         match message {
-            Message::LengthChanged(new_len) => {
-                self.length = new_len;
-                self.generate();
-            }
-            Message::UseNumsToggled(v) => {
-                self.use_nums = v;
-                self.generate();
-            }
-            Message::UseCharsToggled(v) => {
-                self.use_chars = v;
-                self.generate();
-            }
-            Message::Regenerate => {
+            crate::Message::Refresh => {
                 self.generate();
             }
 
-            Message::ChangeSpecialCharacters(new) => {
-                // Keep only visible ASCII non-alphanumeric characters
-                let filtered: String = new
-                    .chars()
-                    .filter(|c| {
-                        c.is_ascii() && !c.is_ascii_alphanumeric() && !c.is_ascii_whitespace()
-                    })
-                    .collect();
+            crate::Message::PasswordGenerator(pmessage) => match pmessage {
+                Message::LengthChanged(new_len) => {
+                    self.length = new_len;
+                    self.generate();
+                }
+                Message::UseNumsToggled(v) => {
+                    self.use_nums = v;
+                    self.generate();
+                }
+                Message::UseCharsToggled(v) => {
+                    self.use_chars = v;
+                    self.generate();
+                }
+                Message::Regenerate => {
+                    self.generate();
+                }
 
-                // Remove duplicates while preserving order
-                let mut unique = String::new();
+                Message::ChangeSpecialCharacters(new) => {
+                    // Keep only visible ASCII non-alphanumeric characters
+                    let filtered: String = new
+                        .chars()
+                        .filter(|c| {
+                            c.is_ascii() && !c.is_ascii_alphanumeric() && !c.is_ascii_whitespace()
+                        })
+                        .collect();
 
-                for c in filtered.chars() {
-                    if !unique.contains(c) {
-                        unique.push(c);
+                    // Remove duplicates while preserving order
+                    let mut unique = String::new();
+
+                    for c in filtered.chars() {
+                        if !unique.contains(c) {
+                            unique.push(c);
+                        }
+                    }
+
+                    let final_chars = unique;
+
+                    if self.special_chars != final_chars {
+                        self.special_chars = final_chars;
+                        self.generate();
                     }
                 }
 
-                let final_chars = unique;
-
-                if self.special_chars != final_chars {
-                    self.special_chars = final_chars;
-                    self.generate();
+                Message::ResetSpecialCharacers => {
+                    if self.special_chars != Self::DEFAULT_SPEC_CHARS {
+                        self.special_chars = Self::DEFAULT_SPEC_CHARS.to_owned();
+                        self.generate();
+                    }
                 }
-            }
-
-            Message::ResetSpecialCharacers => {
-                if self.special_chars != Self::DEFAULT_SPEC_CHARS {
-                    self.special_chars = Self::DEFAULT_SPEC_CHARS.to_owned();
-                    self.generate();
-                }
-            }
+            },
+            _ => {}
         }
         Task::none()
     }
 
-    pub fn view(&self) -> Element<'_, crate::Message> {
+    fn view(&self) -> Element<'_, crate::Message> {
         let text_size = 25;
 
         let length_slider: Slider<'_, u32, crate::Message, Theme> =

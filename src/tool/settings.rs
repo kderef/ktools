@@ -1,10 +1,10 @@
-use crate::define_themes;
+use crate::{Message, define_themes};
 
 use super::*;
 use crate::homescreen::HomescreenStyle;
 use iced::{
     Alignment, Background, Length, Theme,
-    widget::{self, Row, button, container, pick_list, row, rule, space, text},
+    widget::{self, button, container, pick_list, row, rule, space, text},
 };
 use serde::{Deserialize, Serialize};
 
@@ -17,36 +17,37 @@ define_themes! {
     }
 }
 
-#[derive(Debug, Clone)]
-pub enum Message {
-    SetTheme(ThemeSetting),
-    SetHomescreenStyle(crate::homescreen::HomescreenStyle),
-    ResetAllSettings,
-    Copy(String),
-    OpenURL(&'static str),
-}
-
 #[derive(Serialize, Deserialize)]
 pub struct Settings {
     pub theme: ThemeSetting,
+    #[serde(skip)]
+    tools: Vec<Box<dyn Tool>>,
+
+    pub tool_order: Vec<String>,
     pub homescreen_style: HomescreenStyle,
 }
 impl Default for Settings {
     fn default() -> Self {
+        let tools = crate::tool::all();
         Self {
             theme: ThemeSetting::default(),
+            tool_order: tools.iter().map(|t| t.name().to_string()).collect(),
+            tools,
             homescreen_style: HomescreenStyle::default(),
         }
     }
 }
 
-fn section_header<'a>(label: &'a str) -> Element<'a, crate::Message> {
+fn section_header<'a>(label: &'a str) -> Element<'a, Message> {
     widget::column![text(label).size(13).style(text::base), rule::horizontal(1),]
         .spacing(4)
         .into()
 }
 
-fn setting_row<'a, M: 'a>(label: &'a str, content: impl Into<Element<'a, M>>) -> Element<'a, M> {
+fn setting_row<'a>(
+    label: &'a str,
+    content: impl Into<Element<'a, Message>>,
+) -> Element<'a, Message> {
     row![
         text(label)
             .size(15)
@@ -59,8 +60,22 @@ fn setting_row<'a, M: 'a>(label: &'a str, content: impl Into<Element<'a, M>>) ->
     .into()
 }
 
-impl Settings {
-    /*
+impl Tool for Settings {
+    fn name(&self) -> &str {
+        "Settings"
+    }
+    fn category(&self) -> Category {
+        Category::System
+    }
+    fn icon(&self) -> Text<'_> {
+        icon_font::settings_gear()
+    }
+    fn background(&self, _theme: &Theme) -> Color {
+        rgb8(0, 100, 180)
+    }
+    fn save(&self) -> Option<serde_json::Value> {
+        serde_json::to_value(self).ok()
+    }
     fn load(&mut self, data: serde_json::Value) {
         if let Ok(mut s) = serde_json::from_value::<Self>(data) {
             let tools = std::mem::take(&mut self.tools);
@@ -69,11 +84,7 @@ impl Settings {
 
             // Unknown element in list
             for name in &s.tool_order {
-                if tools
-                    .iter()
-                    .find(|t| t.info().title == name.as_str())
-                    .is_none()
-                {
+                if tools.iter().find(|t| t.name() == name.as_str()).is_none() {
                     invalid_list = true;
                     break;
                 }
@@ -86,7 +97,7 @@ impl Settings {
 
             // if invalid reset to default
             if invalid_list {
-                s.tool_order = tools.iter().map(|t| t.info().title.to_string()).collect();
+                s.tool_order = tools.iter().map(|t| t.name().to_string()).collect();
             }
 
             *self = s;
@@ -94,11 +105,24 @@ impl Settings {
             self.tools = tools;
         }
     }
-    */
-    pub fn update(&mut self, message: Message) -> Task<crate::Message> {
+    fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::SetTheme(theme) => {
                 self.theme = theme;
+            }
+            Message::ResetToolOrder => {
+                self.tool_order = self.tools.iter().map(|t| t.name().to_string()).collect();
+            }
+
+            Message::MoveToolUp(i) => {
+                if i > 0 {
+                    self.tool_order.swap(i, i - 1);
+                }
+            }
+            Message::MoveToolDown(i) => {
+                if i + 1 < self.tool_order.len() {
+                    self.tool_order.swap(i, i + 1);
+                }
             }
             Message::SetHomescreenStyle(style) => {
                 self.homescreen_style = style;
@@ -107,61 +131,60 @@ impl Settings {
         }
         Task::none()
     }
-    pub fn view<'a>(&'a self, app: &'a crate::App) -> Element<'a, crate::Message> {
+    fn view(&self) -> Element<'_, Message> {
         let reset_button = button("RESET ALL SETTINGS")
             .style(button::danger)
-            .on_press(crate::Message::ResetAllSettings);
+            .on_press(Message::ResetAllSettings);
 
-        let theme_buttons: Row<'_, crate::Message> =
-            ThemeSetting::all()
-                .iter()
-                .fold(row![].spacing(8), |row, &t| {
-                    let active = t == self.theme;
+        let theme_buttons = ThemeSetting::all()
+            .iter()
+            .fold(row![].spacing(8), |row, &t| {
+                let active = t == self.theme;
 
-                    row.push(
-                        button(text(t.label()).size(14).center())
-                            .on_press(crate::Message::from(Message::SetTheme(t)))
-                            .width(Length::Fixed(70.0))
-                            .style(move |theme: &Theme, status| {
-                                let palette = theme.extended_palette();
-                                button::Style {
-                                    background: Some(Background::Color(if active {
-                                        palette.primary.strong.color
+                row.push(
+                    button(text(t.label()).size(14).center())
+                        .on_press(Message::SetTheme(t))
+                        .width(Length::Fixed(70.0))
+                        .style(move |theme: &Theme, status| {
+                            let palette = theme.extended_palette();
+                            button::Style {
+                                background: Some(Background::Color(if active {
+                                    palette.primary.strong.color
+                                } else {
+                                    match status {
+                                        button::Status::Hovered => palette.background.weak.color,
+                                        _ => palette.background.strong.color,
+                                    }
+                                })),
+                                border: iced::Border {
+                                    color: if active {
+                                        palette.primary.base.color
                                     } else {
-                                        match status {
-                                            button::Status::Hovered => {
-                                                palette.background.weak.color
-                                            }
-                                            _ => palette.background.strong.color,
-                                        }
-                                    })),
-                                    border: iced::Border {
-                                        color: if active {
-                                            palette.primary.base.color
-                                        } else {
-                                            palette.background.strong.color
-                                        },
-                                        width: 1.0,
-                                        radius: 6.0.into(),
+                                        palette.background.strong.color
                                     },
-                                    text_color: if active {
-                                        palette.primary.strong.text
-                                    } else {
-                                        palette.background.base.text
-                                    },
-                                    ..Default::default()
-                                }
-                            }),
-                    )
-                });
+                                    width: 1.0,
+                                    radius: 6.0.into(),
+                                },
+                                text_color: if active {
+                                    palette.primary.strong.text
+                                } else {
+                                    palette.background.base.text
+                                },
+                                ..Default::default()
+                            }
+                        }),
+                )
+            });
 
         let reset_order_btn = button(text("default order").size(16).center())
-            .on_press(crate::Message::ResetToolOrder)
+            .on_press(Message::ResetToolOrder)
             .width(300);
 
-        let layout_picker = pick_list(HomescreenStyle::all(), Some(self.homescreen_style), |s| {
-            Message::SetHomescreenStyle(s).into()
-        });
+        let layout_picker = pick_list(
+            HomescreenStyle::all(),
+            Some(self.homescreen_style),
+            Message::SetHomescreenStyle,
+        );
 
         let rows = widget::column![
             section_header("Appearance"),
@@ -170,7 +193,7 @@ impl Settings {
             space().height(16),
             //
             section_header("Tool Order"),
-            self.tool_order_list(app),
+            self.tool_order_list(),
             space().height(8),
             reset_order_btn,
             space().height(16),
@@ -186,7 +209,7 @@ impl Settings {
             ),
             setting_row("Version", app_version()),
             setting_row("Source Code", source_link()),
-            setting_row("License", license_link(crate::Message::OpenURL)),
+            setting_row("License", license_link()),
         ]
         .spacing(4);
 
@@ -199,57 +222,51 @@ impl Settings {
 }
 
 impl Settings {
-    fn tool_order_list<'a>(&'a self, app: &'a crate::App) -> Element<'a, crate::Message> {
-        let rows = app
-            .tool_order
-            .iter()
-            .map(|i| (i, app.tools[*i].info().title))
-            .map(|(i, name)| {
-                let i = *i;
-                let is_first = i == 0;
-                let is_last = i == app.tool_order.len() - 1;
+    fn tool_order_list<'a>(&'a self) -> Element<'a, Message> {
+        let rows = self.tool_order.iter().enumerate().map(|(i, name)| {
+            let is_first = i == 0;
+            let is_last = i == self.tool_order.len() - 1;
 
-                let tool = app.tools.iter().find(|t| t.info().title == name);
+            let tool = self.tools.iter().find(|t| t.name() == name.as_str());
 
-                let icon_and_name: Element<'_, crate::Message> = if let Some(tool) = tool {
-                    let info = tool.info();
-                    let bg = (info.background)(&self.theme.into()); // use a neutral theme for preview
-                    row![
-                        container((info.icon)().size(16))
-                            .style(move |_| container::Style {
-                                background: Some(Background::Color(bg)),
-                                text_color: Some(iced::Color::WHITE),
-                                border: iced::Border {
-                                    radius: 6.0.into(),
-                                    ..Default::default()
-                                },
-                                ..Default::default()
-                            })
-                            .padding([4, 8]),
-                        text(name).size(14),
-                    ]
-                    .spacing(8)
-                    .align_y(Alignment::Center)
-                    .into()
-                } else {
-                    text(name).size(14).into()
-                };
-
+            let icon_and_name: Element<'_, Message> = if let Some(tool) = tool {
+                let bg = tool.background(&self.theme.into()); // use a neutral theme for preview
                 row![
-                    icon_and_name,
-                    space().width(Length::Fill),
-                    button(icon_font::arrow_up().size(12))
-                        .on_press_maybe((!is_first).then_some(crate::Message::MoveToolUp(i)))
-                        .padding([2, 6]),
-                    button(icon_font::arrow_down().size(12))
-                        .on_press_maybe((!is_last).then_some(crate::Message::MoveToolDown(i)))
-                        .padding([2, 6]),
+                    container(tool.icon().size(16))
+                        .style(move |_| container::Style {
+                            background: Some(Background::Color(bg)),
+                            text_color: Some(iced::Color::WHITE),
+                            border: iced::Border {
+                                radius: 6.0.into(),
+                                ..Default::default()
+                            },
+                            ..Default::default()
+                        })
+                        .padding([4, 8]),
+                    text(name.clone()).size(14),
                 ]
-                .spacing(4)
-                .width(300)
+                .spacing(8)
                 .align_y(Alignment::Center)
                 .into()
-            });
+            } else {
+                text(name.clone()).size(14).into()
+            };
+
+            row![
+                icon_and_name,
+                space().width(Length::Fill),
+                button(icon_font::arrow_up().size(12))
+                    .on_press_maybe((!is_first).then_some(Message::MoveToolUp(i)))
+                    .padding([2, 6]),
+                button(icon_font::arrow_down().size(12))
+                    .on_press_maybe((!is_last).then_some(Message::MoveToolDown(i)))
+                    .padding([2, 6]),
+            ]
+            .spacing(4)
+            .width(300)
+            .align_y(Alignment::Center)
+            .into()
+        });
 
         widget::column(rows).spacing(4).into()
     }

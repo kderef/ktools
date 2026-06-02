@@ -74,10 +74,10 @@ pub fn copy_icon_btn(value: String) -> Element<'static, Message> {
         .into()
 }
 
-pub fn content_container_ex<'a, M: 'a, E: Into<Element<'a, M>>>(
+pub fn content_container_ex<'a, E: Into<Element<'a, Message>>>(
     inside: E,
     inside_scrollable: bool,
-) -> Container<'a, M> {
+) -> Container<'a, Message> {
     let inside = if inside_scrollable {
         scrollable(inside).into()
     } else {
@@ -104,21 +104,17 @@ pub fn content_container_ex<'a, M: 'a, E: Into<Element<'a, M>>>(
 }
 
 #[inline]
-pub fn content_container<'a, M: 'a, E: Into<Element<'a, M>>>(inside: E) -> Container<'a, M> {
+pub fn content_container<'a, E: Into<Element<'a, Message>>>(inside: E) -> Container<'a, Message> {
     content_container_ex(inside, true)
 }
 
-pub fn hyperlink<'a, M: 'a>(
-    label: &'static str,
-    link: Option<&'static str>,
-    open_fn: impl Fn(&'static str) -> M,
-) -> Button<'a, M> {
+pub fn hyperlink<'a>(label: &'static str, link: Option<&'static str>) -> Button<'a, Message> {
     use button::Status;
 
     let url = link.unwrap_or(label);
 
     button(text(label).size(15))
-        .on_press(open_fn(url))
+        .on_press(Message::OpenURL(url))
         .style(|theme: &Theme, status| {
             let pal = theme.extended_palette();
             button::Style {
@@ -143,21 +139,20 @@ pub fn hyperlink<'a, M: 'a>(
 /// Link to the app's source code
 pub fn source_link<'a>() -> Button<'a, Message> {
     const SOURCE_LINK: &str = env!("CARGO_PKG_REPOSITORY");
-    hyperlink(SOURCE_LINK, None, |l| Message::OpenURL(l))
+    hyperlink(SOURCE_LINK, None)
 }
 
 /// hyperlink to the license
-pub fn license_link<'a, M: 'a>(open_fn: impl Fn(&'static str) -> M) -> Button<'a, M> {
+pub fn license_link<'a>() -> Button<'a, Message> {
     const LICENSE: &str = env!("CARGO_PKG_LICENSE");
     hyperlink(
         LICENSE,
         Some("https://www.gnu.org/licenses/gpl-3.0.en.html"),
-        open_fn,
     )
 }
 
 #[inline]
-pub fn app_version<'a, M: 'a>() -> Row<'a, M> {
+pub fn app_version<'a>() -> Row<'a, Message> {
     row![
         text(env!("CARGO_PKG_VERSION")).size(15).style(text::base),
         space().width(10),

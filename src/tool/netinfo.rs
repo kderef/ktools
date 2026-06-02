@@ -1,13 +1,7 @@
 //! Tool used for gathering **local** network information
 //! For *external* network information see `src/tool/ext_ip.rs`
 
-#[derive(Clone, Debug)]
-pub enum Message {
-    NetworkInterfacesFetched(Result<Vec<Adapter>, String>),
-    TabSelected(usize),
-    Refresh,
-    Copy(String),
-}
+use crate::Message;
 
 use super::*;
 use iced::{
@@ -18,13 +12,10 @@ use iced_aw::sidebar::{Sidebar, TabLabel};
 use ipconfig::{Adapter, OperStatus};
 use std::net::IpAddr;
 
-#[derive(Default, Serialize, Deserialize)]
+#[derive(Default)]
 pub struct NetworkInfo {
-    #[serde(skip)]
     active_tab: usize,
-    #[serde(skip)]
     local_interfaces: Vec<Adapter>,
-    #[serde(skip)]
     error: Option<String>,
 }
 
@@ -53,7 +44,7 @@ fn info_row_ex<'a>(
             family: iced::font::Family::Monospace,
             ..Default::default()
         }),
-        copy_icon_btn(value.clone()).map(move |_| Message::Copy(value.clone())),
+        copy_icon_btn(value),
     ]
     .align_y(Alignment::Center)
     .padding([5, 0])
@@ -113,7 +104,6 @@ fn iface_content<'a>(iface: &'a Adapter) -> Element<'a, Message> {
             rows.push(info_row_primary("MAC Address", format_mac(mac)));
         }
     }
-
     // IP addresses
     let mut has_v4 = false;
     let mut has_v6 = false;
@@ -127,6 +117,7 @@ fn iface_content<'a>(iface: &'a Adapter) -> Element<'a, Message> {
                 }
                 rows.push(info_row("Address", v4));
 
+                // get prefix length for this address
                 for (prefix_addr, prefix_len) in iface.prefixes() {
                     if *prefix_addr == IpAddr::V4(*v4) {
                         rows.push(info_row("Prefix Length", prefix_len));
@@ -147,43 +138,52 @@ fn iface_content<'a>(iface: &'a Adapter) -> Element<'a, Message> {
     let dns_servers = iface.dns_servers();
     if !dns_servers.is_empty() {
         rows.push(info_header("DNS"));
-        for (i, dns) in dns_servers.iter().enumerate() {
-            rows.push(info_row(if i == 0 { "Servers" } else { "" }, dns));
+        rows.push(info_row("Servers", dns_servers.first().unwrap()));
+
+        for dns in &dns_servers[1..] {
+            rows.push(info_row("", dns));
         }
     }
 
     // Gateway
     let gateways = iface.gateways();
     if !gateways.is_empty() {
-        rows.push(info_header("Gateway"));
-        for (i, gateway) in gateways.iter().enumerate() {
-            rows.push(info_row(if i == 0 { "Address" } else { "" }, gateway));
+        rows.push(info_row_primary("Gateways", gateways.first().unwrap()));
+
+        for gateway in &gateways[1..] {
+            rows.push(info_row("", gateway));
         }
     }
 
     content_container(column(rows).spacing(4).padding([12, 16])).into()
 }
 
-pub fn background(theme: &Theme) -> Color {
-    theme.extended_palette().success.strong.color
-}
+impl Tool for NetworkInfo {
+    fn name(&self) -> &str {
+        "Network Information"
+    }
+    fn category(&self) -> Category {
+        Category::Network
+    }
 
-impl NetworkInfo {
-    pub fn on_activate(&mut self) -> Task<Message> {
+    fn icon(&self) -> Text<'_> {
+        icon_font::globe()
+    }
+
+    fn background(&self, theme: &Theme) -> Color {
+        theme.extended_palette().success.strong.color
+    }
+
+    fn on_activate(&mut self) -> Task<Message> {
         Task::perform(
             async { ipconfig::get_adapters().map_err(|e| e.to_string()) },
             Message::NetworkInterfacesFetched,
         )
     }
 
-    pub fn update(&mut self, message: Message) -> Task<Message> {
+    fn update(&mut self, message: Message) -> Task<Message> {
         match message {
-            Message::TabSelected(i) => {
-                self.active_tab = i;
-            }
-            Message::Copy(s) => {
-                return Task::done(crate::Message::CopyToClipboard(s)).discard();
-            }
+            Message::TabSelected(i) => self.active_tab = i,
             Message::NetworkInterfacesFetched(result) => match result {
                 Err(e) => self.error = Some(e),
                 Ok(mut ifs) => {
@@ -194,11 +194,12 @@ impl NetworkInfo {
             Message::Refresh => {
                 return self.on_activate();
             }
+            _ => {}
         }
         Task::none()
     }
 
-    pub fn view(&self) -> Element<'_, Message> {
+    fn view(&self) -> Element<'_, Message> {
         use iced_aw::style::Status as AwStatus;
 
         let mut sidebar = Sidebar::new(Message::TabSelected)
@@ -210,7 +211,7 @@ impl NetworkInfo {
                 border_width: 2.0,
                 tab_label_background: Background::Color(match status {
                     AwStatus::Active => theme.palette().primary,
-                    AwStatus::Hovered => theme.extended_palette().primary.weak.color,
+                    iced_aw::style::Status::Hovered => theme.extended_palette().primary.weak.color,
                     _ => Color::TRANSPARENT,
                 }),
                 tab_label_border_color: rgb8(60, 60, 60),

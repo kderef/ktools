@@ -3,16 +3,10 @@ use iced::{
     widget::{self, pick_list, row, space, text},
 };
 
+use crate::Message;
 use serde_json::{Map, Value};
 
 use super::*;
-
-#[derive(Debug, Clone)]
-pub enum Message {
-    Fetched(Result<Object, String>),
-    PickAPI(Api),
-    Refresh,
-}
 
 #[derive(Default, Clone, Copy, Debug, PartialEq, PartialOrd)]
 pub enum Api {
@@ -42,21 +36,29 @@ impl Api {
 
 pub type Object = Map<String, Value>;
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Default)]
 pub struct ExternalIP {
     /// `None` when still loading, `Some` when loaded.
-    #[serde(skip)]
     response: Option<Result<Object, String>>,
 
-    #[serde(skip)]
     api: Api,
 }
 
-pub fn background(theme: &Theme) -> Color {
-    theme.extended_palette().secondary.base.color
-}
-impl ExternalIP {
-    pub fn on_activate(&mut self) -> Task<Message> {
+impl Tool for ExternalIP {
+    fn name(&self) -> &str {
+        "External IP"
+    }
+    fn category(&self) -> Category {
+        Category::Network
+    }
+    fn icon(&self) -> Text<'_> {
+        icon_font::broadcast()
+    }
+    fn background(&self, theme: &Theme) -> Color {
+        // rgb8(100, 100, 100)
+        theme.extended_palette().secondary.base.color
+    }
+    fn on_activate(&mut self) -> Task<crate::Message> {
         fn get(api: Api) -> Result<Object, String> {
             minreq::get(api.url())
                 .send()
@@ -71,15 +73,15 @@ impl ExternalIP {
         }
 
         let api = self.api;
-        Task::perform(async move { get(api) }, Message::Fetched)
+        Task::perform(async move { get(api) }, crate::Message::ExternalIpFetched)
     }
 
-    pub fn update(&mut self, message: Message) -> Task<Message> {
+    fn update(&mut self, message: crate::Message) -> Task<crate::Message> {
         match message {
-            Message::Fetched(response) => {
+            Message::ExternalIpFetched(response) => {
                 self.response = Some(response);
             }
-            Message::PickAPI(api) => {
+            Message::ExternalIpPick(api) => {
                 self.api = api;
                 return self.on_activate();
             }
@@ -87,11 +89,12 @@ impl ExternalIP {
                 self.response = None;
                 return self.on_activate();
             }
+            _ => {}
         }
         Task::none()
     }
 
-    pub fn view(&self) -> Element<'_, crate::Message> {
+    fn view(&self) -> Element<'_, crate::Message> {
         let mut rows = widget::column![];
 
         match &self.response {
@@ -111,14 +114,13 @@ impl ExternalIP {
         let container = content_container(rows).padding(12).height(Length::Fill);
 
         let top_row = row![
-            pick_list(Api::all(), Some(&self.api), |api| Message::PickAPI(api)
-                .into())
-            .width(Length::FillPortion(2)),
+            pick_list(Api::all(), Some(&self.api), Message::ExternalIpPick)
+                .width(Length::FillPortion(2)),
             simple_button("refresh", icon_font::refresh())
-                .on_press(Message::Refresh.into())
+                .on_press(Message::Refresh)
                 .width(Length::FillPortion(1)),
             simple_button("copy all", icon_font::copy())
-                .on_press(crate::Message::CopyToClipboard(match &self.response {
+                .on_press(Message::CopyToClipboard(match &self.response {
                     Some(Ok(obj)) => obj_pretty(&format_obj(obj)),
                     _ => String::new(),
                 }))
