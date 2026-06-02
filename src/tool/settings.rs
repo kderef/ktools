@@ -1,9 +1,10 @@
 use crate::{Message, define_themes};
 
 use super::*;
+use crate::homescreen::HomescreenStyle;
 use iced::{
     Alignment, Background, Length, Theme,
-    widget::{self, button, container, row, rule, space, text},
+    widget::{self, button, container, pick_list, row, rule, space, text},
 };
 use serde::{Deserialize, Serialize};
 
@@ -13,18 +14,6 @@ define_themes! {
         Light => iced::Theme::Light,
         Night => iced::Theme::TokyoNight,
         Solarized => iced::Theme::SolarizedDark
-    }
-}
-
-#[derive(Default, Debug, Clone, Copy, Serialize, Deserialize, PartialEq, PartialOrd)]
-pub enum HomescreenStyle {
-    #[default]
-    Simple,
-    List,
-}
-impl HomescreenStyle {
-    pub const fn all() -> &'static [Self] {
-        &[Self::Simple, Self::List]
     }
 }
 
@@ -191,9 +180,16 @@ impl Tool for Settings {
             .on_press(Message::ResetToolOrder)
             .width(300);
 
+        let layout_picker = pick_list(
+            HomescreenStyle::all(),
+            Some(self.homescreen_style),
+            Message::SetHomescreenStyle,
+        );
+
         let rows = widget::column![
             section_header("Appearance"),
             setting_row("Theme", theme_buttons),
+            setting_row("Tools Layout", layout_picker),
             space().height(16),
             //
             section_header("Tool Order"),

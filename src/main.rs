@@ -24,8 +24,9 @@ use base::ICON_FONT_BYTES;
 use ipconfig::Adapter;
 
 use crate::base::rgb8;
+use crate::homescreen::HomescreenStyle;
 use crate::tool::Tool;
-use crate::tool::settings::{HomescreenStyle, Settings};
+use crate::tool::settings::Settings;
 use crate::window::WindowHandler;
 
 pub use message::Message;
@@ -219,7 +220,7 @@ impl App {
                 let top_row = widget::row![
                     space().width(Length::FillPortion(1)),
                     homescreen::search_bar(&self.search).width(Length::FillPortion(2)),
-                    homescreen::switch_view_button(&self.settings.homescreen_style),
+                    // homescreen::switch_view_button(&self.settings.homescreen_style),
                     space().width(Length::FillPortion(1))
                 ]
                 .spacing(8)

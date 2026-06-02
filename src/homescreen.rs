@@ -9,8 +9,30 @@ use iced::{
 use crate::{
     App, Message,
     base::{BOLD_DEFAULT, icon_font, rgb8},
-    tool::{Category, Tool, settings::HomescreenStyle},
+    tool::{Category, Tool},
 };
+use serde::{Deserialize, Serialize};
+
+#[derive(Default, Debug, Clone, Copy, Serialize, Deserialize, PartialEq, PartialOrd)]
+pub enum HomescreenStyle {
+    #[default]
+    Simple,
+    List,
+}
+impl HomescreenStyle {
+    pub const fn all() -> &'static [Self] {
+        &[Self::Simple, Self::List]
+    }
+}
+impl ToString for HomescreenStyle {
+    fn to_string(&self) -> String {
+        match self {
+            Self::Simple => "simple (default)",
+            Self::List => "list (advanced)",
+        }
+        .to_owned()
+    }
+}
 
 pub fn tool_button_simple<'a>(
     icon: Text<'a>,
