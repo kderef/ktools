@@ -8,7 +8,23 @@ use iced::{
 use sysinfo::System;
 
 use super::*;
-use crate::Message;
+
+#[derive(Debug, Clone)]
+pub enum Message {
+    SystemInfoFetched(&'static str, Result<SystemValue, String>),
+    SystemInfoOpen(ProcessOpen),
+    Refresh,
+}
+
+pub fn background(theme: &Theme) -> Color {
+    let pal = theme.extended_palette();
+
+    if pal.is_dark {
+        pal.warning.weak.color
+    } else {
+        pal.warning.strong.color
+    }
+}
 
 /// Value returned from fetching info
 /// Example: `fetch_hostname()` could return `SystemValue::Text("my computer")`
@@ -148,8 +164,10 @@ static TASKS: &[(&str, fn() -> Result<SystemValue, String>)] = &[
     ("Disks", fetch_disks),
 ];
 
+#[derive(Serialize, Deserialize)]
 pub struct SystemInfo {
     /// `None` means loading, `Some(Result<...>)` will be received upon `Message::SystemInfoFetched`
+    #[serde(skip)]
     info: HashMap<&'static str, Option<Result<SystemValue, String>>>,
 }
 
@@ -161,35 +179,16 @@ impl Default for SystemInfo {
     }
 }
 
-impl Tool for SystemInfo {
-    fn name(&self) -> &str {
-        "System Information"
-    }
-    fn category(&self) -> Category {
-        Category::System
-    }
-    fn icon(&self) -> Text<'_> {
-        icon_font::vm()
-    }
-    fn background(&self, theme: &Theme) -> Color {
-        // rgb8(66, 123, 88)
-        let pal = theme.extended_palette();
-
-        if pal.is_dark {
-            pal.warning.weak.color
-        } else {
-            pal.warning.strong.color
-        }
-    }
-    fn on_activate(&mut self) -> Task<crate::Message> {
+impl SystemInfo {
+    pub fn on_activate(&mut self) -> Task<Message> {
         // Launch tasks for each of the TASKS
         Task::batch(TASKS.iter().map(|(k, f)| {
             Task::perform(async move { f() }, move |r| {
-                Message::SystemInfoFetched(k, r)
+                Message::SystemInfoFetched(k, r).into()
             })
         }))
     }
-    fn update(&mut self, message: Message) -> Task<Message> {
+    pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::SystemInfoFetched(key, result) => {
                 if let Some(val) = self.info.get_mut(&key) {
@@ -218,11 +217,10 @@ impl Tool for SystemInfo {
                 #[cfg(debug_assertions)]
                 println!("$ {prog} {args:?} -> {_result:?}");
             }
-            _ => {}
         }
         Task::none()
     }
-    fn view(&self) -> Element<'_, crate::Message> {
+    pub fn view(&self) -> Element<'_, crate::Message> {
         let mut rows = widget::column![].spacing(2).height(Length::Fill);
 
         // Iterate through TASKS instead of self.info to preserve order
@@ -232,7 +230,7 @@ impl Tool for SystemInfo {
         }
 
         let proc_button = |label, msg: ProcessOpen| {
-            simple_button(label, msg.icon()).on_press(Message::SystemInfoOpen(msg))
+            simple_button(label, msg.icon()).on_press(Message::SystemInfoOpen(msg).into())
         };
 
         let spacing = 10;
@@ -269,7 +267,7 @@ impl Tool for SystemInfo {
 
         let bottom_row = row![
             button(text("refresh").size(24).center())
-                .on_press_maybe(all_loaded.then_some(Message::Refresh))
+                .on_press_maybe(all_loaded.then_some(Message::Refresh.into()))
                 .width(Length::Fill),
             space().width(10),
             button(text("copy all").size(24).center())
@@ -286,7 +284,7 @@ impl Tool for SystemInfo {
                         })
                         .collect::<Vec<_>>()
                         .join("\n");
-                    Message::CopyToClipboard(text)
+                    crate::Message::CopyToClipboard(text)
                 }))
         ];
         let col = widget::column![
@@ -322,7 +320,7 @@ fn info_row<'a>(
         .into()
 }
 
-fn value_widget<'a>(value: &'a SystemValue) -> Element<'a, Message> {
+fn value_widget<'a>(value: &'a SystemValue) -> Element<'a, crate::Message> {
     match value {
         SystemValue::Text(s) => row![
             text(s.clone()).size(14).width(Length::Fill),

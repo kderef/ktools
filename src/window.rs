@@ -59,8 +59,8 @@ pub struct WindowHandler {
     cursor_position: iced::Point,
 }
 
-impl WindowHandler {
-    pub fn new() -> Self {
+impl Default for WindowHandler {
+    fn default() -> Self {
         Self {
             window_id: None,
             window_size: iced::Size::default(),
@@ -68,6 +68,9 @@ impl WindowHandler {
             cursor_position: iced::Point::default(),
         }
     }
+}
+
+impl WindowHandler {
     pub fn handle(&mut self, message: Message) -> Task<crate::Message> {
         match message {
             Message::Opened { id, size } => {
@@ -212,7 +215,7 @@ pub fn decorations<'a>(app: &'a crate::App) -> Element<'a, crate::Message> {
     let title_text = match app.selected {
         Selection::Settings => "Settings",
         Selection::Home => "KTools",
-        Selection::Tool(index) => app.tools[index].name(),
+        Selection::Tool(index) => app.tools[index].info().title,
     };
 
     let title = text(title_text).size(30).font(BOLD_DEFAULT);

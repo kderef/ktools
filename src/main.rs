@@ -21,12 +21,12 @@ use iced::{
 };
 
 use base::ICON_FONT_BYTES;
-use ipconfig::Adapter;
+use serde::{Deserialize, Serialize};
 
 use crate::base::rgb8;
 use crate::homescreen::HomescreenStyle;
-use crate::tool::Tool;
 use crate::tool::settings::Settings;
+use crate::tool::{Tool, ToolMessage};
 use crate::window::WindowHandler;
 
 pub use message::Message;
@@ -54,35 +54,44 @@ fn main() {
 }
 
 /// Represents a selection of the user (home screen, settings screen, or a tool)
-#[derive(Debug, Clone)]
+#[derive(Default, Debug, Clone)]
 enum Selection {
+    #[default]
     Home,
     Settings,
     Tool(usize),
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct App {
-    tools: Vec<Box<dyn Tool>>,
-    selected: Selection,
+    tools: Vec<Tool>,
+    tool_order: Vec<usize>,
     settings: Settings,
 
-    // searching
-    search: String,
-    search_matches: Vec<usize>,
+    #[serde(skip)]
+    selected: Selection,
 
+    #[serde(skip)]
+    search: String,
+
+    #[serde(skip)]
+    search_matches: Option<Vec<usize>>,
+
+    #[serde(skip)]
     window_handler: WindowHandler,
 }
 
 impl App {
     /// Returns the empty (default) state of the app, and returns a message that will properly load data.
     fn new() -> (Self, Task<Message>) {
-        let tools = tool::all();
+        let tools = Tool::all();
         let app = Self {
             selected: Selection::Home,
             settings: Settings::default(),
             search: String::new(),
-            search_matches: tools.iter().enumerate().map(|(i, _)| i).collect(),
-            window_handler: WindowHandler::new(),
+            search_matches: None, //tools.iter().enumerate().map(|(i, _)| i).collect(),
+            window_handler: WindowHandler::default(),
+            tool_order: (0..tools.len()).collect(),
             tools,
         };
 
@@ -157,7 +166,7 @@ impl App {
             Message::ChooseTool(index) => {
                 let tool = &mut self.tools[index];
 
-                if !tool.no_view() {
+                if !tool.info().no_view {
                     self.selected = Selection::Tool(index);
                 }
                 return tool.on_activate();
@@ -167,7 +176,7 @@ impl App {
             }
             Message::ResetAllSettings => {
                 self.settings = Settings::default();
-                self.tools = tool::all();
+                self.tools = Tool::all();
             }
             Message::OpenURL(url) => {
                 let _ = open::that(url);
@@ -177,7 +186,11 @@ impl App {
 
                 let matcher = SkimMatcherV2::default();
 
-                let tool_indices = self.tools.iter().enumerate().map(|(i, t)| (i, t.name()));
+                let tool_indices = self
+                    .tools
+                    .iter()
+                    .enumerate()
+                    .map(|(i, t)| (i, t.info().title));
 
                 let mut matches: Vec<(usize, i64)> = tool_indices
                     .filter_map(|(i, tn)| {
@@ -190,17 +203,32 @@ impl App {
                 matches.sort_by(|a, b| b.1.cmp(&a.1));
 
                 self.search = query;
-                self.search_matches = matches.iter().map(|(i, _)| *i).collect();
+                self.search_matches = Some(matches.iter().map(|(i, _)| *i).collect());
             }
-            Message::SetHomescreenStyle(style) => {
-                self.settings.homescreen_style = style;
-            }
-            // Globally non-relevant Messages will be relegated to the `Tool`
-            other => match self.selected {
-                Selection::Settings => return self.settings.update(other),
-                Selection::Tool(index) => return self.tools[index].update(other),
-                _ => {}
+            Message::ToolMessage(message) => match self.selected {
+                Selection::Home => {}
+                Selection::Settings => {
+                    if let ToolMessage::Settings(message) = message {
+                        return self.settings.update(message).map(Into::into);
+                    }
+                }
+                Selection::Tool(index) => return self.tools[index].update(message),
             },
+            Message::ResetToolOrder => {
+                self.tool_order = (0..self.tools.len()).collect();
+            }
+
+            Message::MoveToolUp(i) => {
+                if i > 0 {
+                    self.tool_order.swap(i, i - 1);
+                }
+            }
+            Message::MoveToolDown(i) => {
+                if i + 1 < self.tool_order.len() {
+                    self.tool_order.swap(i, i + 1);
+                }
+            }
+            _ => {}
         }
 
         Task::none()
@@ -209,7 +237,7 @@ impl App {
     /// Dynamic grid of squares representing tools.
     fn view(&self) -> Element<'_, Message> {
         let view = match self.selected {
-            Selection::Settings => self.settings.view(),
+            Selection::Settings => self.settings.view(self).map(Into::into),
             Selection::Tool(index) => self.tools[index].view(),
             Selection::Home => {
                 let view = match self.settings.homescreen_style {
@@ -281,40 +309,28 @@ impl App {
             }
         };
 
-        let map = match serde_json::from_slice(&bytes) {
-            Ok(serde_json::Value::Object(m)) => m,
-            Ok(_unexpected) => {
-                #[cfg(debug_assertions)]
-                eprintln!("ERROR: unexpected JSON value: {_unexpected}");
-                return;
-            }
-            Err(_e) => {
-                #[cfg(debug_assertions)]
-                eprintln!("ERROR: failed to deserialize: {_e}");
-                return;
-            }
-        };
+        let loaded: Self = serde_json::from_slice(&bytes).unwrap_or_else(|e| {
+            #[cfg(debug_assertions)]
+            eprintln!("ERROR: failed to deserialize: {e}");
+            Self::new().0
+        });
 
-        for tool in &mut self.tools {
-            if let Some(data) = map.get(tool.name()).cloned() {
-                tool.load(data);
-            }
-        }
+        // for tool in &mut self.tools {
+        //     if let Some(data) = map.get(tool.name()).cloned() {
+        //         tool.load(data);
+        //     }
+        // }
 
-        if let Some(data) = map.get(self.settings.name()).cloned() {
-            self.settings.load(data);
-        }
+        // if let Some(data) = map.get(self.settings.name()).cloned() {
+        //     self.settings.load(data);
+        // }
+
+        *self = loaded;
     }
 
     /// Collect state of all the `Tool`'s and saves it in a config file
     fn save_all(&self) {
-        let data: serde_json::Map<String, serde_json::Value> = self
-            .tools
-            .iter()
-            .map(|t| t.as_ref()) // unbox
-            .chain([&self.settings as &dyn Tool]) // add settings
-            .filter_map(|t| t.save().map(|v| (t.name().to_owned(), v)))
-            .collect();
+        let data = serde_json::to_value(self).unwrap(); // NOTE: unwrap
 
         let data_dir = Self::data_dir();
         let path = Self::data_path();

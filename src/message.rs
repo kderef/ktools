@@ -11,13 +11,19 @@ pub enum Message {
 
     OpenURL(&'static str),
 
+    ToolMessage(tool::ToolMessage),
+
+    ResetToolOrder,
+    MoveToolUp(usize),
+    MoveToolDown(usize),
+
     /* Home page messages */
     /// Go to index of App::tools
     ChooseTool(usize),
     GoHome,
     GoToSettings,
-    SetHomescreenStyle(homescreen::HomescreenStyle),
     Search(String),
+    ResetAllSettings,
 
     /* Generic messages */
     Refresh,
@@ -25,35 +31,40 @@ pub enum Message {
     TabSelected(usize),
     CopyToClipboard(String),
     TopTabSelected(usize),
-
-    /* messages for settings */
-    SetTheme(tool::settings::ThemeSetting),
-    ResetToolOrder,
-    MoveToolUp(usize),
-    MoveToolDown(usize),
-    ResetAllSettings,
-
-    /* messages for netinfo */
-    NetworkInterfacesFetched(Result<Vec<Adapter>, String>),
-
-    /* messages for passgen */
-    PasswordGenerator(tool::passgen::Message),
-
     /* messages for ext_ip */
-    ExternalIpFetched(Result<tool::ext_ip::Object, String>),
-    ExternalIpPick(tool::ext_ip::Api),
+}
 
-    /* messages for sys_info */
-    SystemInfoFetched(&'static str, Result<tool::sys_info::SystemValue, String>),
-    SystemInfoOpen(tool::sys_info::ProcessOpen),
+impl From<tool::sys_info::Message> for Message {
+    fn from(value: tool::sys_info::Message) -> Self {
+        Self::ToolMessage(ToolMessage::SysInfo(value))
+    }
+}
 
-    /* messages for ping */
-    PingStart(Option<String>),
-    PingCancel,
-    PingDefaultGateway,
-    PingAddressChanged(String),
-    PingEditorAction(text_editor::Action),
-    PingToggleCustom,
-    PingOutput(String),
-    PingDone,
+impl From<tool::ext_ip::Message> for Message {
+    fn from(value: tool::ext_ip::Message) -> Self {
+        Self::ToolMessage(ToolMessage::ExtIp(value))
+    }
+}
+
+impl From<tool::settings::Message> for Message {
+    fn from(value: tool::settings::Message) -> Self {
+        Self::ToolMessage(ToolMessage::Settings(value))
+    }
+}
+
+impl From<tool::netinfo::Message> for Message {
+    fn from(value: tool::netinfo::Message) -> Self {
+        Self::ToolMessage(ToolMessage::NetInfo(value))
+    }
+}
+impl From<tool::passgen::Message> for Message {
+    fn from(value: tool::passgen::Message) -> Self {
+        Self::ToolMessage(ToolMessage::PassGen(value))
+    }
+}
+
+impl From<tool::ping::Message> for Message {
+    fn from(value: tool::ping::Message) -> Self {
+        Self::ToolMessage(ToolMessage::Ping(value))
+    }
 }

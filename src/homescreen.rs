@@ -9,7 +9,7 @@ use iced::{
 use crate::{
     App, Message,
     base::{BOLD_DEFAULT, icon_font, rgb8},
-    tool::{Category, Tool},
+    tool::{Category, ToolInfo},
 };
 use serde::{Deserialize, Serialize};
 
@@ -24,6 +24,7 @@ impl HomescreenStyle {
         &[Self::Simple, Self::List]
     }
 }
+
 impl ToString for HomescreenStyle {
     fn to_string(&self) -> String {
         match self {
@@ -34,13 +35,10 @@ impl ToString for HomescreenStyle {
     }
 }
 
-pub fn tool_button_simple<'a>(
-    icon: Text<'a>,
-    name: &'a str,
-    bg: Color,
-    index: usize,
-) -> Button<'a, Message> {
-    let icon = icon.size(28);
+pub fn tool_button_simple<'a>(tool_info: ToolInfo, index: usize) -> Button<'a, Message> {
+    let icon = (tool_info.icon)().size(28);
+    let name = tool_info.title;
+
     button(
         container(
             iced::widget::column![icon, text(name).size(16),]
@@ -58,6 +56,7 @@ pub fn tool_button_simple<'a>(
             button::Status::Pressed => 0.65,
             _ => 1.0,
         };
+        let bg = (tool_info.background)(theme);
         let tinted = Color { a: alpha, ..bg };
         button::Style {
             snap: false,
@@ -86,17 +85,14 @@ const PADDING: u16 = 20;
 pub fn view_simple<'a>(app: &'a App) -> Element<'a, Message> {
     // The grid of Tool's
     let children = app
-        .settings
         .tool_order
         .iter()
-        .filter_map(|name| app.tools.iter().position(|t| t.name() == name))
-        .filter_map(|i| {
-            if app.search_matches.contains(&i) {
-                let t = &app.tools[i];
-                Some(tool_button_simple(t.icon(), t.name(), t.background(&app.theme()), i).into())
-            } else {
-                None
-            }
+        .map(|i| (i, &app.tools[*i]))
+        .filter_map(|(i, t)| {
+            app.search_matches
+                .as_ref()
+                .is_none_or(|ms| ms.contains(&i))
+                .then_some(tool_button_simple(t.info(), *i).into())
         });
 
     let grid = grid(children).fluid(200).spacing(20);
@@ -107,10 +103,13 @@ pub fn view_simple<'a>(app: &'a App) -> Element<'a, Message> {
     view.into()
 }
 
-fn tool_small_button<'a>(t: &'a dyn Tool, index: usize) -> Button<'a, Message> {
+fn tool_small_button<'a>(t: ToolInfo, index: usize) -> Button<'a, Message> {
     use button::Status;
 
-    button(widget::row![t.icon(), space().width(5), t.name()])
+    let icon = (t.icon)();
+    let name = t.title;
+
+    button(widget::row![icon, space().width(5), name])
         .on_press(Message::ChooseTool(index))
         .padding(0)
         .style(|theme, status| {
@@ -132,11 +131,12 @@ fn tool_small_button<'a>(t: &'a dyn Tool, index: usize) -> Button<'a, Message> {
 pub fn view_advanced<'a>(app: &'a App) -> Element<'a, Message> {
     let tools_by_category = Category::all().iter().filter_map(|c| {
         let mut tools = app
-            .tools
+            .tool_order
             .iter()
-            .enumerate()
+            .map(|i| (i, &app.tools[*i]))
             .filter(|(i, t)| {
-                t.category() == *c && (app.search.is_empty() || app.search_matches.contains(i))
+                t.info().category == *c
+                    && app.search_matches.as_ref().is_none_or(|ms| ms.contains(i))
             })
             .peekable();
         // if is empty
@@ -155,10 +155,10 @@ pub fn view_advanced<'a>(app: &'a App) -> Element<'a, Message> {
         .extend(tools.map(|(i, t)| {
             widget::row![
                 container(space().width(6).height(Length::Fill)).style(|theme| container::Style {
-                    background: Some(Background::Color(t.background(theme))),
+                    background: Some(Background::Color((t.info().background)(theme))),
                     ..Default::default()
                 }),
-                tool_small_button(t.as_ref(), i)
+                tool_small_button(t.info(), *i)
             ]
             .spacing(5)
             .height(20)
@@ -215,6 +215,7 @@ pub fn search_bar<'a>(state: &'a str) -> TextInput<'a, Message> {
         })
 }
 
+/*
 pub fn switch_view_button<'a>(state: &'a HomescreenStyle) -> Button<'a, Message> {
     let icon = match state {
         HomescreenStyle::Simple => icon_font::layout(),
@@ -254,3 +255,4 @@ pub fn switch_view_button<'a>(state: &'a HomescreenStyle) -> Button<'a, Message>
             }
         })
 }
+*/
