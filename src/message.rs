@@ -1,4 +1,4 @@
-use crate::*;
+use crate::{tool::Category, ui::SidebarOption, *};
 
 /// Only message type used in the App.
 /// It has a couple of generic messages such as `GoHome`
@@ -10,6 +10,8 @@ pub enum Message {
     Window(window::Message),
 
     OpenURL(&'static str),
+
+    SidebarOption(SidebarOption),
 
     /* Home page messages */
     /// Go to index of App::tools

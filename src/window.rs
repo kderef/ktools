@@ -4,7 +4,7 @@ use iced::{
     Alignment, Background, Border, Color, Element, Length, Task, Theme,
     border::Radius,
     mouse::Interaction,
-    widget::{self, Button, button, container, mouse_area, row, space, stack, text},
+    widget::{self, Button, Container, button, container, mouse_area, row, space, stack, text},
 };
 
 use crate::base::*;
@@ -176,6 +176,34 @@ impl WindowHandler {
             ]
             .into(),
         ]
+    }
+
+    pub fn container<'a, M: 'a>(&'a self, content: impl Into<Element<'a, M>>) -> Container<'a, M> {
+        container(content)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .style(|_theme: &Theme| container::Style {
+                text_color: None,
+                background: None,
+                border: Border {
+                    color: Color::TRANSPARENT,
+                    width: 0.0,
+                    radius: Radius::new(self.window_border_radius),
+                },
+                ..Default::default()
+            })
+    }
+
+    /// Wrap the `inside` in mouse resizing areas
+    pub fn wrap<'a>(
+        &'a self,
+        inside: impl Into<Element<'a, crate::Message>>,
+    ) -> Element<'a, crate::Message> {
+        stack![mouse_area(inside).on_press(crate::Message::Window(Message::Drag)),]
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .extend(self.resize_areas())
+            .into()
     }
 }
 

@@ -10,6 +10,7 @@ mod base;
 mod homescreen;
 mod message;
 mod tool;
+mod ui;
 mod window;
 
 use fuzzy_matcher::FuzzyMatcher;
@@ -27,6 +28,7 @@ use crate::base::rgb8;
 use crate::homescreen::HomescreenStyle;
 use crate::tool::Tool;
 use crate::tool::settings::Settings;
+use crate::ui::Sidebar;
 use crate::window::WindowHandler;
 
 pub use message::Message;
@@ -70,6 +72,7 @@ pub struct App {
     search: String,
     search_matches: Vec<usize>,
 
+    sidebar: Sidebar,
     window_handler: WindowHandler,
 }
 
@@ -83,6 +86,7 @@ impl App {
             search: String::new(),
             search_matches: tools.iter().enumerate().map(|(i, _)| i).collect(),
             window_handler: WindowHandler::new(),
+            sidebar: Sidebar::from_tools(&tools),
             tools,
         };
 
@@ -162,6 +166,10 @@ impl App {
                 }
                 return tool.on_activate();
             }
+
+            // sidebar
+            Message::SidebarOption(option) => {}
+
             Message::CopyToClipboard(text) => {
                 return clipboard::write(text);
             }
@@ -230,7 +238,7 @@ impl App {
                     space().height(10),
                     top_row,
                     space().height(10),
-                    view,
+                    widget::row![self.sidebar.view(), view],
                     space().height(Length::Fill),
                     text("© Kian Heitkamp").size(11).color(rgb8(120, 120, 120))
                 ]
@@ -242,27 +250,8 @@ impl App {
             .height(Length::Fill)
             .width(Length::Fill);
 
-        let view = container(main_content)
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .style(|_theme: &Theme| container::Style {
-                text_color: None,
-                background: None,
-                border: Border {
-                    color: Color::TRANSPARENT,
-                    width: 0.0,
-                    radius: Radius::new(self.window_handler.window_border_radius),
-                },
-                ..Default::default()
-            });
-
-        let resize_areas = self.window_handler.resize_areas();
-
-        stack![mouse_area(view).on_press(Message::Window(window::Message::Drag)),]
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .extend(resize_areas.into_iter())
-            .into()
+        let view = self.window_handler.container(main_content);
+        self.window_handler.wrap(view)
     }
 
     /// Load saved data into all the tools
