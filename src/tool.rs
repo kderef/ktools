@@ -23,6 +23,15 @@ impl Category {
             Self::Network => "network",
         }
     }
+    pub fn icon(self) -> Text<'static> {
+        match self {
+            Self::Application => icon_font::terminal_cmd(),
+            Self::Utility => icon_font::tools(),
+            Self::System => icon_font::vm(),
+            Self::Network => icon_font::globe(),
+        }
+    }
+
     pub const fn all() -> &'static [Self] {
         &[
             Self::Application,

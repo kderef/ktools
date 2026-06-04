@@ -28,7 +28,7 @@ use crate::base::rgb8;
 use crate::homescreen::HomescreenStyle;
 use crate::tool::Tool;
 use crate::tool::settings::Settings;
-use crate::ui::Sidebar;
+use crate::ui::{Sidebar, SidebarOption};
 use crate::window::WindowHandler;
 
 pub use message::Message;
@@ -168,7 +168,9 @@ impl App {
             }
 
             // sidebar
-            Message::SidebarOption(option) => {}
+            Message::SidebarOption(SidebarOption::Category(c)) => {
+                self.sidebar.toggle_category(c);
+            }
 
             Message::CopyToClipboard(text) => {
                 return clipboard::write(text);
@@ -236,11 +238,11 @@ impl App {
 
                 widget::column![
                     space().height(10),
-                    top_row,
-                    space().height(10),
+                    // top_row,
+                    // space().height(10),
                     widget::row![self.sidebar.view(), view],
-                    space().height(Length::Fill),
-                    text("© Kian Heitkamp").size(11).color(rgb8(120, 120, 120))
+                    // space().height(Length::Fill),
+                    // text("© Kian Heitkamp").size(11).color(rgb8(120, 120, 120))
                 ]
                 .into()
             }
