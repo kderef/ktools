@@ -136,60 +136,15 @@ impl Tool for Settings {
             .style(button::danger)
             .on_press(Message::ResetAllSettings);
 
-        let theme_buttons = ThemeSetting::all()
-            .iter()
-            .fold(row![].spacing(8), |row, &t| {
-                let active = t == self.theme;
-
-                row.push(
-                    button(text(t.label()).size(14).center())
-                        .on_press(Message::SetTheme(t))
-                        .width(Length::Fixed(70.0))
-                        .style(move |theme: &Theme, status| {
-                            let palette = theme.extended_palette();
-                            button::Style {
-                                background: Some(Background::Color(if active {
-                                    palette.primary.strong.color
-                                } else {
-                                    match status {
-                                        button::Status::Hovered => palette.background.weak.color,
-                                        _ => palette.background.strong.color,
-                                    }
-                                })),
-                                border: iced::Border {
-                                    color: if active {
-                                        palette.primary.base.color
-                                    } else {
-                                        palette.background.strong.color
-                                    },
-                                    width: 1.0,
-                                    radius: 6.0.into(),
-                                },
-                                text_color: if active {
-                                    palette.primary.strong.text
-                                } else {
-                                    palette.background.base.text
-                                },
-                                ..Default::default()
-                            }
-                        }),
-                )
-            });
+        let theme_picker = pick_list(ThemeSetting::all(), Some(self.theme), Message::SetTheme);
 
         let reset_order_btn = button(text("default order").size(16).center())
             .on_press(Message::ResetToolOrder)
             .width(300);
 
-        let layout_picker = pick_list(
-            HomescreenStyle::all(),
-            Some(self.homescreen_style),
-            Message::SetHomescreenStyle,
-        );
-
         let rows = widget::column![
             section_header("Appearance"),
-            setting_row("Theme", theme_buttons),
-            setting_row("Tools Layout", layout_picker),
+            setting_row("Theme", theme_picker),
             space().height(16),
             //
             section_header("Tool Order"),

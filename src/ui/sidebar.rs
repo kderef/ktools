@@ -1,6 +1,7 @@
+use crate::base::icon_font;
 use iced::{
-    Color, Element, Length, Padding, Task, Theme,
-    widget::{self, button, container, rule, space, text},
+    Color, Element, Length, Padding, Theme,
+    widget::{self, Button, Text, button, container, rule, space, text},
 };
 
 use crate::tool::{Category, Tool};
@@ -27,6 +28,15 @@ pub enum SidebarItem {
 pub enum SidebarOption {
     Category(Category),
     Tool(Category, usize),
+}
+
+fn icon_button<'a>(icon: Text<'a>, label: &'a str) -> Button<'a, Message> {
+    button(widget::row![
+        icon.size(15),
+        space().width(5),
+        text(label).size(15)
+    ])
+    .style(SidebarItem::style)
 }
 
 impl SidebarItem {
@@ -67,13 +77,7 @@ impl SidebarItem {
             } => {
                 let on_click = Message::SidebarOption(SidebarOption::Category(*category));
 
-                let view_self = button(widget::row![
-                    category.icon(),
-                    space().width(5),
-                    category.name()
-                ])
-                .on_press(on_click)
-                .style(Self::style);
+                let view_self = icon_button(category.icon(), category.name()).on_press(on_click);
 
                 let mut col = widget::column![view_self];
 
@@ -118,9 +122,6 @@ pub struct Sidebar {
 }
 
 impl Sidebar {
-    pub fn new() -> Self {
-        Self { items: vec![] }
-    }
     pub fn from_tools(tools: &[Box<dyn Tool>]) -> Self {
         let items = Category::all()
             .iter()
@@ -160,18 +161,37 @@ impl Sidebar {
     }
 
     pub fn view(&self) -> Element<'_, Message> {
-        let col = widget::column(self.items.iter().map(SidebarItem::render))
-            .height(Length::Fill)
-            .padding(10);
+        // add header
+        let mut col = widget::column![
+            icon_button(icon_font::home(), "Home").on_press(crate::Message::GoHome),
+            rule::horizontal(2),
+        ]
+        .height(Length::Fill)
+        .padding(10);
+
+        // add items
+        col = col.extend(self.items.iter().map(SidebarItem::render));
+
+        // add footer
+        col = col
+            .push(space().height(Length::Fill))
+            .push(rule::horizontal(2))
+            .push(
+                icon_button(icon_font::settings_gear(), "settings")
+                    .on_press(crate::Message::GoToSettings),
+            );
+
         let row = widget::row![col, rule::vertical(2)];
 
-        let view = container(row).style(|theme: &Theme| container::Style {
-            text_color: None,
-            background: Some(iced::Background::Color(
-                theme.extended_palette().background.weaker.color,
-            )),
-            ..Default::default()
-        });
+        let view = container(row)
+            .style(|theme: &Theme| container::Style {
+                text_color: None,
+                background: Some(iced::Background::Color(
+                    theme.extended_palette().background.weaker.color,
+                )),
+                ..Default::default()
+            })
+            .width(160);
 
         view.into()
     }

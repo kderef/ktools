@@ -15,16 +15,14 @@ mod window;
 
 use fuzzy_matcher::FuzzyMatcher;
 use fuzzy_matcher::skim::SkimMatcherV2;
-use iced::border::Radius;
 use iced::{
-    Border, Color, Element, Length, Subscription, Task, clipboard, keyboard,
+    Element, Length, Subscription, Task, clipboard, keyboard,
     widget::{self, *},
 };
 
 use base::ICON_FONT_BYTES;
 use ipconfig::Adapter;
 
-use crate::base::rgb8;
 use crate::homescreen::HomescreenStyle;
 use crate::tool::Tool;
 use crate::tool::settings::Settings;
@@ -37,7 +35,7 @@ fn main() {
     iced::application(App::new, App::update, App::view)
         .window(iced::window::Settings {
             min_size: Some(iced::Size {
-                width: 650.0,
+                width: 800.0,
                 height: 500.0,
             }),
             icon: window::icon(),
@@ -45,7 +43,7 @@ fn main() {
         })
         .title(App::title)
         .resizable(true)
-        .window_size((650, 600))
+        .window_size((800, 600))
         .decorations(false)
         .centered()
         .font(ICON_FONT_BYTES)

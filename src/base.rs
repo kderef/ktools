@@ -176,6 +176,12 @@ macro_rules! define_themes {
             ),+
         }
 
+        impl ToString for $enum_name {
+            fn to_string(&self) -> String {
+                self.label().to_string()
+            }
+        }
+
         impl $enum_name {
             /// Name of the theme to be displayed
             pub const fn label(self) -> &'static str {
