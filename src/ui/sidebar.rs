@@ -1,9 +1,11 @@
 use iced::{
     Color, Element, Length, Padding, Task, Theme,
-    widget::{self, button, container, space, text},
+    widget::{self, button, container, rule, space, text},
 };
 
 use crate::tool::{Category, Tool};
+
+// TODO: make the sidebar background reach the title bar
 
 type Message = crate::Message;
 
@@ -67,7 +69,7 @@ impl SidebarItem {
 
                 let view_self = button(widget::row![
                     category.icon(),
-                    space().width(2),
+                    space().width(5),
                     category.name()
                 ])
                 .on_press(on_click)
@@ -85,6 +87,9 @@ impl SidebarItem {
                         }));
                     }
                 }
+
+                // col = col.push(widget::row![rule::horizontal(1)]);
+
                 col.into()
             }
         };
@@ -155,9 +160,12 @@ impl Sidebar {
     }
 
     pub fn view(&self) -> Element<'_, Message> {
-        let col = widget::column(self.items.iter().map(SidebarItem::render)).height(Length::Fill);
+        let col = widget::column(self.items.iter().map(SidebarItem::render))
+            .height(Length::Fill)
+            .padding(10);
+        let row = widget::row![col, rule::vertical(2)];
 
-        let view = container(col).style(|theme: &Theme| container::Style {
+        let view = container(row).style(|theme: &Theme| container::Style {
             text_color: None,
             background: Some(iced::Background::Color(
                 theme.extended_palette().background.weaker.color,

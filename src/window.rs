@@ -4,7 +4,9 @@ use iced::{
     Alignment, Background, Border, Color, Element, Length, Task, Theme,
     border::Radius,
     mouse::Interaction,
-    widget::{self, Button, Container, button, container, mouse_area, row, space, stack, text},
+    widget::{
+        self, Button, Container, Text, button, container, mouse_area, row, space, stack, text,
+    },
 };
 
 use crate::base::*;
@@ -207,7 +209,7 @@ impl WindowHandler {
     }
 }
 
-fn top_button<'a, M: Into<crate::Message>, E: Into<Element<'a, crate::Message>>>(
+pub fn decoration_button<'a, M: Into<crate::Message>, E: Into<Element<'a, crate::Message>>>(
     inside: E,
     message: M,
 ) -> Button<'a, crate::Message> {
@@ -236,17 +238,24 @@ fn top_button<'a, M: Into<crate::Message>, E: Into<Element<'a, crate::Message>>>
         })
 }
 
-pub fn decorations<'a>(app: &'a crate::App) -> Element<'a, crate::Message> {
+pub fn titlebar_text<'a>(app: &'a crate::App) -> Text<'a> {
     let title_text = match app.selected {
         Selection::Settings => "Settings",
         Selection::Home => "KTools",
         Selection::Tool(index) => app.tools[index].name(),
     };
 
-    let title = text(title_text).size(30).font(BOLD_DEFAULT);
+    let title = text(title_text).size(30).font(BOLD_DEFAULT).center();
 
+    title
+}
+
+pub fn decorations<'a>(
+    app: &'a crate::App,
+    show_top_left_btn: bool,
+) -> Element<'a, crate::Message> {
     let top_left_button = if matches!(app.selected, Selection::Home) {
-        top_button(
+        decoration_button(
             row![
                 icon_font::settings_gear().size(15),
                 space().width(4),
@@ -257,7 +266,7 @@ pub fn decorations<'a>(app: &'a crate::App) -> Element<'a, crate::Message> {
             crate::Message::GoToSettings,
         )
     } else {
-        top_button(
+        decoration_button(
             row![
                 icon_font::arrow_left().size(15),
                 space().width(2),
@@ -269,13 +278,19 @@ pub fn decorations<'a>(app: &'a crate::App) -> Element<'a, crate::Message> {
         )
     };
 
+    let top_left: Element<'_, crate::Message> = if show_top_left_btn {
+        top_left_button.into()
+    } else {
+        space().into()
+    };
+
     let decorations = stack![
-        title.width(Length::Fill).center(),
+        // title.width(Length::Fill).center(),
         row![
-            top_left_button,
+            top_left,
             space().width(Length::Fill),
-            top_button(icon_font::dash().size(25), Message::Minimize),
-            top_button(icon_font::close().size(25), Message::Close)
+            decoration_button(icon_font::dash().size(25), Message::Minimize),
+            decoration_button(icon_font::close().size(25), Message::Close)
         ]
     ];
 

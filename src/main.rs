@@ -217,45 +217,36 @@ impl App {
     }
 
     /// Dynamic grid of squares representing tools.
+
     fn view(&self) -> Element<'_, Message> {
-        let view = match self.selected {
+        let content: Element<'_, Message> = match self.selected {
             Selection::Settings => self.settings.view(),
             Selection::Tool(index) => self.tools[index].view(),
-            Selection::Home => {
-                let view = match self.settings.homescreen_style {
-                    HomescreenStyle::Simple => homescreen::view_simple(self),
-                    HomescreenStyle::List => homescreen::view_advanced(self),
-                };
-
-                let top_row = widget::row![
-                    space().width(Length::FillPortion(1)),
-                    homescreen::search_bar(&self.search).width(Length::FillPortion(2)),
-                    // homescreen::switch_view_button(&self.settings.homescreen_style),
-                    space().width(Length::FillPortion(1))
-                ]
-                .spacing(8)
-                .height(30);
-
-                widget::column![
-                    space().height(10),
-                    // top_row,
-                    // space().height(10),
-                    widget::row![self.sidebar.view(), view],
-                    // space().height(Length::Fill),
-                    // text("© Kian Heitkamp").size(11).color(rgb8(120, 120, 120))
-                ]
-                .into()
-            }
+            Selection::Home => match self.settings.homescreen_style {
+                HomescreenStyle::Simple => homescreen::view_simple(self),
+                HomescreenStyle::List => homescreen::view_advanced(self),
+            },
         };
 
-        let main_content = widget::column![window::decorations(self), view,]
+        let decorations = window::decorations(self, false);
+        let titlebar_text = window::titlebar_text(self).width(Length::Fill);
+
+        // Decorations + content stacked in the right column only
+        let right = widget::column![decorations, content,]
             .height(Length::Fill)
             .width(Length::Fill);
+
+        // Sidebar spans full height — its background paints over the titlebar area
+        let main_content = widget::row![self.sidebar.view(), right,]
+            .height(Length::Fill)
+            .width(Length::Fill);
+
+        // to make sure the window title is centered
+        let main_content = stack![main_content, titlebar_text,];
 
         let view = self.window_handler.container(main_content);
         self.window_handler.wrap(view)
     }
-
     /// Load saved data into all the tools
     fn load_all(&mut self) {
         let path = Self::data_path();
