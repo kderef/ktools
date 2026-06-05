@@ -1,6 +1,6 @@
 use crate::base::icon_font;
 use iced::{
-    Color, Element, Length, Padding, Theme,
+    Background, Color, Element, Length, Padding, Theme,
     widget::{self, Button, Text, button, container, rule, space, text},
 };
 
@@ -24,8 +24,10 @@ pub enum SidebarItem {
     },
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum SidebarOption {
+    Home,
+    Settings,
     Category(Category),
     Tool(Category, usize),
 }
@@ -37,9 +39,20 @@ fn icon_button<'a>(icon: Text<'a>, label: &'a str) -> Button<'a, Message> {
         text(label).size(15)
     ])
     .style(SidebarItem::style)
+    .width(Length::Fill)
 }
 
 impl SidebarItem {
+    fn style_active(theme: &Theme, status: button::Status) -> button::Style {
+        let ex = theme.extended_palette();
+
+        let mut style = Self::style(theme, status);
+
+        style.background = Some(Background::Color(ex.background.base.color));
+        style.border = style.border.rounded(4);
+
+        style
+    }
     fn style(theme: &Theme, status: button::Status) -> button::Style {
         use button::Status;
 
@@ -47,7 +60,7 @@ impl SidebarItem {
         let ex = theme.extended_palette();
 
         button::Style {
-            background: Some(iced::Background::Color(Color::TRANSPARENT)),
+            background: Some(Background::Color(Color::TRANSPARENT)),
             text_color: match status {
                 Status::Active => pal.text,
                 Status::Pressed => pal.text,
@@ -64,26 +77,50 @@ impl SidebarItem {
         }
     }
 
-    fn render(&self) -> Element<'_, Message> {
-        let view = match self {
-            Self::Item { name, on_click } => button(text(name))
-                .on_press(on_click.clone())
-                .style(Self::style)
-                .into(),
+    fn render(&self, active: &Option<SidebarOption>) -> Element<'_, Message> {
+        match self {
+            Self::Item { name, on_click } => {
+                let is_active = matches!(active, Some(SidebarOption::Tool(_, _)));
+                // match by on_click message to determine if this item is active
+                let is_active = active.as_ref().map_or(
+                    false,
+                    |a| matches!(on_click, Message::SidebarOption(o) if o == a),
+                );
+
+                button(text(name))
+                    .on_press(on_click.clone())
+                    .style(if is_active {
+                        Self::style_active
+                    } else {
+                        Self::style
+                    })
+                    .width(Length::Fill)
+                    .into()
+            }
             Self::Category {
                 category,
                 expanded,
                 children,
             } => {
-                let on_click = Message::SidebarOption(SidebarOption::Category(*category));
+                let on_click_msg = Message::SidebarOption(SidebarOption::Category(*category));
+                let is_active = active
+                    .as_ref()
+                    .map_or(false, |a| a == &SidebarOption::Category(*category));
 
-                let view_self = icon_button(category.icon(), category.name()).on_press(on_click);
+                let view_self = icon_button(category.icon(), category.name())
+                    .on_press(on_click_msg)
+                    .style(if is_active {
+                        Self::style_active
+                    } else {
+                        Self::style
+                    })
+                    .width(Length::Fill);
 
                 let mut col = widget::column![view_self];
 
                 if *expanded {
                     for child in children {
-                        col = col.push(widget::container(child.render()).padding(Padding {
+                        col = col.push(widget::container(child.render(active)).padding(Padding {
                             top: 0.,
                             right: 0.,
                             bottom: 0.,
@@ -91,14 +128,9 @@ impl SidebarItem {
                         }));
                     }
                 }
-
-                // col = col.push(widget::row![rule::horizontal(1)]);
-
                 col.into()
             }
-        };
-
-        view
+        }
     }
 }
 
@@ -160,17 +192,23 @@ impl Sidebar {
         }
     }
 
-    pub fn view(&self) -> Element<'_, Message> {
+    pub fn view(&self, active: &Option<SidebarOption>) -> Element<'_, Message> {
         // add header
         let mut col = widget::column![
-            icon_button(icon_font::home(), "Home").on_press(crate::Message::GoHome),
+            icon_button(icon_font::home(), "Home")
+                .on_press(crate::Message::SidebarOption(SidebarOption::Home))
+                .style(if matches!(active, Some(SidebarOption::Home)) {
+                    SidebarItem::style_active
+                } else {
+                    SidebarItem::style
+                }),
             rule::horizontal(2),
         ]
         .height(Length::Fill)
         .padding(10);
 
         // add items
-        col = col.extend(self.items.iter().map(SidebarItem::render));
+        col = col.extend(self.items.iter().map(|i| i.render(active)));
 
         // add footer
         col = col
@@ -178,7 +216,12 @@ impl Sidebar {
             .push(rule::horizontal(2))
             .push(
                 icon_button(icon_font::settings_gear(), "settings")
-                    .on_press(crate::Message::GoToSettings),
+                    .style(if matches!(active, Some(SidebarOption::Settings)) {
+                        SidebarItem::style_active
+                    } else {
+                        SidebarItem::style
+                    })
+                    .on_press(crate::Message::SidebarOption(SidebarOption::Settings)),
             );
 
         let row = widget::row![col, rule::vertical(2)];

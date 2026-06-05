@@ -63,6 +63,7 @@ enum Selection {
 
 pub struct App {
     tools: Vec<Box<dyn Tool>>,
+    sidebar_selected: Option<SidebarOption>,
     selected: Selection,
     settings: Settings,
 
@@ -80,6 +81,7 @@ impl App {
         let tools = tool::all();
         let app = Self {
             selected: Selection::Home,
+            sidebar_selected: None,
             settings: Settings::default(),
             search: String::new(),
             search_matches: tools.iter().enumerate().map(|(i, _)| i).collect(),
@@ -166,10 +168,17 @@ impl App {
             }
 
             // sidebar
-            Message::SidebarOption(SidebarOption::Category(c)) => {
-                self.sidebar.toggle_category(c);
+            Message::SidebarOption(opt) => {
+                match opt {
+                    SidebarOption::Home => {}
+                    SidebarOption::Settings => {}
+                    SidebarOption::Category(c) => {
+                        self.sidebar.toggle_category(c);
+                    }
+                    SidebarOption::Tool(_c, _i) => {}
+                }
+                self.sidebar_selected = Some(opt);
             }
-
             Message::CopyToClipboard(text) => {
                 return clipboard::write(text);
             }
@@ -235,7 +244,7 @@ impl App {
             .width(Length::Fill);
 
         // Sidebar spans full height — its background paints over the titlebar area
-        let main_content = widget::row![self.sidebar.view(), right,]
+        let main_content = widget::row![self.sidebar.view(&self.sidebar_selected), right,]
             .height(Length::Fill)
             .width(Length::Fill);
 
