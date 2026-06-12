@@ -28,6 +28,13 @@ pub enum Message {
     CopyToClipboard(String),
     TopTabSelected(usize),
 
+    /* messages for applications */
+    ApplicationOpen {
+        cmd: &'static [&'static str],
+        create_new_console: bool,
+        elevate: bool,
+    },
+
     /* messages for settings */
     SetTheme(tool::settings::ThemeSetting),
     ResetToolOrder,

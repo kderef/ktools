@@ -162,9 +162,6 @@ impl Tool for NetworkInfo {
     fn name(&self) -> &'static str {
         "Network Information"
     }
-    fn category(&self) -> Category {
-        Category::Network
-    }
 
     fn icon(&self) -> Text<'_> {
         icon_font::globe()

@@ -23,7 +23,6 @@ use iced::{
 use base::ICON_FONT_BYTES;
 use ipconfig::Adapter;
 
-use crate::homescreen::HomescreenStyle;
 use crate::tool::Tool;
 use crate::tool::settings::Settings;
 use crate::ui::{Sidebar, SidebarItem};
@@ -151,9 +150,7 @@ impl App {
             Message::ChooseTool(index) => {
                 let tool = &mut self.tools[index];
 
-                if !tool.no_view() {
-                    self.selected = SidebarItem::Tool(index);
-                }
+                self.selected = SidebarItem::Tool(index);
                 return tool.on_activate();
             }
 
@@ -165,9 +162,7 @@ impl App {
                     SidebarItem::Tool(index) => {
                         let tool = &mut self.tools[index];
 
-                        if !tool.no_view() {
-                            self.selected = SidebarItem::Tool(index);
-                        }
+                        self.selected = SidebarItem::Tool(index);
                         return tool.on_activate();
                     }
                 }
@@ -203,9 +198,6 @@ impl App {
                 self.search = query;
                 self.search_matches = matches.iter().map(|(i, _)| *i).collect();
             }
-            Message::SetHomescreenStyle(style) => {
-                self.settings.homescreen_style = style;
-            }
             // Globally non-relevant Messages will be relegated to the `Tool`
             other => match self.selected {
                 SidebarItem::Settings => return self.settings.update(other),
@@ -223,10 +215,7 @@ impl App {
         let content: Element<'_, Message> = match self.selected {
             SidebarItem::Settings => self.settings.view(),
             SidebarItem::Tool(index) => self.tools[index].view(),
-            SidebarItem::Home => match self.settings.homescreen_style {
-                HomescreenStyle::Simple => homescreen::view_simple(self),
-                HomescreenStyle::List => homescreen::view_advanced(self),
-            },
+            SidebarItem::Home => homescreen::view_simple(self),
         };
 
         let decorations = window::decorations(self, false);

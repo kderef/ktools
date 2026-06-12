@@ -6,48 +6,11 @@ use iced::{Task, Theme};
 
 pub use iced::{Color, Element, widget::Text};
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-pub enum Category {
-    Application,
-    Utility,
-    System,
-    Network,
-}
-
-impl Category {
-    pub const fn name(self) -> &'static str {
-        match self {
-            Self::Application => "applications",
-            Self::Utility => "utility",
-            Self::System => "system",
-            Self::Network => "network",
-        }
-    }
-    pub fn icon(self) -> Text<'static> {
-        match self {
-            Self::Application => icon_font::terminal_cmd(),
-            Self::Utility => icon_font::tools(),
-            Self::System => icon_font::vm(),
-            Self::Network => icon_font::globe(),
-        }
-    }
-
-    pub const fn all() -> &'static [Self] {
-        &[
-            Self::Application,
-            Self::Utility,
-            Self::System,
-            Self::Network,
-        ]
-    }
-}
-
 /// NOTE: a `Tool` implementation must also have `Default` to be used with `register_tools!` macro.
 pub trait Tool {
     fn name(&self) -> &'static str;
     fn icon(&self) -> Text<'_>;
     fn background(&self, theme: &Theme) -> Color;
-    fn category(&self) -> Category;
 
     /// Serialize the Tool's state into a JSON value to be loaded.
     fn save(&self) -> Option<serde_json::Value> {
@@ -60,11 +23,6 @@ pub trait Tool {
     /// Run code when the tool is selected
     fn on_activate(&mut self) -> Task<crate::Message> {
         Task::none()
-    }
-
-    /// Should the tool's view() be used?
-    fn no_view(&self) -> bool {
-        false
     }
 
     /// This method will get the left over messages from the `main`'s `update()`
@@ -89,10 +47,10 @@ macro_rules! register_tools {
 }
 
 register_tools! {
-    cmd::CMD,
-    ping::Ping,
-    passgen::PasswordGenerator,
+    application::Applications,
+    sys_info::SystemInfo,
     netinfo::NetworkInfo,
     ext_ip::ExternalIP,
-    sys_info::SystemInfo,
+    ping::Ping,
+    passgen::PasswordGenerator,
 }

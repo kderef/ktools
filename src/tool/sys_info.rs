@@ -165,9 +165,6 @@ impl Tool for SystemInfo {
     fn name(&self) -> &'static str {
         "System Information"
     }
-    fn category(&self) -> Category {
-        Category::System
-    }
     fn icon(&self) -> Text<'_> {
         icon_font::vm()
     }

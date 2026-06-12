@@ -8,8 +8,8 @@ use iced::{
 
 use crate::{
     App, Message,
-    base::{BOLD_DEFAULT, icon_font, rgb8},
-    tool::{Category, Tool},
+    base::{icon_font, rgb8},
+    tool::Tool,
 };
 use serde::{Deserialize, Serialize};
 
@@ -129,6 +129,7 @@ fn tool_small_button<'a>(t: &'a dyn Tool, index: usize) -> Button<'a, Message> {
         })
 }
 
+/*
 pub fn view_advanced<'a>(app: &'a App) -> Element<'a, Message> {
     let tools_by_category = Category::all().iter().filter_map(|c| {
         let mut tools = app
@@ -175,6 +176,7 @@ pub fn view_advanced<'a>(app: &'a App) -> Element<'a, Message> {
 
     view.into()
 }
+*/
 
 pub fn search_bar<'a>(state: &'a str) -> TextInput<'a, Message> {
     use text_input::Status;

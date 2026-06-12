@@ -24,7 +24,6 @@ pub struct Settings {
     tools: Vec<Box<dyn Tool>>,
 
     pub tool_order: Vec<String>,
-    pub homescreen_style: HomescreenStyle,
 }
 impl Default for Settings {
     fn default() -> Self {
@@ -33,7 +32,6 @@ impl Default for Settings {
             theme: ThemeSetting::default(),
             tool_order: tools.iter().map(|t| t.name().to_string()).collect(),
             tools,
-            homescreen_style: HomescreenStyle::default(),
         }
     }
 }
@@ -63,9 +61,6 @@ fn setting_row<'a>(
 impl Tool for Settings {
     fn name(&self) -> &'static str {
         "Settings"
-    }
-    fn category(&self) -> Category {
-        Category::System
     }
     fn icon(&self) -> Text<'_> {
         icon_font::settings_gear()
@@ -123,9 +118,6 @@ impl Tool for Settings {
                 if i + 1 < self.tool_order.len() {
                     self.tool_order.swap(i, i + 1);
                 }
-            }
-            Message::SetHomescreenStyle(style) => {
-                self.homescreen_style = style;
             }
             _ => {}
         }

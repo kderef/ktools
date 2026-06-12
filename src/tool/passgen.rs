@@ -118,9 +118,6 @@ impl Tool for PasswordGenerator {
     fn name(&self) -> &'static str {
         "Password Generator"
     }
-    fn category(&self) -> Category {
-        Category::Utility
-    }
 
     fn icon(&self) -> Text<'_> {
         icon_font::lock()
