@@ -10,7 +10,6 @@ pub use iced::{Color, Element, widget::Text};
 pub trait Tool {
     fn name(&self) -> &'static str;
     fn icon(&self) -> Text<'_>;
-    fn background(&self, theme: &Theme) -> Color;
 
     /// Serialize the Tool's state into a JSON value to be loaded.
     fn save(&self) -> Option<serde_json::Value> {

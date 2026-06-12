@@ -167,10 +167,6 @@ impl Tool for NetworkInfo {
         icon_font::globe()
     }
 
-    fn background(&self, theme: &Theme) -> Color {
-        theme.extended_palette().success.strong.color
-    }
-
     fn on_activate(&mut self) -> Task<Message> {
         Task::perform(
             async { ipconfig::get_adapters().map_err(|e| e.to_string()) },

@@ -1,10 +1,9 @@
 use crate::{Message, define_themes};
 
 use super::*;
-use crate::homescreen::HomescreenStyle;
 use iced::{
-    Alignment, Background, Length, Theme,
-    widget::{self, button, container, pick_list, row, rule, space, text},
+    Alignment, Length,
+    widget::{self, button, pick_list, row, rule, space, text},
 };
 use serde::{Deserialize, Serialize};
 
@@ -62,17 +61,13 @@ impl Tool for Settings {
     fn icon(&self) -> Text<'_> {
         icon_font::settings_gear()
     }
-    fn background(&self, _theme: &Theme) -> Color {
-        rgb8(0, 100, 180)
-    }
+
     fn save(&self) -> Option<serde_json::Value> {
         serde_json::to_value(self).ok()
     }
     fn load(&mut self, data: serde_json::Value) {
-        if let Ok(mut s) = serde_json::from_value::<Self>(data) {
+        if let Ok(s) = serde_json::from_value::<Self>(data) {
             let tools = std::mem::take(&mut self.tools);
-
-            let mut invalid_list = false;
 
             *self = s;
 

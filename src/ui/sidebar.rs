@@ -1,7 +1,7 @@
 use crate::base::icon_font;
 use iced::{
     Background, Color, Element, Length, Theme,
-    widget::{self, Button, Text, button, container, rule, space, text},
+    widget::{self, button, container, rule, space, text},
 };
 
 use crate::tool::Tool;

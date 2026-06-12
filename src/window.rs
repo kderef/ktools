@@ -248,7 +248,7 @@ pub fn titlebar_text<'a>(app: &'a crate::App) -> Text<'a> {
 }
 
 pub fn decorations<'a>(
-    app: &'a crate::App,
+    _app: &'a crate::App,
     show_top_left_btn: bool,
 ) -> Element<'a, crate::Message> {
     let top_left_button = decoration_button(

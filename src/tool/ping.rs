@@ -1,6 +1,6 @@
 use crate::Message;
 use iced::{
-    Alignment, Font, Length, Theme, futures,
+    Alignment, Font, Length, futures,
     widget::{self, button, container, row, space, text, text_editor, text_input},
 };
 use serde::{Deserialize, Serialize};
@@ -117,9 +117,7 @@ impl Tool for Ping {
     fn icon(&self) -> Text<'_> {
         icon_font::debug_disconnect()
     }
-    fn background(&self, _theme: &Theme) -> Color {
-        rgb8(100, 100, 100)
-    }
+
     fn save(&self) -> Option<serde_json::Value> {
         serde_json::to_value(self).ok()
     }

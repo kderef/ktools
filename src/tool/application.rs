@@ -128,9 +128,6 @@ impl Tool for Applications {
     fn icon(&self) -> Text<'_> {
         icon_font::terminal_cmd()
     }
-    fn background(&self, _theme: &Theme) -> Color {
-        Color::default()
-    }
 
     fn save(&self) -> Option<serde_json::Value> {
         None

@@ -52,10 +52,7 @@ impl Tool for ExternalIP {
     fn icon(&self) -> Text<'_> {
         icon_font::broadcast()
     }
-    fn background(&self, theme: &Theme) -> Color {
-        // rgb8(100, 100, 100)
-        theme.extended_palette().secondary.base.color
-    }
+
     fn on_activate(&mut self) -> Task<crate::Message> {
         fn get(api: Api) -> Result<Object, String> {
             minreq::get(api.url())

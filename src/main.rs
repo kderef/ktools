@@ -201,7 +201,6 @@ impl App {
             other => match self.selected {
                 SidebarItem::Settings => return self.settings.update(other),
                 SidebarItem::Tool(index) => return self.tools[index].update(other),
-                _ => {}
             },
         }
 

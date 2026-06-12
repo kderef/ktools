@@ -10,10 +10,8 @@ impl Tool for Homescreen {
     fn icon(&self) -> Text<'_> {
         icon_font::home()
     }
-    fn background(&self, theme: &Theme) -> Color {
-        Color::default()
-    }
-    fn update(&mut self, message: crate::Message) -> Task<crate::Message> {
+
+    fn update(&mut self, _message: crate::Message) -> Task<crate::Message> {
         Task::none()
     }
     fn view(&self) -> Element<'_, crate::Message> {
