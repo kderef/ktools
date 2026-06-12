@@ -44,7 +44,7 @@ impl Category {
 
 /// NOTE: a `Tool` implementation must also have `Default` to be used with `register_tools!` macro.
 pub trait Tool {
-    fn name(&self) -> &str;
+    fn name(&self) -> &'static str;
     fn icon(&self) -> Text<'_>;
     fn background(&self, theme: &Theme) -> Color;
     fn category(&self) -> Category;

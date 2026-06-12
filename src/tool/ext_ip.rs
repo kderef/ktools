@@ -45,7 +45,7 @@ pub struct ExternalIP {
 }
 
 impl Tool for ExternalIP {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "External IP"
     }
     fn category(&self) -> Category {

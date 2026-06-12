@@ -61,7 +61,7 @@ fn setting_row<'a>(
 }
 
 impl Tool for Settings {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "Settings"
     }
     fn category(&self) -> Category {

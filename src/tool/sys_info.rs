@@ -162,7 +162,7 @@ impl Default for SystemInfo {
 }
 
 impl Tool for SystemInfo {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "System Information"
     }
     fn category(&self) -> Category {

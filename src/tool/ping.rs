@@ -111,7 +111,7 @@ fn ping_stream(host: String, child_handle: ChildHandle) -> impl futures::Stream<
     rx
 }
 impl Tool for Ping {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "Ping"
     }
     fn category(&self) -> Category {

@@ -26,7 +26,7 @@ use ipconfig::Adapter;
 use crate::homescreen::HomescreenStyle;
 use crate::tool::Tool;
 use crate::tool::settings::Settings;
-use crate::ui::{Sidebar, SidebarOption};
+use crate::ui::{Sidebar, SidebarItem};
 use crate::window::WindowHandler;
 
 pub use message::Message;
@@ -35,7 +35,7 @@ fn main() {
     iced::application(App::new, App::update, App::view)
         .window(iced::window::Settings {
             min_size: Some(iced::Size {
-                width: 800.0,
+                width: 850.0,
                 height: 500.0,
             }),
             icon: window::icon(),
@@ -43,7 +43,7 @@ fn main() {
         })
         .title(App::title)
         .resizable(true)
-        .window_size((800, 600))
+        .window_size((850, 600))
         .decorations(false)
         .centered()
         .font(ICON_FONT_BYTES)
@@ -53,18 +53,9 @@ fn main() {
         .unwrap();
 }
 
-/// Represents a selection of the user (home screen, settings screen, or a tool)
-#[derive(Debug, Clone)]
-enum Selection {
-    Home,
-    Settings,
-    Tool(usize),
-}
-
 pub struct App {
     tools: Vec<Box<dyn Tool>>,
-    sidebar_selected: Option<SidebarOption>,
-    selected: Selection,
+    selected: SidebarItem,
     settings: Settings,
 
     // searching
@@ -80,8 +71,7 @@ impl App {
     fn new() -> (Self, Task<Message>) {
         let tools = tool::all();
         let app = Self {
-            selected: Selection::Home,
-            sidebar_selected: None,
+            selected: SidebarItem::Home,
             settings: Settings::default(),
             search: String::new(),
             search_matches: tools.iter().enumerate().map(|(i, _)| i).collect(),
@@ -153,16 +143,16 @@ impl App {
             }
             Message::Window(window_message) => return self.window_handler.handle(window_message),
             Message::GoHome => {
-                self.selected = Selection::Home;
+                self.selected = SidebarItem::Home;
             }
             Message::GoToSettings => {
-                self.selected = Selection::Settings;
+                self.selected = SidebarItem::Settings;
             }
             Message::ChooseTool(index) => {
                 let tool = &mut self.tools[index];
 
                 if !tool.no_view() {
-                    self.selected = Selection::Tool(index);
+                    self.selected = SidebarItem::Tool(index);
                 }
                 return tool.on_activate();
             }
@@ -170,14 +160,18 @@ impl App {
             // sidebar
             Message::SidebarOption(opt) => {
                 match opt {
-                    SidebarOption::Home => {}
-                    SidebarOption::Settings => {}
-                    SidebarOption::Category(c) => {
-                        self.sidebar.toggle_category(c);
+                    SidebarItem::Home => {}
+                    SidebarItem::Settings => {}
+                    SidebarItem::Tool(index) => {
+                        let tool = &mut self.tools[index];
+
+                        if !tool.no_view() {
+                            self.selected = SidebarItem::Tool(index);
+                        }
+                        return tool.on_activate();
                     }
-                    SidebarOption::Tool(_c, _i) => {}
                 }
-                self.sidebar_selected = Some(opt);
+                self.selected = opt;
             }
             Message::CopyToClipboard(text) => {
                 return clipboard::write(text);
@@ -214,8 +208,8 @@ impl App {
             }
             // Globally non-relevant Messages will be relegated to the `Tool`
             other => match self.selected {
-                Selection::Settings => return self.settings.update(other),
-                Selection::Tool(index) => return self.tools[index].update(other),
+                SidebarItem::Settings => return self.settings.update(other),
+                SidebarItem::Tool(index) => return self.tools[index].update(other),
                 _ => {}
             },
         }
@@ -227,9 +221,9 @@ impl App {
 
     fn view(&self) -> Element<'_, Message> {
         let content: Element<'_, Message> = match self.selected {
-            Selection::Settings => self.settings.view(),
-            Selection::Tool(index) => self.tools[index].view(),
-            Selection::Home => match self.settings.homescreen_style {
+            SidebarItem::Settings => self.settings.view(),
+            SidebarItem::Tool(index) => self.tools[index].view(),
+            SidebarItem::Home => match self.settings.homescreen_style {
                 HomescreenStyle::Simple => homescreen::view_simple(self),
                 HomescreenStyle::List => homescreen::view_advanced(self),
             },
@@ -244,7 +238,7 @@ impl App {
             .width(Length::Fill);
 
         // Sidebar spans full height — its background paints over the titlebar area
-        let main_content = widget::row![self.sidebar.view(&self.sidebar_selected), right,]
+        let main_content = widget::row![self.sidebar.view(self.selected, &self.tools), right,]
             .height(Length::Fill)
             .width(Length::Fill);
 

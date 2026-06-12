@@ -9,13 +9,10 @@ use iced::{
     },
 };
 
-use crate::base::*;
+use crate::{base::*, ui::SidebarItem};
 pub use iced::window::Direction;
 
-use crate::{
-    Selection,
-    base::{BACKGROUND_TRANSPARENT, BOLD_DEFAULT},
-};
+use crate::base::{BACKGROUND_TRANSPARENT, BOLD_DEFAULT};
 
 pub const DECORATIONS_HEIGHT: f32 = 40.0;
 
@@ -240,9 +237,9 @@ pub fn decoration_button<'a, M: Into<crate::Message>, E: Into<Element<'a, crate:
 
 pub fn titlebar_text<'a>(app: &'a crate::App) -> Text<'a> {
     let title_text = match app.selected {
-        Selection::Settings => "Settings",
-        Selection::Home => "KTools",
-        Selection::Tool(index) => app.tools[index].name(),
+        SidebarItem::Settings => "Settings",
+        SidebarItem::Home => "KTools",
+        SidebarItem::Tool(index) => app.tools[index].name(),
     };
 
     let title = text(title_text).size(30).font(BOLD_DEFAULT).center();
@@ -254,7 +251,7 @@ pub fn decorations<'a>(
     app: &'a crate::App,
     show_top_left_btn: bool,
 ) -> Element<'a, crate::Message> {
-    let top_left_button = if matches!(app.selected, Selection::Home) {
+    let top_left_button = if app.selected == SidebarItem::Home {
         decoration_button(
             row![
                 icon_font::settings_gear().size(15),

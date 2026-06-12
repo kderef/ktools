@@ -159,7 +159,7 @@ fn iface_content<'a>(iface: &'a Adapter) -> Element<'a, Message> {
 }
 
 impl Tool for NetworkInfo {
-    fn name(&self) -> &str {
+    fn name(&self) -> &'static str {
         "Network Information"
     }
     fn category(&self) -> Category {
