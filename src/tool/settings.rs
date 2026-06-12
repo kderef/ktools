@@ -22,15 +22,12 @@ pub struct Settings {
     pub theme: ThemeSetting,
     #[serde(skip)]
     tools: Vec<Box<dyn Tool>>,
-
-    pub tool_order: Vec<String>,
 }
 impl Default for Settings {
     fn default() -> Self {
         let tools = crate::tool::all();
         Self {
             theme: ThemeSetting::default(),
-            tool_order: tools.iter().map(|t| t.name().to_string()).collect(),
             tools,
         }
     }
@@ -77,24 +74,6 @@ impl Tool for Settings {
 
             let mut invalid_list = false;
 
-            // Unknown element in list
-            for name in &s.tool_order {
-                if tools.iter().find(|t| t.name() == name.as_str()).is_none() {
-                    invalid_list = true;
-                    break;
-                }
-            }
-
-            // List is not complete
-            if s.tool_order.len() != tools.len() {
-                invalid_list = true;
-            }
-
-            // if invalid reset to default
-            if invalid_list {
-                s.tool_order = tools.iter().map(|t| t.name().to_string()).collect();
-            }
-
             *self = s;
 
             self.tools = tools;
@@ -104,20 +83,6 @@ impl Tool for Settings {
         match message {
             Message::SetTheme(theme) => {
                 self.theme = theme;
-            }
-            Message::ResetToolOrder => {
-                self.tool_order = self.tools.iter().map(|t| t.name().to_string()).collect();
-            }
-
-            Message::MoveToolUp(i) => {
-                if i > 0 {
-                    self.tool_order.swap(i, i - 1);
-                }
-            }
-            Message::MoveToolDown(i) => {
-                if i + 1 < self.tool_order.len() {
-                    self.tool_order.swap(i, i + 1);
-                }
             }
             _ => {}
         }
@@ -130,19 +95,11 @@ impl Tool for Settings {
 
         let theme_picker = pick_list(ThemeSetting::all(), Some(self.theme), Message::SetTheme);
 
-        let reset_order_btn = button(text("default order").size(16).center())
-            .on_press(Message::ResetToolOrder)
-            .width(300);
-
         let rows = widget::column![
             section_header("Appearance"),
             setting_row("Theme", theme_picker),
             space().height(16),
             //
-            section_header("Tool Order"),
-            self.tool_order_list(),
-            space().height(8),
-            reset_order_btn,
             space().height(16),
             //
             section_header("Tool Settings"),
@@ -165,56 +122,5 @@ impl Tool for Settings {
         let col = widget::column![container];
 
         col.height(Length::Fill).padding(12).into()
-    }
-}
-
-impl Settings {
-    fn tool_order_list<'a>(&'a self) -> Element<'a, Message> {
-        let rows = self.tool_order.iter().enumerate().map(|(i, name)| {
-            let is_first = i == 0;
-            let is_last = i == self.tool_order.len() - 1;
-
-            let tool = self.tools.iter().find(|t| t.name() == name.as_str());
-
-            let icon_and_name: Element<'_, Message> = if let Some(tool) = tool {
-                let bg = tool.background(&self.theme.into()); // use a neutral theme for preview
-                row![
-                    container(tool.icon().size(16))
-                        .style(move |_| container::Style {
-                            background: Some(Background::Color(bg)),
-                            text_color: Some(iced::Color::WHITE),
-                            border: iced::Border {
-                                radius: 6.0.into(),
-                                ..Default::default()
-                            },
-                            ..Default::default()
-                        })
-                        .padding([4, 8]),
-                    text(name.clone()).size(14),
-                ]
-                .spacing(8)
-                .align_y(Alignment::Center)
-                .into()
-            } else {
-                text(name.clone()).size(14).into()
-            };
-
-            row![
-                icon_and_name,
-                space().width(Length::Fill),
-                button(icon_font::arrow_up().size(12))
-                    .on_press_maybe((!is_first).then_some(Message::MoveToolUp(i)))
-                    .padding([2, 6]),
-                button(icon_font::arrow_down().size(12))
-                    .on_press_maybe((!is_last).then_some(Message::MoveToolDown(i)))
-                    .padding([2, 6]),
-            ]
-            .spacing(4)
-            .width(300)
-            .align_y(Alignment::Center)
-            .into()
-        });
-
-        widget::column(rows).spacing(4).into()
     }
 }

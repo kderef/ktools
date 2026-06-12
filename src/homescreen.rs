@@ -85,19 +85,14 @@ const PADDING: u16 = 20;
 
 pub fn view_simple<'a>(app: &'a App) -> Element<'a, Message> {
     // The grid of Tool's
-    let children = app
-        .settings
-        .tool_order
-        .iter()
-        .filter_map(|name| app.tools.iter().position(|t| t.name() == name))
-        .filter_map(|i| {
-            if app.search_matches.contains(&i) {
-                let t = &app.tools[i];
-                Some(tool_button_simple(t.icon(), t.name(), t.background(&app.theme()), i).into())
-            } else {
-                None
-            }
-        });
+    let children = app.tools.iter().enumerate().filter_map(|(i, t)| {
+        if app.search_matches.contains(&i) {
+            let t = &app.tools[i];
+            Some(tool_button_simple(t.icon(), t.name(), t.background(&app.theme()), i).into())
+        } else {
+            None
+        }
+    });
 
     let grid = grid(children).fluid(200).spacing(20);
 

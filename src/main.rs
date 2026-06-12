@@ -34,7 +34,7 @@ fn main() {
     iced::application(App::new, App::update, App::view)
         .window(iced::window::Settings {
             min_size: Some(iced::Size {
-                width: 850.0,
+                width: 870.0,
                 height: 500.0,
             }),
             icon: window::icon(),
@@ -42,7 +42,7 @@ fn main() {
         })
         .title(App::title)
         .resizable(true)
-        .window_size((850, 600))
+        .window_size((870, 600))
         .decorations(false)
         .centered()
         .font(ICON_FONT_BYTES)
@@ -70,7 +70,7 @@ impl App {
     fn new() -> (Self, Task<Message>) {
         let tools = tool::all();
         let app = Self {
-            selected: SidebarItem::Home,
+            selected: SidebarItem::Tool(0),
             settings: Settings::default(),
             search: String::new(),
             search_matches: tools.iter().enumerate().map(|(i, _)| i).collect(),
@@ -142,7 +142,7 @@ impl App {
             }
             Message::Window(window_message) => return self.window_handler.handle(window_message),
             Message::GoHome => {
-                self.selected = SidebarItem::Home;
+                self.selected = SidebarItem::Tool(0);
             }
             Message::GoToSettings => {
                 self.selected = SidebarItem::Settings;
@@ -157,7 +157,6 @@ impl App {
             // sidebar
             Message::SidebarOption(opt) => {
                 match opt {
-                    SidebarItem::Home => {}
                     SidebarItem::Settings => {}
                     SidebarItem::Tool(index) => {
                         let tool = &mut self.tools[index];
@@ -215,7 +214,7 @@ impl App {
         let content: Element<'_, Message> = match self.selected {
             SidebarItem::Settings => self.settings.view(),
             SidebarItem::Tool(index) => self.tools[index].view(),
-            SidebarItem::Home => homescreen::view_simple(self),
+            // SidebarItem::Home => homescreen::view_simple(self),
         };
 
         let decorations = window::decorations(self, false);

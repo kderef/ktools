@@ -12,7 +12,6 @@ type Message = crate::Message;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum SidebarItem {
-    Home,
     Settings,
     Tool(usize),
 }
@@ -58,7 +57,6 @@ impl SidebarItem {
         let is_active = active == self;
 
         let (name, icon) = match self {
-            Self::Home => ("Home", icon_font::home()),
             Self::Settings => ("Settings", icon_font::settings_gear()),
             Self::Tool(index) => (tools[index].name(), tools[index].icon()),
         };
@@ -104,10 +102,7 @@ impl Sidebar {
         tools: &'a [Box<dyn Tool>],
     ) -> Element<'a, Message> {
         // add header
-        let mut col =
-            widget::column![SidebarItem::Home.render(active, tools), rule::horizontal(2),]
-                .height(Length::Fill)
-                .padding(10);
+        let mut col = widget::column![].height(Length::Fill).padding(10);
 
         // add items
         col = col.extend(

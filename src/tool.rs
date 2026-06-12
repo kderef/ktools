@@ -47,6 +47,7 @@ macro_rules! register_tools {
 }
 
 register_tools! {
+    home::Homescreen,
     application::Applications,
     sys_info::SystemInfo,
     netinfo::NetworkInfo,

@@ -238,7 +238,7 @@ pub fn decoration_button<'a, M: Into<crate::Message>, E: Into<Element<'a, crate:
 pub fn titlebar_text<'a>(app: &'a crate::App) -> Text<'a> {
     let title_text = match app.selected {
         SidebarItem::Settings => "Settings",
-        SidebarItem::Home => "KTools",
+        SidebarItem::Tool(0) => "KTools",
         SidebarItem::Tool(index) => app.tools[index].name(),
     };
 
@@ -251,29 +251,16 @@ pub fn decorations<'a>(
     app: &'a crate::App,
     show_top_left_btn: bool,
 ) -> Element<'a, crate::Message> {
-    let top_left_button = if app.selected == SidebarItem::Home {
-        decoration_button(
-            row![
-                icon_font::settings_gear().size(15),
-                space().width(4),
-                text("settings").size(15).center()
-            ]
-            .align_y(Alignment::Center)
-            .height(Length::Fill),
-            crate::Message::GoToSettings,
-        )
-    } else {
-        decoration_button(
-            row![
-                icon_font::arrow_left().size(15),
-                space().width(2),
-                text("back").size(15)
-            ]
-            .align_y(Alignment::Center)
-            .height(Length::Fill),
-            crate::Message::GoHome,
-        )
-    };
+    let top_left_button = decoration_button(
+        row![
+            icon_font::arrow_left().size(15),
+            space().width(2),
+            text("back").size(15)
+        ]
+        .align_y(Alignment::Center)
+        .height(Length::Fill),
+        crate::Message::GoHome,
+    );
 
     let top_left: Element<'_, crate::Message> = if show_top_left_btn {
         top_left_button.into()

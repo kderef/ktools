@@ -30,7 +30,7 @@ impl Api {
         }
     }
     const fn all() -> &'static [Self] {
-        &[Self::IpApi, Self::Ipify, Self::IpApiCo]
+        &[Self::IpApi, Self::Ipify]
     }
 }
 
