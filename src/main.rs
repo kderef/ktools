@@ -146,6 +146,7 @@ impl App {
             }
             Message::GoToSettings => {
                 self.selected = SidebarItem::Settings;
+                return self.settings.on_activate();
             }
             Message::ChooseTool(index) => {
                 let tool = &mut self.tools[index];
@@ -155,18 +156,18 @@ impl App {
             }
 
             // sidebar
-            Message::SidebarOption(opt) => {
-                match opt {
-                    SidebarItem::Settings => {}
-                    SidebarItem::Tool(index) => {
-                        let tool = &mut self.tools[index];
-
-                        self.selected = SidebarItem::Tool(index);
-                        return tool.on_activate();
-                    }
+            Message::SidebarOption(opt) => match opt {
+                SidebarItem::Settings => {
+                    self.selected = opt;
+                    return self.settings.on_activate();
                 }
-                self.selected = opt;
-            }
+                SidebarItem::Tool(index) => {
+                    let tool = &mut self.tools[index];
+
+                    self.selected = SidebarItem::Tool(index);
+                    return tool.on_activate();
+                }
+            },
             Message::CopyToClipboard(text) => {
                 return clipboard::write(text);
             }

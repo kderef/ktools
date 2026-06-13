@@ -21,12 +21,16 @@ pub struct Settings {
     pub theme: ThemeSetting,
     #[serde(skip)]
     tools: Vec<Box<dyn Tool>>,
+
+    #[serde(skip)]
+    latest_git_tag: Option<Result<String, String>>,
 }
 impl Default for Settings {
     fn default() -> Self {
         let tools = crate::tool::all();
         Self {
             theme: ThemeSetting::default(),
+            latest_git_tag: None,
             tools,
         }
     }
@@ -74,10 +78,19 @@ impl Tool for Settings {
             self.tools = tools;
         }
     }
+    fn on_activate(&mut self) -> Task<crate::Message> {
+        Task::perform(
+            async { get_latest_build_tag() },
+            Message::FetchedLatestGitTag,
+        )
+    }
     fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::SetTheme(theme) => {
                 self.theme = theme;
+            }
+            Message::FetchedLatestGitTag(result) => {
+                self.latest_git_tag = Some(result);
             }
             _ => {}
         }
@@ -107,6 +120,7 @@ impl Tool for Settings {
                 text("Kian Heitkamp").size(15).style(text::base)
             ),
             setting_row("Version", app_version()),
+            setting_row("Latest Version", app_latest_version(&self.latest_git_tag)),
             setting_row("Source Code", source_link()),
             setting_row("License", license_link()),
         ]
@@ -118,4 +132,35 @@ impl Tool for Settings {
 
         col.height(Length::Fill).padding(12).into()
     }
+}
+
+pub fn get_latest_build_tag() -> Result<String, String> {
+    const SOURCE_LINK: &str = env!("CARGO_PKG_REPOSITORY");
+
+    let repo_name = SOURCE_LINK.splitn(4, '/').last().unwrap();
+    let api_url = format!("https://api.github.com/repos/{repo_name}/tags");
+
+    let response = minreq::get(api_url)
+        .with_header("User-Agent", "KTools")
+        .send()
+        .map_err(|e| e.to_string())?
+        .into_bytes();
+
+    let response_json: serde_json::Value =
+        serde_json::from_slice(&response).map_err(|e| e.to_string())?;
+
+    match response_json {
+        serde_json::Value::Array(a) => a
+            .first()
+            .ok_or("No build tags found")?
+            .as_object()
+            .ok_or("Array member was not an object")?
+            .get("name")
+            .ok_or("No git name tag was found.")?
+            .as_str()
+            .ok_or("name tag was not a string")
+            .map(|s| s.to_owned()),
+        _ => Err("JSon value is not an array."),
+    }
+    .map_err(|e| e.to_string())
 }

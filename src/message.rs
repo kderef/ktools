@@ -9,7 +9,7 @@ pub enum Message {
     Startup,
     Window(window::Message),
 
-    OpenURL(&'static str),
+    OpenURL(String),
 
     SidebarOption(SidebarItem),
 
@@ -41,6 +41,7 @@ pub enum Message {
     MoveToolUp(usize),
     MoveToolDown(usize),
     ResetAllSettings,
+    FetchedLatestGitTag(Result<String, String>),
 
     /* messages for netinfo */
     NetworkInterfacesFetched(Result<Vec<Adapter>, String>),

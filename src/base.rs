@@ -108,22 +108,31 @@ pub fn content_container<'a, E: Into<Element<'a, Message>>>(inside: E) -> Contai
     content_container_ex(inside, true)
 }
 
-pub fn hyperlink<'a>(label: &'static str, link: Option<&'static str>) -> Button<'a, Message> {
+pub fn hyperlink<'a>(label: &'a str, link: Option<String>, important: bool) -> Button<'a, Message> {
     use button::Status;
 
-    let url = link.unwrap_or(label);
+    let url = link.unwrap_or(label.to_string());
 
     button(text(label).size(15))
         .on_press(Message::OpenURL(url))
-        .style(|theme: &Theme, status| {
+        .style(move |theme: &Theme, status| {
             let pal = theme.extended_palette();
             button::Style {
                 background: None,
-                text_color: match status {
-                    Status::Pressed => pal.primary.weak.color,
-                    Status::Active => pal.primary.base.color,
-                    Status::Hovered => pal.primary.strong.color,
-                    Status::Disabled => pal.secondary.base.text,
+                text_color: if important {
+                    match status {
+                        Status::Pressed => pal.success.base.color,
+                        Status::Active => pal.success.strong.color,
+                        Status::Hovered => pal.success.base.color,
+                        Status::Disabled => pal.secondary.base.text,
+                    }
+                } else {
+                    match status {
+                        Status::Pressed => pal.primary.weak.color,
+                        Status::Active => pal.primary.base.color,
+                        Status::Hovered => pal.primary.strong.color,
+                        Status::Disabled => pal.secondary.base.text,
+                    }
                 },
                 border: Border {
                     color: Color::TRANSPARENT,
@@ -139,7 +148,7 @@ pub fn hyperlink<'a>(label: &'static str, link: Option<&'static str>) -> Button<
 /// Link to the app's source code
 pub fn source_link<'a>() -> Button<'a, Message> {
     const SOURCE_LINK: &str = env!("CARGO_PKG_REPOSITORY");
-    hyperlink(SOURCE_LINK, None)
+    hyperlink(SOURCE_LINK, None, false)
 }
 
 /// hyperlink to the license
@@ -147,7 +156,8 @@ pub fn license_link<'a>() -> Button<'a, Message> {
     const LICENSE: &str = env!("CARGO_PKG_LICENSE");
     hyperlink(
         LICENSE,
-        Some("https://www.gnu.org/licenses/gpl-3.0.en.html"),
+        Some("https://www.gnu.org/licenses/gpl-3.0.en.html".to_owned()),
+        false,
     )
 }
 
@@ -162,6 +172,24 @@ pub fn app_version<'a>() -> Row<'a, Message> {
         space().width(10),
         text(format!("released on {}", env!("BUILD_DATE"))).size(15)
     ]
+}
+
+pub fn app_latest_version<'a>(latest: &'a Option<Result<String, String>>) -> Row<'a, Message> {
+    let ver_text = match latest {
+        None => text("loading...").style(text::secondary),
+        Some(Ok(s)) => text(s),
+        Some(Err(_)) => text("unknown").style(text::secondary),
+    };
+
+    let latest_release_url = if let Some(Ok(tag)) = latest {
+        format!("{}/releases/tag/{tag}", env!("CARGO_PKG_REPOSITORY"))
+    } else {
+        concat!(env!("CARGO_PKG_REPOSITORY"), "/releases/latest").to_owned()
+    };
+
+    let go_to_latest_btn = hyperlink("Go to latest version", Some(latest_release_url), true);
+
+    row![ver_text.size(15), space().width(10), go_to_latest_btn]
 }
 
 /// Macro for src/tool/settings.rs
