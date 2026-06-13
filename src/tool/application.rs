@@ -12,6 +12,8 @@ use super::*;
 enum AppBackground {
     Black,
     Orange,
+    Blue,
+    Green,
 }
 
 pub struct App {
@@ -71,6 +73,30 @@ impl Default for Applications {
                 )
                 .create_console()
                 .elevate(),
+                App::new(
+                    "Task Manager",
+                    icon_font::server_process,
+                    &["taskmgr.exe"],
+                    AppBackground::Black,
+                ),
+                App::new(
+                    "Control Panel",
+                    icon_font::settings,
+                    &["control.exe"],
+                    AppBackground::Green,
+                ),
+                App::new(
+                    "Services",
+                    icon_font::terminal_powershell,
+                    &["cmd", "/C", "services.msc"],
+                    AppBackground::Blue,
+                ),
+                App::new(
+                    "Computer Management",
+                    icon_font::vm,
+                    &["cmd", "/c", "compmgmt.msc"],
+                    AppBackground::Blue,
+                ),
             ],
         }
     }
@@ -97,6 +123,9 @@ pub fn app_button<'a>(app: &'a App) -> Button<'a, Message> {
     .height(80)
     .on_press(message)
     .style(move |theme: &Theme, status| {
+        let pal = theme.palette();
+        let ex = theme.extended_palette();
+
         let alpha = match status {
             button::Status::Hovered => 0.82,
             button::Status::Pressed => 0.65,
@@ -104,7 +133,9 @@ pub fn app_button<'a>(app: &'a App) -> Button<'a, Message> {
         };
         let bg = match app.background {
             AppBackground::Black => Color::BLACK,
-            AppBackground::Orange => theme.extended_palette().warning.weak.color,
+            AppBackground::Orange => ex.warning.weak.color,
+            AppBackground::Blue => pal.primary,
+            AppBackground::Green => ex.success.weak.color,
         };
         let tinted = Color { a: alpha, ..bg };
         button::Style {
@@ -138,6 +169,7 @@ impl Tool for Applications {
     }
     fn update(&mut self, message: Message) -> Task<Message> {
         const CREATE_NEW_CONSOLE: u32 = 0x00000010;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
 
         match message {
             Message::ApplicationOpen {
@@ -148,14 +180,18 @@ impl Tool for Applications {
                 let program = cmd[0];
                 let args = &cmd[1..];
 
+                let creation_flags = if create_new_console {
+                    CREATE_NEW_CONSOLE
+                } else {
+                    CREATE_NO_WINDOW
+                };
+
                 if elevate {
                     run_elevated(&cmd.join(" "));
                 } else {
                     let mut process = std::process::Command::new(program);
 
-                    if create_new_console {
-                        process.creation_flags(CREATE_NEW_CONSOLE);
-                    }
+                    process.creation_flags(creation_flags);
 
                     let _result = process.args(args).spawn();
 

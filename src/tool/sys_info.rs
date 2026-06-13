@@ -229,7 +229,7 @@ impl Tool for SystemInfo {
             .push(space().height(Length::Fill))
             .push(
                 row![
-                    proc_button("Configuration Panel", ProcessOpen::ConfigPanel),
+                    proc_button("Control Panel", ProcessOpen::ConfigPanel),
                     proc_button("Printers", ProcessOpen::Printers),
                     proc_button("Admin Tools", ProcessOpen::AdminTools),
                     proc_button("Windows Features", ProcessOpen::Features),
