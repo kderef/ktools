@@ -49,7 +49,6 @@ fn main() {
         .theme(App::theme)
         .subscription(App::subscription)
         .run();
-    ui::messagebox_err("KTools fatal error", "Hello");
 
     if let Err(e) = app_result {
         #[cfg(debug_assertions)]
