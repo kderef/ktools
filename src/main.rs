@@ -31,7 +31,7 @@ use crate::window::WindowHandler;
 pub use message::Message;
 
 fn main() {
-    iced::application(App::new, App::update, App::view)
+    let app_result = iced::application(App::new, App::update, App::view)
         .window(iced::window::Settings {
             min_size: Some(iced::Size {
                 width: 870.0,
@@ -48,8 +48,16 @@ fn main() {
         .font(ICON_FONT_BYTES)
         .theme(App::theme)
         .subscription(App::subscription)
-        .run()
-        .unwrap();
+        .run();
+    ui::messagebox_err("KTools fatal error", "Hello");
+
+    if let Err(e) = app_result {
+        #[cfg(debug_assertions)]
+        eprintln!("FATAL APP ERROR: {e:?}");
+
+        ui::messagebox_err("KTools fatal error", &e.to_string());
+        std::process::exit(1);
+    }
 }
 
 pub struct App {
