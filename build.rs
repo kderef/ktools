@@ -3,6 +3,18 @@ use std::{path::Path, process::Command};
 #[cfg(windows)]
 use winapi::um::winnt::{LANG_ENGLISH, SUBLANG_ENGLISH_US};
 
+fn get_build_date() -> String {
+    #[cfg(windows)]
+    String::from_utf8(
+        Command::new("cmd")
+            .args(["/C", "echo", "%DATE%"])
+            .output()
+            .unwrap()
+            .stdout,
+    )
+    .unwrap()
+}
+
 fn git_commit_hash() -> String {
     let output = Command::new("git")
         .args(["rev-parse", "--short", "HEAD"])
@@ -33,9 +45,11 @@ fn main() {
     // On release, an icon is baked into the exe, as well as static vcruntime.
 
     let git_hash = git_commit_hash();
+    let build_date = get_build_date();
 
     // env!() vars
     println!("cargo:rustc-env=GIT_HASH={git_hash}");
+    println!("cargo:rustc-env=BUILD_DATE={build_date}");
 
     // set icon
     println!("cargo:rerun-if-changed=icon.ico");

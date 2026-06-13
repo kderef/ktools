@@ -158,7 +158,9 @@ pub fn app_version<'a>() -> Row<'a, Message> {
         space().width(10),
         text(format!("({})", env!("GIT_HASH")))
             .size(15)
-            .style(text::secondary)
+            .style(text::secondary),
+        space().width(10),
+        text(format!("released on {}", env!("BUILD_DATE"))).size(15)
     ]
 }
 
