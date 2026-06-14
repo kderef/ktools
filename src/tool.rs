@@ -1,9 +1,8 @@
 pub mod settings;
 
-pub use crate::base::*;
-
 use iced::{Task, Theme};
 
+pub use crate::base::*;
 pub use iced::{Color, Element, widget::Text};
 
 /// NOTE: a `Tool` implementation must also have `Default` to be used with `register_tools!` macro.

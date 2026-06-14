@@ -4,6 +4,7 @@
 )]
 
 // TODO: add port scanning tool
+// TODO: add homescreen to tool/home.rs
 
 mod base;
 mod homescreen;
@@ -29,19 +30,18 @@ use crate::window::WindowHandler;
 
 pub use message::Message;
 
+const WINDOW_MIN_SIZE: (f32, f32) = (870.0, 500.0);
+
 fn main() {
     let app_result = iced::application(App::new, App::update, App::view)
         .window(iced::window::Settings {
-            min_size: Some(iced::Size {
-                width: 870.0,
-                height: 500.0,
-            }),
+            min_size: Some(WINDOW_MIN_SIZE.into()),
             icon: window::icon(),
             ..Default::default()
         })
         .title(App::title)
         .resizable(true)
-        .window_size((870, 600))
+        .window_size(WINDOW_MIN_SIZE)
         .decorations(false)
         .centered()
         .font(ICON_FONT_BYTES)

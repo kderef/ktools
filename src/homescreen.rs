@@ -3,28 +3,6 @@
 use iced::{Background, Border, border::Radius, widget::*};
 
 use crate::{Message, base::icon_font};
-use serde::{Deserialize, Serialize};
-
-#[derive(Default, Debug, Clone, Copy, Serialize, Deserialize, PartialEq, PartialOrd)]
-pub enum HomescreenStyle {
-    #[default]
-    Simple,
-    List,
-}
-impl HomescreenStyle {
-    pub const fn all() -> &'static [Self] {
-        &[Self::Simple, Self::List]
-    }
-}
-impl ToString for HomescreenStyle {
-    fn to_string(&self) -> String {
-        match self {
-            Self::Simple => "simple (default)",
-            Self::List => "list (advanced)",
-        }
-        .to_owned()
-    }
-}
 
 #[allow(unused)]
 pub fn search_bar<'a>(state: &'a str) -> TextInput<'a, Message> {

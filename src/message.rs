@@ -1,6 +1,6 @@
 use crate::{ui::SidebarItem, *};
 
-/// Only message type used in the App.
+/// Main message type used in the App.
 /// It has a couple of generic messages such as `GoHome`
 /// and a couple of `Tool`-specific messages such as `ExternalIpFetched()`
 #[derive(Debug, Clone)]
@@ -11,6 +11,7 @@ pub enum Message {
 
     OpenURL(String),
 
+    /// Something was selected in the sidebar
     SidebarOption(SidebarItem),
 
     /* Home page messages */
@@ -18,7 +19,6 @@ pub enum Message {
     ChooseTool(usize),
     GoHome,
     GoToSettings,
-    SetHomescreenStyle(homescreen::HomescreenStyle),
     Search(String),
 
     /* Generic messages */
@@ -37,9 +37,6 @@ pub enum Message {
 
     /* messages for settings */
     SetTheme(tool::settings::ThemeSetting),
-    ResetToolOrder,
-    MoveToolUp(usize),
-    MoveToolDown(usize),
     ResetAllSettings,
     FetchedLatestGitTag(Result<String, String>),
 
