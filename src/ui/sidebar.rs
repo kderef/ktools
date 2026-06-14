@@ -6,8 +6,6 @@ use iced::{
 
 use crate::tool::Tool;
 
-// TODO: make the sidebar background reach the title bar
-
 type Message = crate::Message;
 
 #[derive(Debug, Clone, Copy, PartialEq)]

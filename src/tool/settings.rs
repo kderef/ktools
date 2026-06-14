@@ -1,3 +1,5 @@
+//! settings: the "settings" page of the app. Contains global settings relevant to all tools and the app
+
 use crate::{Message, define_themes};
 
 use super::*;
@@ -19,19 +21,15 @@ define_themes! {
 #[derive(Serialize, Deserialize)]
 pub struct Settings {
     pub theme: ThemeSetting,
-    #[serde(skip)]
-    tools: Vec<Box<dyn Tool>>,
 
     #[serde(skip)]
     latest_git_tag: Option<Result<String, String>>,
 }
 impl Default for Settings {
     fn default() -> Self {
-        let tools = crate::tool::all();
         Self {
             theme: ThemeSetting::default(),
             latest_git_tag: None,
-            tools,
         }
     }
 }
@@ -71,11 +69,7 @@ impl Tool for Settings {
     }
     fn load(&mut self, data: serde_json::Value) {
         if let Ok(s) = serde_json::from_value::<Self>(data) {
-            let tools = std::mem::take(&mut self.tools);
-
             *self = s;
-
-            self.tools = tools;
         }
     }
     fn on_activate(&mut self) -> Task<crate::Message> {

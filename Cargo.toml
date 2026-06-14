@@ -29,7 +29,7 @@ codegen-units = 1
 opt-level = "z"
 
 [build-dependencies]
-ico = "0.5.0"
+ico = "0.5.0" # for baking the ICO data at build-time
 
 [target.x86_64-pc-windows-msvc.build-dependencies]
 winres = "0.1.12"
@@ -62,6 +62,7 @@ windows = {
   ]
 }
 
+# We disable wgpu to use only tiny-skia, since it saves ~5MB on the EXE and has faster startup
 [dependencies.iced]
 version = "0.14.0"
 default-features = false

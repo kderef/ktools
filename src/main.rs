@@ -4,7 +4,6 @@
 )]
 
 // TODO: add port scanning tool
-// TODO: revamp main home screen UI to have sections (network: [ext_ip, netinfo], ...)
 
 mod base;
 mod homescreen;

@@ -58,7 +58,8 @@ fn main() {
     }
 
     if is_release {
-        if cfg!(target_os = "windows") {
+        #[cfg(windows)]
+        {
             static_vcruntime::metabuild();
 
             // winres
