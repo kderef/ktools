@@ -67,8 +67,17 @@ fn main() {
 
             let mut res = winres::WindowsResource::new();
 
+            println!("cargo:warn={res:?}");
+
             res.set_icon("icon.ico");
             res.set_language(language);
+
+            // TODO: winres is supposed to grab from package.metadata.winres but it is not.
+            res.set("LegalCopyright", "Copyright © 2026 Kian Heitkamp");
+            res.set(
+                "FileDescription",
+                "App that makes getting system information easy",
+            );
 
             res.compile().unwrap();
         }
