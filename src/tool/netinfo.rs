@@ -19,7 +19,7 @@ pub struct NetworkInfo {
     error: Option<String>,
 }
 
-fn info_header<'a>(label: &'a str) -> Element<'a, Message> {
+fn info_header(label: &str) -> Element<'_, Message> {
     text(label)
         .size(13)
         .style(text::primary)
@@ -27,12 +27,12 @@ fn info_header<'a>(label: &'a str) -> Element<'a, Message> {
         .into()
 }
 
-fn info_row_ex<'a>(
-    label: &'a str,
+fn info_row_ex(
+    label: &str,
     value: impl ToString,
     bold: bool,
     label_style: fn(&Theme) -> text::Style,
-) -> Element<'a, Message> {
+) -> Element<'_, Message> {
     let value = value.to_string();
     row![
         text(label)
@@ -52,12 +52,12 @@ fn info_row_ex<'a>(
 }
 
 #[inline]
-fn info_row<'a>(label: &'a str, value: impl ToString) -> Element<'a, Message> {
+fn info_row(label: &str, value: impl ToString) -> Element<'_, Message> {
     info_row_ex(label, value, true, text::secondary)
 }
 
 #[inline]
-fn info_row_primary<'a>(label: &'a str, value: impl ToString) -> Element<'a, Message> {
+fn info_row_primary(label: &str, value: impl ToString) -> Element<'_, Message> {
     info_row_ex(label, value, true, text::primary)
 }
 
@@ -176,7 +176,9 @@ impl Tool for NetworkInfo {
 
     fn update(&mut self, message: Message) -> Task<Message> {
         match message {
-            Message::TabSelected(i) => self.active_tab = i,
+            Message::TabSelected(i) => {
+                self.active_tab = i;
+            }
             Message::NetworkInterfacesFetched(result) => match result {
                 Err(e) => self.error = Some(e),
                 Ok(mut ifs) => {

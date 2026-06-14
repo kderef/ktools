@@ -63,3 +63,9 @@ impl From<tool::ping::Message> for Message {
         Self::Ping(value)
     }
 }
+
+impl From<tool::passgen::Message> for Message {
+    fn from(value: tool::passgen::Message) -> Self {
+        Self::PasswordGenerator(value)
+    }
+}

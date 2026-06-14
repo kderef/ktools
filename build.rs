@@ -24,6 +24,7 @@ fn git_commit_hash() -> String {
     String::from_utf8(output.stdout).unwrap()
 }
 
+/// Read the icon from `input` path and output raw RGBA data to `output` path
 fn write_icon_rgba<P: AsRef<Path>>(input: P, output: P) {
     let bytes = std::fs::read(input).unwrap();
 

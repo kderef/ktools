@@ -1,3 +1,5 @@
+//! passgen: A simple password generator tool.
+
 use super::*;
 
 use iced::Background;
@@ -50,12 +52,6 @@ pub enum Message {
     Regenerate,
     ChangeSpecialCharacters(String),
     ResetSpecialCharacers,
-}
-
-impl Into<crate::Message> for Message {
-    fn into(self) -> crate::Message {
-        crate::Message::PasswordGenerator(self)
-    }
 }
 
 impl PasswordGenerator {
@@ -199,7 +195,7 @@ impl Tool for PasswordGenerator {
     fn view(&self) -> Element<'_, crate::Message> {
         let text_size = 25;
 
-        let length_slider: Slider<'_, u32, crate::Message, Theme> =
+        let length_slider: Slider<'_, u32, crate::Message> =
             slider(Self::LENGTH_RANGE, self.length, |n| {
                 Message::LengthChanged(n).into()
             });
@@ -227,6 +223,7 @@ impl Tool for PasswordGenerator {
         let top_content = widget::column![
             password_output,
             widget::row![
+                // copy password button
                 button(
                     container(
                         widget::row![icon_font::copy().size(24), text("copy").size(24)]
@@ -238,6 +235,7 @@ impl Tool for PasswordGenerator {
                 .on_press_with(|| crate::Message::CopyToClipboard(self.password.clone()))
                 .width(Length::FillPortion(4))
                 .height(Length::Shrink),
+                // regenerate button
                 button(
                     container(
                         widget::row![icon_font::refresh().size(24), text("regenerate").size(24)]
@@ -263,6 +261,7 @@ impl Tool for PasswordGenerator {
         .spacing(8)
         .align_y(iced::Alignment::Center);
 
+        // row showing password length and slider to modify it.
         let length_row = row![
             text(format!("Length: {}", self.length)).size(text_size),
             length_slider,
@@ -274,6 +273,7 @@ impl Tool for PasswordGenerator {
             checkbox(self.use_nums)
                 .label("Numbers")
                 .on_toggle(|v| Message::UseNumsToggled(v).into()),
+            // toggle for special characters along with the special character set
             widget::row![
                 checkbox(self.use_chars)
                     .label("Special Characters")
@@ -290,6 +290,7 @@ impl Tool for PasswordGenerator {
         ]
         .spacing(10);
 
+        /// add space to the left and right of the element (and center it)
         fn wrap<'a>(el: Element<'a, crate::Message>) -> Element<'a, crate::Message> {
             widget::row![
                 space().width(Length::FillPortion(1)),

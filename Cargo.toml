@@ -37,30 +37,17 @@ static_vcruntime = "3.0.0"
 winapi = {version = "0.3.9", features = ["winnt"]}
 
 [dependencies]
-iced_aw = "0.14.1"
-iced_fonts = { version = "0.3.0", features = ["codicon"] }
 rand = "0.10.1"
 sysinfo = "0.39.2"
-serde_json = "1.0.150"
-serde = { version = "1.0.228", features = ["derive"] }
 dirs = "6.0.0"
-ipconfig = {path = "ipconfig"}
 open = "5.3.5"
-minreq = { version = "2.14.1", features = ["https-native"] }
 fuzzy-matcher = "0.3.7"
-
-[target.'cfg(windows)'.dependencies]
-windows = {
-  version = "0.62.2",
-  features = [
-    "Win32_Graphics",
-    "Win32_Graphics_Dxgi",
-    "Win32_Graphics_Dwm",
-    "Win32_UI_Controls",
-    "Win32_UI_Shell",
-    "Win32_UI_WindowsAndMessaging",
-  ]
-}
+iced_aw = "0.14.1"
+serde_json = "1.0.150"
+iced_fonts = { version = "0.3.0", features = ["codicon"] }
+serde = { version = "1.0.228", features = ["derive"] }
+ipconfig = {path = "ipconfig"}
+minreq = { version = "2.14.1", features = ["https-native"] }
 
 # We disable wgpu to use only tiny-skia, since it saves ~5MB on the EXE and has faster startup
 [dependencies.iced]
@@ -78,3 +65,17 @@ features = [
   "wayland",
   "image-without-codecs"
 ]
+
+[target.'cfg(windows)'.dependencies]
+windows = {
+  version = "0.62.2",
+  features = [
+    "Win32_Graphics",
+    "Win32_Graphics_Dxgi",
+    "Win32_Graphics_Dwm",
+    "Win32_UI_Controls",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+  ]
+}
+
