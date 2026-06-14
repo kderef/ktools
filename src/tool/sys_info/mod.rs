@@ -6,8 +6,8 @@ pub use process::ProcessOpen;
 pub use system_value::{Bytes, Disk, SystemValue};
 use tasks::*;
 
+use std::collections::HashMap;
 use std::fmt;
-use std::{collections::HashMap, os::windows::process::CommandExt};
 
 use iced::{
     Alignment, Background, Border, Length, Theme,
@@ -47,6 +47,7 @@ impl Tool for SystemInfo {
             })
         }))
     }
+
     fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::SystemInfoFetched(key, result) => {
@@ -55,6 +56,7 @@ impl Tool for SystemInfo {
                 }
             }
             Message::Refresh => {
+                // Delete existing data, then start task to fetch new data
                 for v in self.info.values_mut() {
                     *v = None;
                 }
@@ -65,13 +67,18 @@ impl Tool for SystemInfo {
                 let prog = cmd[0];
                 let args = &cmd[1..];
 
-                #[cfg(windows)]
-                use windows::Win32::System::Threading::CREATE_NO_WINDOW;
+                let mut process = std::process::Command::new(prog);
 
-                let _result = std::process::Command::new(prog)
-                    .creation_flags(CREATE_NO_WINDOW.0)
-                    .args(args)
-                    .spawn();
+                #[cfg(windows)]
+                {
+                    use std::os::windows::process::CommandExt;
+                    use windows::Win32::System::Threading::CREATE_NO_WINDOW;
+
+                    let flags = CREATE_NO_WINDOW.0;
+                    process.creation_flags(flags);
+                }
+
+                let _result = process.args(args).spawn();
 
                 #[cfg(debug_assertions)]
                 println!("$ {prog} {args:?} -> {_result:?}");
@@ -148,10 +155,8 @@ impl Tool for SystemInfo {
                 }))
         ];
         let col = widget::column![
-            // middle
             container,
-            // bottom
-            space().height(20),
+            space().height(20), //
             bottom_row
         ];
         col.height(Length::Fill).padding(12).into()
@@ -159,10 +164,10 @@ impl Tool for SystemInfo {
 }
 
 fn info_row<'a>(
-    key: &str,
+    key: &'a str,
     value: &'a Option<Result<SystemValue, String>>,
 ) -> Element<'a, crate::Message> {
-    let label = text(key.to_string()).size(14).width(120);
+    let label = text(key).size(14).width(120);
 
     let content: Element<'a, crate::Message> = match value {
         None => text("Loading...").size(14).style(text::secondary).into(),

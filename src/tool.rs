@@ -7,7 +7,10 @@ pub use iced::{Color, Element, widget::Text};
 
 /// NOTE: a `Tool` implementation must also have `Default` to be used with `register_tools!` macro.
 pub trait Tool {
+    /// The name of the tool is displayed in the sidebar and in the title bar when it is selected.
     fn name(&self) -> &'static str;
+
+    /// The icon to use displayed next to the name.
     fn icon(&self) -> Text<'_>;
 
     /// Serialize the Tool's state into a JSON value to be loaded.

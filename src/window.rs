@@ -1,7 +1,7 @@
 //! Module for window handling (resizing, title bar etc.)
 
 use iced::{
-    Alignment, Background, Border, Color, Element, Length, Task, Theme,
+    Background, Border, Color, Element, Length, Task, Theme,
     border::Radius,
     mouse::Interaction,
     widget::{
@@ -9,13 +9,14 @@ use iced::{
     },
 };
 
-use crate::{base::*, ui::SidebarItem};
+use crate::{base::*, tool::Tool, ui::SidebarItem};
 pub use iced::window::Direction;
 
 use crate::base::{BACKGROUND_TRANSPARENT, BOLD_DEFAULT};
 
 pub const DECORATIONS_HEIGHT: f32 = 40.0;
 
+/// Will return `Some(icon)` ONLY in release builds, else `None`
 pub fn icon() -> Option<iced::window::Icon> {
     #[cfg(not(debug_assertions))]
     return Some({
@@ -51,7 +52,9 @@ impl Into<crate::Message> for Message {
     }
 }
 
+/// Wrapper around window specifics, handles window decorations and such.
 pub struct WindowHandler {
+    /// Option because we have to wait for iced to provide the window id.
     window_id: Option<iced::window::Id>,
     window_size: iced::Size,
     pub window_border_radius: f32,
@@ -108,6 +111,8 @@ impl WindowHandler {
         Task::none()
     }
 
+    /// Tries to set the window's corners to be rounded.
+    /// returns: `true` on success, `false` on failure.
     pub fn set_rounded_corners(&self, window_id: u64) -> bool {
         #[cfg(windows)]
         unsafe {
@@ -177,6 +182,7 @@ impl WindowHandler {
         ]
     }
 
+    /// The window area, 'contains' the whole app's view.
     pub fn container<'a, M: 'a>(&'a self, content: impl Into<Element<'a, M>>) -> Container<'a, M> {
         container(content)
             .width(Length::Fill)
@@ -203,6 +209,45 @@ impl WindowHandler {
             .height(Length::Fill)
             .extend(self.resize_areas())
             .into()
+    }
+
+    /// The text at the top of the window containing the 'title'.
+    /// Normally the Window Manager draws this, but we use custom decorations.
+    pub fn titlebar_text<'a>(&self, selected: SidebarItem, tools: &'a [Box<dyn Tool>]) -> Text<'a> {
+        let title_text = match selected {
+            SidebarItem::Settings => "Settings",
+            SidebarItem::Tool(0) => "KTools",
+            SidebarItem::Tool(index) => tools[index].name(),
+        };
+
+        let title = text(title_text).size(30).font(BOLD_DEFAULT).center();
+
+        title
+    }
+
+    /// The window decorations, such as a close (X) button and a minimize (-) button
+    pub fn decorations(&self) -> Element<'_, crate::Message> {
+        let decorations = stack![
+            // title.width(Length::Fill).center(),
+            row![
+                space().width(Length::Fill),
+                decoration_button(icon_font::dash().size(25), Message::Minimize),
+                decoration_button(icon_font::close().size(25), Message::Close)
+            ]
+        ];
+
+        let bar = container(decorations)
+            .height(DECORATIONS_HEIGHT)
+            .style(|theme: &Theme| container::Style {
+                text_color: None,
+                background: Some(Background::Color(
+                    theme.extended_palette().background.base.color,
+                )),
+                ..Default::default()
+            });
+
+        // enable user to move the window
+        mouse_area(bar).on_press(Message::Drag.into()).into()
     }
 }
 
@@ -233,61 +278,4 @@ pub fn decoration_button<'a, M: Into<crate::Message>, E: Into<Element<'a, crate:
                 ..Default::default()
             }
         })
-}
-
-pub fn titlebar_text<'a>(app: &'a crate::App) -> Text<'a> {
-    let title_text = match app.selected {
-        SidebarItem::Settings => "Settings",
-        SidebarItem::Tool(0) => "KTools",
-        SidebarItem::Tool(index) => app.tools[index].name(),
-    };
-
-    let title = text(title_text).size(30).font(BOLD_DEFAULT).center();
-
-    title
-}
-
-pub fn decorations<'a>(
-    _app: &'a crate::App,
-    show_top_left_btn: bool,
-) -> Element<'a, crate::Message> {
-    let top_left_button = decoration_button(
-        row![
-            icon_font::arrow_left().size(15),
-            space().width(2),
-            text("back").size(15)
-        ]
-        .align_y(Alignment::Center)
-        .height(Length::Fill),
-        crate::Message::GoHome,
-    );
-
-    let top_left: Element<'_, crate::Message> = if show_top_left_btn {
-        top_left_button.into()
-    } else {
-        space().into()
-    };
-
-    let decorations = stack![
-        // title.width(Length::Fill).center(),
-        row![
-            top_left,
-            space().width(Length::Fill),
-            decoration_button(icon_font::dash().size(25), Message::Minimize),
-            decoration_button(icon_font::close().size(25), Message::Close)
-        ]
-    ];
-
-    let bar = container(decorations)
-        .height(DECORATIONS_HEIGHT)
-        .style(|theme: &Theme| container::Style {
-            text_color: None,
-            background: Some(Background::Color(
-                theme.extended_palette().background.base.color,
-            )),
-            ..Default::default()
-        });
-
-    // enable user to move the window
-    mouse_area(bar).on_press(Message::Drag.into()).into()
 }

@@ -75,13 +75,17 @@ impl App {
     /// Returns the empty (default) state of the app, and returns a message that will properly load data.
     fn new() -> (Self, Task<Message>) {
         let tools = tool::all();
+
         let app = Self {
             selected: SidebarItem::Tool(0),
             settings: Settings::default(),
+
             search: String::new(),
             search_matches: tools.iter().enumerate().map(|(i, _)| i).collect(),
+
             window_handler: WindowHandler::new(),
             sidebar: Sidebar::from_tools(&tools),
+
             tools,
         };
 
@@ -226,8 +230,11 @@ impl App {
             // SidebarItem::Home => homescreen::view_simple(self),
         };
 
-        let decorations = window::decorations(self, false);
-        let titlebar_text = window::titlebar_text(self).width(Length::Fill);
+        let decorations = self.window_handler.decorations();
+        let titlebar_text = self
+            .window_handler
+            .titlebar_text(self.selected, &self.tools)
+            .width(Length::Fill);
 
         // Decorations + content stacked in the right column only
         let right = widget::column![decorations, content,]
