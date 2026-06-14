@@ -58,12 +58,11 @@ pub enum Message {
     SystemInfoOpen(tool::sys_info::ProcessOpen),
 
     /* messages for ping */
-    PingStart(Option<String>),
-    PingCancel,
-    PingDefaultGateway,
-    PingAddressChanged(String),
-    PingEditorAction(text_editor::Action),
-    PingToggleCustom,
-    PingOutput(String),
-    PingDone,
+    Ping(tool::ping::Message),
+}
+
+impl From<tool::ping::Message> for Message {
+    fn from(value: tool::ping::Message) -> Self {
+        Self::Ping(value)
+    }
 }

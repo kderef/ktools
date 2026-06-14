@@ -1,4 +1,3 @@
-use crate::Message;
 use iced::{
     Alignment, Font, Length, futures,
     widget::{self, button, container, row, space, text, text_editor, text_input},
@@ -14,6 +13,19 @@ use std::{
 use windows::Win32::System::Threading::CREATE_NO_WINDOW;
 
 use super::*;
+
+#[derive(Debug, Clone)]
+pub enum Message {
+    Start(Option<String>),
+    Cancel,
+    DefaultGatewayFetched(Result<String, String>),
+    PingDefaultGateway,
+    AddressChanged(String),
+    EditorAction(text_editor::Action),
+    ToggleCustom,
+    Output(String),
+    Done,
+}
 
 type ChildHandle = Arc<Mutex<Option<std::process::Child>>>;
 
@@ -40,7 +52,7 @@ pub struct Ping {
     child: Option<ChildHandle>,
 }
 
-fn get_default_gateway() -> Result<sys_info::SystemValue, String> {
+fn get_default_gateway() -> Result<String, String> {
     let adapters = ipconfig::get_adapters().map_err(|e| e.to_string())?;
 
     for adapter in adapters {
@@ -51,7 +63,7 @@ fn get_default_gateway() -> Result<sys_info::SystemValue, String> {
 
         for gateway in adapter.gateways() {
             if let IpAddr::V4(ip) = gateway {
-                return Ok(sys_info::SystemValue::Text(ip.to_string()));
+                return Ok(ip.to_string());
             }
         }
     }
@@ -77,8 +89,8 @@ fn ping_stream(host: String, child_handle: ChildHandle) -> impl futures::Stream<
         {
             Ok(c) => c,
             Err(e) => {
-                let _ = tx.unbounded_send(Message::PingOutput(format!("Failed to start: {e}")));
-                let _ = tx.unbounded_send(Message::PingDone);
+                let _ = tx.unbounded_send(Message::Output(format!("Failed to start: {e}")));
+                let _ = tx.unbounded_send(Message::Done);
                 return;
             }
         };
@@ -91,7 +103,7 @@ fn ping_stream(host: String, child_handle: ChildHandle) -> impl futures::Stream<
         for line in reader.lines() {
             match line {
                 Ok(line) => {
-                    if tx.unbounded_send(Message::PingOutput(line)).is_err() {
+                    if tx.unbounded_send(Message::Output(line)).is_err() {
                         break; // receiver dropped, user navigated away
                     }
                 }
@@ -105,7 +117,7 @@ fn ping_stream(host: String, child_handle: ChildHandle) -> impl futures::Stream<
 
         *lock(&child_handle) = None;
 
-        let _ = tx.unbounded_send(Message::PingDone);
+        let _ = tx.unbounded_send(Message::Done);
     });
 
     rx
@@ -126,32 +138,37 @@ impl Tool for Ping {
             *self = data;
         }
     }
-    fn on_activate(&mut self) -> Task<Message> {
+    fn on_activate(&mut self) -> Task<crate::Message> {
         Task::none()
     }
-    fn update(&mut self, message: Message) -> Task<Message> {
+    fn update(&mut self, message: crate::Message) -> Task<crate::Message> {
+        let crate::Message::Ping(message) = message else {
+            return Task::none();
+        };
+
         match message {
-            Message::SystemInfoFetched(_, result) => {
-                self.default_gateway = Some(result.map(|r| r.to_string()));
+            Message::DefaultGatewayFetched(result) => {
+                self.default_gateway = Some(result);
             }
 
-            Message::PingAddressChanged(new) => {
+            Message::AddressChanged(new) => {
                 self.address = new;
             }
             Message::PingDefaultGateway => match &self.default_gateway {
-                Some(Ok(addr)) => return Task::done(Message::PingStart(Some(addr.clone()))),
+                Some(Ok(addr)) => return Task::done(Message::Start(Some(addr.clone())).into()),
                 _ => {
                     self.output = Default::default(); // clear output before showing status messages
                     return Task::chain(
-                        Task::done(Message::PingOutput("Loading default gateway...".to_owned())),
+                        Task::done(Message::Output("Loading default gateway...".to_owned())),
                         Task::perform(async { get_default_gateway() }, |r| match r {
-                            Ok(addr) => Message::PingStart(Some(addr.to_string())),
-                            Err(e) => Message::PingOutput(format!("ERROR: {e}")),
+                            Ok(addr) => Message::Start(Some(addr.to_string())),
+                            Err(e) => Message::Output(format!("ERROR: {e}")),
                         }),
-                    );
+                    )
+                    .map(Into::into);
                 }
             },
-            Message::PingCancel => {
+            Message::Cancel => {
                 self.running = false;
 
                 // If a process exists, kill it.
@@ -163,9 +180,9 @@ impl Tool for Ping {
 
                 self.child = None;
 
-                return Task::done(Message::PingOutput("Ping canceled".to_owned()));
+                return Task::done(Message::Output("Ping canceled".to_owned()).into());
             }
-            Message::PingStart(addr) => {
+            Message::Start(addr) => {
                 let addr = match addr {
                     Some(a) => {
                         self.custom_address = false;
@@ -186,12 +203,12 @@ impl Tool for Ping {
                 let handle = Arc::new(Mutex::new(None));
                 self.child = Some(handle.clone());
 
-                return Task::run(ping_stream(addr, handle), |m| m);
+                return Task::run(ping_stream(addr, handle), |m| m).map(Into::into);
             }
-            Message::PingToggleCustom => {
+            Message::ToggleCustom => {
                 self.custom_address ^= true;
             }
-            Message::PingOutput(line) => {
+            Message::Output(line) => {
                 let mut current = self.output.text();
                 if !current.is_empty() {
                     current.push('\n');
@@ -199,33 +216,33 @@ impl Tool for Ping {
                 current.push_str(&line);
                 self.output = text_editor::Content::with_text(&current);
             }
-            Message::PingEditorAction(action) => {
+            Message::EditorAction(action) => {
                 if !action.is_edit() {
                     self.output.perform(action);
                 }
             }
-            Message::PingDone => {
+            Message::Done => {
                 self.running = false;
             }
-            _ => {}
         }
         Task::none()
     }
-    fn view(&self) -> Element<'_, Message> {
+    fn view(&self) -> Element<'_, crate::Message> {
         let input = text_input("Address to ping...", &self.address)
-            .on_input(Message::PingAddressChanged)
-            .on_submit(Message::PingStart(None));
+            .on_input(|i| Message::AddressChanged(i).into())
+            .on_submit(Message::Start(None).into());
 
-        let custom_button = |txt: &'static str, message| {
-            button(text(txt).size(15).center()).on_press_maybe((!self.running).then_some(message))
+        let custom_button = |txt: &'static str, message: Message| {
+            button(text(txt).size(15).center())
+                .on_press_maybe((!self.running).then_some(crate::Message::from(message)))
         };
 
         let ping_btn = if self.running {
-            custom_button("Stop Ping", Message::PingCancel)
+            custom_button("Stop Ping", Message::Cancel)
                 .style(button::danger)
-                .on_press(Message::PingCancel)
+                .on_press(Message::Cancel.into())
         } else {
-            custom_button("Ping", Message::PingStart(None)).on_press(Message::PingStart(None))
+            custom_button("Ping", Message::Start(None)).on_press(Message::Start(None).into())
         }
         .width(Length::Fixed(90.0));
 
@@ -233,18 +250,18 @@ impl Tool for Ping {
             .height(Length::Fill)
             .font(Font::MONOSPACE)
             .placeholder("ping output...")
-            .on_action(Message::PingEditorAction); // make read-only by ignoring edits
+            .on_action(|a| Message::EditorAction(a).into()); // make read-only by ignoring edits
 
-        let ping_gateway_btn = custom_button("Ping gateway", Message::PingDefaultGateway);
+        let ping_gateway_btn = custom_button("Ping gateway", Message::PingDefaultGateway.into());
         let ping_google_btn = custom_button(
             "Ping google.com",
-            Message::PingStart(Some("google.com".to_owned())),
+            Message::Start(Some("google.com".to_owned())).into(),
         );
         let ping_google_dns_btn = custom_button(
             "Ping google DNS (8.8.8.8)",
-            Message::PingStart(Some("8.8.8.8".to_owned())),
+            Message::Start(Some("8.8.8.8".to_owned())).into(),
         );
-        let ping_custom_btn = custom_button("Ping custom address", Message::PingToggleCustom);
+        let ping_custom_btn = custom_button("Ping custom address", Message::ToggleCustom.into());
 
         let mut content = widget::column![
             row![

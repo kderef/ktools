@@ -150,6 +150,7 @@ impl App {
             Message::Window(window_message) => return self.window_handler.handle(window_message),
             Message::GoHome => {
                 self.selected = SidebarItem::Tool(0);
+                return self.tools[0].on_activate();
             }
             Message::GoToSettings => {
                 self.selected = SidebarItem::Settings;
@@ -215,8 +216,10 @@ impl App {
         Task::none()
     }
 
-    /// Dynamic grid of squares representing tools.
-
+    /// The main view of the application, contains:
+    /// - Window decorations
+    /// - Selected tool's view()
+    /// - Sidebar
     fn view(&self) -> Element<'_, Message> {
         let content: Element<'_, Message> = match self.selected {
             SidebarItem::Settings => self.settings.view(),
