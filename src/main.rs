@@ -30,6 +30,7 @@ use crate::window::WindowHandler;
 
 pub use message::Message;
 
+/// Minimum AND default size for the window.
 const WINDOW_MIN_SIZE: (f32, f32) = (870.0, 500.0);
 
 fn main() {
@@ -148,7 +149,8 @@ impl App {
 
         match message {
             Message::Startup => {
-                self.load_all();
+                self.load_all_config();
+                return self.load_all_data();
             }
             Message::Window(window_message) => return self.window_handler.handle(window_message),
             Message::GoHome => {
@@ -164,6 +166,10 @@ impl App {
 
                 self.selected = SidebarItem::Tool(index);
                 return tool.on_activate();
+            }
+
+            Message::InitialDataLoaded(index, message) => {
+                return self.tools[index].update(*message);
             }
 
             // sidebar
@@ -227,7 +233,6 @@ impl App {
         let content: Element<'_, Message> = match self.selected {
             SidebarItem::Settings => self.settings.view(),
             SidebarItem::Tool(index) => self.tools[index].view(),
-            // SidebarItem::Home => homescreen::view_simple(self),
         };
 
         let decorations = self.window_handler.decorations();
@@ -237,12 +242,12 @@ impl App {
             .width(Length::Fill);
 
         // Decorations + content stacked in the right column only
-        let right = widget::column![decorations, content,]
+        let right = widget::column![decorations, content]
             .height(Length::Fill)
             .width(Length::Fill);
 
-        // Sidebar spans full height — its background paints over the titlebar area
-        let main_content = widget::row![self.sidebar.view(self.selected, &self.tools), right,]
+        // Sidebar of the app, takes up FULL height, including the top where the window decorations are.
+        let main_content = widget::row![self.sidebar.view(self.selected, &self.tools), right]
             .height(Length::Fill)
             .width(Length::Fill);
 
@@ -252,8 +257,16 @@ impl App {
         let view = self.window_handler.container(main_content);
         self.window_handler.wrap(view)
     }
-    /// Load saved data into all the tools
-    fn load_all(&mut self) {
+
+    fn load_all_data(&mut self) -> Task<Message> {
+        Task::batch(self.tools.iter_mut().enumerate().map(|(i, t)| {
+            t.load_data()
+                .map(move |msg| crate::Message::InitialDataLoaded(i, Box::new(msg)))
+        }))
+    }
+
+    /// Load config data into all the tools
+    fn load_all_config(&mut self) {
         let path = Self::data_path();
 
         #[cfg(debug_assertions)]
@@ -284,23 +297,23 @@ impl App {
 
         for tool in &mut self.tools {
             if let Some(data) = map.get(tool.name()).cloned() {
-                tool.load(data);
+                tool.load_config(data);
             }
         }
 
         if let Some(data) = map.get(self.settings.name()).cloned() {
-            self.settings.load(data);
+            self.settings.load_config(data);
         }
     }
 
     /// Collect state of all the `Tool`'s and saves it in a config file
-    fn save_all(&self) {
+    fn save_all_config(&self) {
         let data: serde_json::Map<String, serde_json::Value> = self
             .tools
             .iter()
             .map(|t| t.as_ref()) // unbox
             .chain([&self.settings as &dyn Tool]) // add settings
-            .filter_map(|t| t.save().map(|v| (t.name().to_owned(), v)))
+            .filter_map(|t| t.save_config().map(|v| (t.name().to_owned(), v)))
             .collect();
 
         let data_dir = Self::data_dir();
@@ -337,6 +350,6 @@ impl App {
 // IMPORTANT: we save userdata on exit (after window closes)
 impl Drop for App {
     fn drop(&mut self) {
-        self.save_all();
+        self.save_all_config();
     }
 }

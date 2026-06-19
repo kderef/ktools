@@ -14,12 +14,17 @@ pub trait Tool {
     fn icon(&self) -> Text<'_>;
 
     /// Serialize the Tool's state into a JSON value to be loaded.
-    fn save(&self) -> Option<serde_json::Value> {
+    fn save_config(&self) -> Option<serde_json::Value> {
         None
     }
 
     /// Deserialize Tool's state from JSON
-    fn load(&mut self, _data: serde_json::Value) {}
+    fn load_config(&mut self, _data: serde_json::Value) {}
+
+    /// Called on program startup or refresh, fetches the data.
+    fn load_data(&mut self) -> Task<crate::Message> {
+        Task::none()
+    }
 
     /// Run code when the tool is selected
     fn on_activate(&mut self) -> Task<crate::Message> {

@@ -53,7 +53,7 @@ impl Tool for ExternalIP {
         icon_font::broadcast()
     }
 
-    fn on_activate(&mut self) -> Task<crate::Message> {
+    fn load_data(&mut self) -> Task<crate::Message> {
         fn get(api: Api) -> Result<Object, String> {
             minreq::get(api.url())
                 .send()
@@ -69,6 +69,9 @@ impl Tool for ExternalIP {
 
         let api = self.api;
         Task::perform(async move { get(api) }, crate::Message::ExternalIpFetched)
+    }
+    fn on_activate(&mut self) -> Task<crate::Message> {
+        Task::none()
     }
 
     fn update(&mut self, message: crate::Message) -> Task<crate::Message> {

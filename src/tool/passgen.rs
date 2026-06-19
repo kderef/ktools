@@ -119,10 +119,10 @@ impl Tool for PasswordGenerator {
         icon_font::lock()
     }
 
-    fn save(&self) -> Option<serde_json::Value> {
+    fn save_config(&self) -> Option<serde_json::Value> {
         serde_json::to_value(self).ok()
     }
-    fn load(&mut self, data: serde_json::Value) {
+    fn load_config(&mut self, data: serde_json::Value) {
         let Ok(loaded) = serde_json::from_value(data) else {
             return;
         };

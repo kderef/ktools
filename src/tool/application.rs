@@ -160,10 +160,10 @@ impl Tool for Applications {
         icon_font::terminal_cmd()
     }
 
-    fn save(&self) -> Option<serde_json::Value> {
+    fn save_config(&self) -> Option<serde_json::Value> {
         None
     }
-    fn load(&mut self, _data: serde_json::Value) {}
+    fn load_config(&mut self, _data: serde_json::Value) {}
     fn on_activate(&mut self) -> Task<crate::Message> {
         Task::none()
     }

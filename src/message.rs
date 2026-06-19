@@ -9,6 +9,9 @@ pub enum Message {
     Startup,
     Window(window::Message),
 
+    /// Data from `Tool::load_data()` was loaded.
+    InitialDataLoaded(usize, Box<Self>),
+
     OpenURL(String),
 
     /// Something was selected in the sidebar
@@ -51,8 +54,7 @@ pub enum Message {
     ExternalIpPick(tool::ext_ip::Api),
 
     /* messages for sys_info */
-    SystemInfoFetched(&'static str, Result<tool::sys_info::SystemValue, String>),
-    SystemInfoOpen(tool::sys_info::ProcessOpen),
+    SystemInfo(tool::sys_info::Message),
 
     /* messages for ping */
     Ping(tool::ping::Message),
@@ -67,5 +69,11 @@ impl From<tool::ping::Message> for Message {
 impl From<tool::passgen::Message> for Message {
     fn from(value: tool::passgen::Message) -> Self {
         Self::PasswordGenerator(value)
+    }
+}
+
+impl From<tool::sys_info::Message> for Message {
+    fn from(value: tool::sys_info::Message) -> Self {
+        Self::SystemInfo(value)
     }
 }

@@ -16,7 +16,7 @@ use iced::{
 use sysinfo::System;
 
 use super::*;
-use crate::Message;
+pub use tasks::Message;
 
 pub struct SystemInfo {
     /// `None` means loading, `Some(Result<...>)` will be received upon `Message::SystemInfoFetched`
@@ -39,30 +39,31 @@ impl Tool for SystemInfo {
         icon_font::vm()
     }
 
-    fn on_activate(&mut self) -> Task<crate::Message> {
+    fn load_data(&mut self) -> Task<crate::Message> {
         // Launch tasks for each of the TASKS
         Task::batch(TASKS.iter().map(|(name, fetch)| {
             Task::perform(async move { fetch() }, move |result| {
-                Message::SystemInfoFetched(name, result)
+                Message::Fetched(name, result).into()
             })
         }))
     }
 
-    fn update(&mut self, message: Message) -> Task<Message> {
+    fn on_activate(&mut self) -> Task<crate::Message> {
+        Task::none()
+    }
+
+    fn update(&mut self, message: crate::Message) -> Task<crate::Message> {
+        let crate::Message::SystemInfo(message) = message else {
+            return Task::none();
+        };
+
         match message {
-            Message::SystemInfoFetched(key, result) => {
+            Message::Fetched(key, result) => {
                 if let Some(val) = self.info.get_mut(&key) {
                     *val = Some(result);
                 }
             }
-            Message::Refresh => {
-                // Delete existing data, then start task to fetch new data
-                for v in self.info.values_mut() {
-                    *v = None;
-                }
-                return self.on_activate();
-            }
-            Message::SystemInfoOpen(proc) => {
+            Message::OpenProcess(proc) => {
                 let cmd = proc.command();
                 let prog = cmd[0];
                 let args = &cmd[1..];
@@ -83,7 +84,13 @@ impl Tool for SystemInfo {
                 #[cfg(debug_assertions)]
                 println!("$ {prog} {args:?} -> {_result:?}");
             }
-            _ => {}
+            Message::Refresh => {
+                // Delete existing data, then start task to fetch new data
+                for v in self.info.values_mut() {
+                    *v = None;
+                }
+                return self.on_activate();
+            }
         }
         Task::none()
     }
@@ -97,7 +104,7 @@ impl Tool for SystemInfo {
         }
 
         let proc_button = |label, msg: ProcessOpen| {
-            simple_button(label, msg.icon()).on_press(Message::SystemInfoOpen(msg))
+            simple_button(label, msg.icon()).on_press(Message::OpenProcess(msg).into())
         };
 
         let spacing = 10;
@@ -134,7 +141,7 @@ impl Tool for SystemInfo {
 
         let bottom_row = row![
             button(text("refresh").size(24).center())
-                .on_press_maybe(all_loaded.then_some(Message::Refresh))
+                .on_press_maybe(all_loaded.then_some(Message::Refresh.into()))
                 .width(Length::Fill),
             space().width(10),
             button(text("copy all").size(24).center())
@@ -151,7 +158,7 @@ impl Tool for SystemInfo {
                         })
                         .collect::<Vec<_>>()
                         .join("\n");
-                    Message::CopyToClipboard(text)
+                    crate::Message::CopyToClipboard(text)
                 }))
         ];
         let col = widget::column![

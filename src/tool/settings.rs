@@ -64,20 +64,24 @@ impl Tool for Settings {
         icon_font::settings_gear()
     }
 
-    fn save(&self) -> Option<serde_json::Value> {
+    fn save_config(&self) -> Option<serde_json::Value> {
         serde_json::to_value(self).ok()
     }
-    fn load(&mut self, data: serde_json::Value) {
+    fn load_config(&mut self, data: serde_json::Value) {
         if let Ok(s) = serde_json::from_value::<Self>(data) {
             *self = s;
         }
     }
-    fn on_activate(&mut self) -> Task<crate::Message> {
+    fn load_data(&mut self) -> Task<crate::Message> {
         Task::perform(
             async { get_latest_build_tag() },
             Message::FetchedLatestGitTag,
         )
     }
+    fn on_activate(&mut self) -> Task<crate::Message> {
+        Task::none()
+    }
+
     fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::SetTheme(theme) => {

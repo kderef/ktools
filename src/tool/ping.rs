@@ -130,10 +130,10 @@ impl Tool for Ping {
         icon_font::debug_disconnect()
     }
 
-    fn save(&self) -> Option<serde_json::Value> {
+    fn save_config(&self) -> Option<serde_json::Value> {
         serde_json::to_value(self).ok()
     }
-    fn load(&mut self, data: serde_json::Value) {
+    fn load_config(&mut self, data: serde_json::Value) {
         if let Ok(data) = serde_json::from_value(data) {
             *self = data;
         }

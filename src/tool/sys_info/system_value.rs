@@ -85,7 +85,7 @@ impl ToString for SystemValue {
 }
 
 impl SystemValue {
-    pub fn widget<'a>(&'a self) -> Element<'a, Message> {
+    pub fn widget<'a>(&'a self) -> Element<'a, crate::Message> {
         match self {
             Self::Text(s) => row![
                 text(s.clone()).size(14).width(Length::Fill),

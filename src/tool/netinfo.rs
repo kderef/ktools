@@ -167,11 +167,15 @@ impl Tool for NetworkInfo {
         icon_font::globe()
     }
 
-    fn on_activate(&mut self) -> Task<Message> {
+    fn load_data(&mut self) -> Task<crate::Message> {
         Task::perform(
             async { ipconfig::get_adapters().map_err(|e| e.to_string()) },
             Message::NetworkInterfacesFetched,
         )
+    }
+
+    fn on_activate(&mut self) -> Task<Message> {
+        Task::none()
     }
 
     fn update(&mut self, message: Message) -> Task<Message> {

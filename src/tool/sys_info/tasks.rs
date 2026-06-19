@@ -1,5 +1,12 @@
 use super::*;
 
+#[derive(Debug, Clone)]
+pub enum Message {
+    Fetched(&'static str, Result<SystemValue, String>),
+    OpenProcess(ProcessOpen),
+    Refresh,
+}
+
 /// Tasks that are performed simultaneously in their own `Task`'s
 /// The name is used for indexing into a `HashMap`, as well as displaying.
 pub static TASKS: &[(&str, fn() -> Result<SystemValue, String>)] = &[
