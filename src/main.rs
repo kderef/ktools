@@ -6,6 +6,8 @@
 // TODO: add port scanning tool
 // TODO: add homescreen to tool/home.rs
 
+// TODO(fix): Sometimes InitialDataLoaded message is not sent on startup.
+
 mod base;
 mod homescreen;
 mod message;
@@ -169,7 +171,7 @@ impl App {
             }
 
             Message::InitialDataLoaded(index, message) => {
-                return self.tools[index].update(*message);
+                return self.all_tools_mut().nth(index).unwrap().update(*message);
             }
 
             // sidebar
@@ -258,8 +260,23 @@ impl App {
         self.window_handler.wrap(view)
     }
 
+    /// All the tools including edge cases such as `Settings` and `Home`
+    fn all_tools_mut(&mut self) -> impl Iterator<Item = &mut dyn Tool> {
+        self.tools
+            .iter_mut()
+            .map(|t| t.as_mut() as &mut dyn Tool)
+            .chain([&mut self.settings as &mut dyn Tool])
+    }
+    /// All the tools including edge cases such as `Settings` and `Home`
+    fn all_tools(&self) -> impl Iterator<Item = &dyn Tool> {
+        self.tools
+            .iter()
+            .map(Box::as_ref)
+            .chain([&self.settings as &dyn Tool])
+    }
+
     fn load_all_data(&mut self) -> Task<Message> {
-        Task::batch(self.tools.iter_mut().enumerate().map(|(i, t)| {
+        Task::batch(self.all_tools_mut().enumerate().map(|(i, t)| {
             t.load_data()
                 .map(move |msg| crate::Message::InitialDataLoaded(i, Box::new(msg)))
         }))
@@ -295,24 +312,17 @@ impl App {
             }
         };
 
-        for tool in &mut self.tools {
+        for tool in self.all_tools_mut() {
             if let Some(data) = map.get(tool.name()).cloned() {
                 tool.load_config(data);
             }
-        }
-
-        if let Some(data) = map.get(self.settings.name()).cloned() {
-            self.settings.load_config(data);
         }
     }
 
     /// Collect state of all the `Tool`'s and saves it in a config file
     fn save_all_config(&self) {
         let data: serde_json::Map<String, serde_json::Value> = self
-            .tools
-            .iter()
-            .map(|t| t.as_ref()) // unbox
-            .chain([&self.settings as &dyn Tool]) // add settings
+            .all_tools()
             .filter_map(|t| t.save_config().map(|v| (t.name().to_owned(), v)))
             .collect();
 
