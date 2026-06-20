@@ -89,7 +89,7 @@ impl Tool for SystemInfo {
                 for v in self.info.values_mut() {
                     *v = None;
                 }
-                return self.on_activate();
+                return self.load_data();
             }
         }
         Task::none()

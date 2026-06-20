@@ -38,7 +38,6 @@ winapi = {version = "0.3.9", features = ["winnt"]}
 
 [dependencies]
 rand = "0.10.1"
-sysinfo = "0.39.2"
 dirs = "6.0.0"
 open = "5.3.5"
 fuzzy-matcher = "0.3.7"
@@ -48,6 +47,7 @@ iced_fonts = { version = "0.3.0", features = ["codicon"] }
 serde = { version = "1.0.228", features = ["derive"] }
 ipconfig = {path = "ipconfig"}
 minreq = { version = "2.14.1", features = ["https-native"] }
+sysinfo = {version = "0.39.2", default-features = false, features = ["disk", "system"]}
 
 # We disable wgpu to use only tiny-skia, since it saves ~5MB on the EXE and has faster startup
 [dependencies.iced]

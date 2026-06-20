@@ -11,6 +11,10 @@ impl Tool for Homescreen {
         icon_font::home()
     }
 
+    fn load_data(&mut self) -> Task<crate::Message> {
+        Task::none()
+    }
+
     fn update(&mut self, _message: crate::Message) -> Task<crate::Message> {
         Task::none()
     }

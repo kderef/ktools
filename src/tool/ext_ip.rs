@@ -56,6 +56,7 @@ impl Tool for ExternalIP {
     fn load_data(&mut self) -> Task<crate::Message> {
         fn get(api: Api) -> Result<Object, String> {
             minreq::get(api.url())
+                .with_timeout(5)
                 .send()
                 .map_err(|e| e.to_string())?
                 .as_str()
@@ -85,7 +86,7 @@ impl Tool for ExternalIP {
             }
             Message::Refresh => {
                 self.response = None;
-                return self.on_activate();
+                return self.load_data();
             }
             _ => {}
         }

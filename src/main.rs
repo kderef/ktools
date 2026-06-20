@@ -7,6 +7,8 @@
 // TODO: add homescreen to tool/home.rs
 
 // TODO(fix): Sometimes InitialDataLoaded message is not sent on startup.
+// - sys_info tasks take longer to run when no internet connection
+// - minreq::get causes other tasks to be delayed until completion
 
 mod base;
 mod homescreen;
@@ -277,6 +279,7 @@ impl App {
 
     fn load_all_data(&mut self) -> Task<Message> {
         Task::batch(self.all_tools_mut().enumerate().map(|(i, t)| {
+            println!("fetching tool {i}: {}", t.name());
             t.load_data()
                 .map(move |msg| crate::Message::InitialDataLoaded(i, Box::new(msg)))
         }))

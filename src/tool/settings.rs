@@ -140,6 +140,7 @@ pub fn get_latest_build_tag() -> Result<String, String> {
 
     let response = minreq::get(api_url)
         .with_header("User-Agent", "KTools")
+        .with_timeout(5)
         .send()
         .map_err(|e| e.to_string())?
         .into_bytes();
