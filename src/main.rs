@@ -173,7 +173,10 @@ impl App {
             }
 
             Message::InitialDataLoaded(index, message) => {
-                return self.all_tools_mut().nth(index).unwrap().update(*message);
+                // We send it to the home tool as well, since it needs information from all the tools.
+                return self.tools[0]
+                    .update(*message.clone())
+                    .chain(self.all_tools_mut().nth(index).unwrap().update(*message));
             }
 
             // sidebar

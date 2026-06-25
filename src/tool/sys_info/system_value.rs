@@ -6,8 +6,9 @@ use super::*;
 pub enum SystemValue {
     Text(String),
     System {
-        name: String,
-        version: String,
+        description_long: String,
+        description_short: String,
+        kernel_version: String,
         arch: String,
     },
     Cpu {
@@ -57,10 +58,11 @@ impl ToString for SystemValue {
         match self {
             SystemValue::Text(s) => s.clone(),
             SystemValue::System {
-                name,
-                version,
+                description_long,
+                description_short: _,
+                kernel_version,
                 arch,
-            } => format!("{name} {arch} ({version})"),
+            } => format!("{description_long} {arch} ({kernel_version})"),
             SystemValue::Cpu {
                 brand,
                 frequency,
@@ -95,15 +97,16 @@ impl SystemValue {
             .align_y(Alignment::Center)
             .into(),
             sys @ Self::System {
-                name,
-                version,
+                description_long,
+                description_short: _,
+                kernel_version,
                 arch,
             } => row![
-                text(name).size(14),
+                text(description_long).size(14),
                 space().width(8),
                 text(arch).style(text::secondary).size(14),
                 space().width(8),
-                text(format!("( {version} )"))
+                text(format!("( {kernel_version} )"))
                     .size(14)
                     .style(|theme: &Theme| {
                         text::Style {

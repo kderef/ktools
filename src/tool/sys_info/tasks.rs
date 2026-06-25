@@ -2,22 +2,63 @@ use super::*;
 
 #[derive(Debug, Clone)]
 pub enum Message {
-    Fetched(&'static str, Result<SystemValue, String>),
+    Fetched(FetchTask, Result<SystemValue, String>),
     OpenProcess(ProcessOpen),
     Refresh,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Hash)]
+pub enum FetchTask {
+    System,
+    Hostname,
+    Username,
+    Cpu,
+    GraphicsCard,
+    Ram,
+    Disks,
+}
+impl std::fmt::Display for FetchTask {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.name())
+    }
+}
+
 /// Tasks that are performed simultaneously in their own `Task`'s
-/// The name is used for indexing into a `HashMap`, as well as displaying.
-pub static TASKS: &[(&str, fn() -> Result<SystemValue, String>)] = &[
-    ("System", fetch_os),
-    ("Hostname", fetch_hostname),
-    ("Username", fetch_username),
-    ("CPU", fetch_cpu),
-    ("Graphics Card", fetch_graphics_card),
-    ("RAM", fetch_ram),
-    ("Disks", fetch_disks),
-];
+impl FetchTask {
+    pub const fn all() -> &'static [Self] {
+        &[
+            Self::System,
+            Self::Hostname,
+            Self::Username,
+            Self::Cpu,
+            Self::GraphicsCard,
+            Self::Ram,
+            Self::Disks,
+        ]
+    }
+    pub const fn name(self) -> &'static str {
+        match self {
+            Self::System => "System",
+            Self::Hostname => "Hostname",
+            Self::Username => "Username",
+            Self::Cpu => "CPU",
+            Self::GraphicsCard => "GraphicsCard",
+            Self::Ram => "RAM",
+            Self::Disks => "Disks",
+        }
+    }
+    pub const fn action(self) -> fn() -> Result<SystemValue, String> {
+        match self {
+            Self::System => fetch_os,
+            Self::Hostname => fetch_hostname,
+            Self::Username => fetch_username,
+            Self::Cpu => fetch_cpu,
+            Self::GraphicsCard => fetch_graphics_card,
+            Self::Ram => fetch_ram,
+            Self::Disks => fetch_disks,
+        }
+    }
+}
 
 fn fetch_hostname() -> Result<SystemValue, String> {
     System::host_name()
@@ -59,8 +100,9 @@ fn fetch_ram() -> Result<SystemValue, String> {
 
 fn fetch_os() -> Result<SystemValue, String> {
     Ok(SystemValue::System {
-        name: System::long_os_version().ok_or("unknown OS type".to_owned())?,
-        version: System::kernel_long_version(),
+        description_long: System::long_os_version().ok_or("unknown OS type".to_owned())?,
+        description_short: System::os_version().ok_or("Unknown OS type".to_owned())?,
+        kernel_version: System::kernel_long_version(),
         arch: System::cpu_arch(),
     })
 }

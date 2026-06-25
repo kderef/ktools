@@ -62,7 +62,7 @@ impl SidebarItem {
         let text_size = 17;
         let button_contents = widget::row![
             icon.size(text_size),
-            space().width(3),
+            space().width(4),
             text(name).size(text_size)
         ];
 

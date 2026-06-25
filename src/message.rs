@@ -5,6 +5,9 @@ use crate::{ui::SidebarItem, *};
 /// and a couple of `Tool`-specific messages such as `ExternalIpFetched()`
 #[derive(Debug, Clone)]
 pub enum Message {
+    /// Ignored message, not handled.
+    Ignore,
+
     /// Runs once when the window is opened
     Startup,
     Window(window::Message),

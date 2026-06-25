@@ -4,7 +4,6 @@ mod tasks;
 
 pub use process::ProcessOpen;
 pub use system_value::{Bytes, Disk, SystemValue};
-use tasks::*;
 
 use std::collections::HashMap;
 use std::fmt;
@@ -16,17 +15,18 @@ use iced::{
 use sysinfo::System;
 
 use super::*;
+pub use tasks::FetchTask;
 pub use tasks::Message;
 
 pub struct SystemInfo {
     /// `None` means loading, `Some(Result<...>)` will be received upon `Message::SystemInfoFetched`
-    info: HashMap<&'static str, Option<Result<SystemValue, String>>>,
+    info: HashMap<FetchTask, Option<Result<SystemValue, String>>>,
 }
 
 impl Default for SystemInfo {
     fn default() -> Self {
         Self {
-            info: TASKS.iter().map(|(k, _)| (*k, None)).collect(),
+            info: FetchTask::all().iter().map(|ft| (*ft, None)).collect(),
         }
     }
 }
@@ -41,9 +41,9 @@ impl Tool for SystemInfo {
 
     fn load_data(&mut self) -> Task<crate::Message> {
         // Launch tasks for each of the TASKS
-        Task::batch(TASKS.iter().map(|(name, fetch)| {
-            Task::perform(async move { fetch() }, move |result| {
-                Message::Fetched(name, result).into()
+        Task::batch(FetchTask::all().iter().map(|ft| {
+            Task::perform(async move { (ft.action())() }, move |result| {
+                Message::Fetched(*ft, result).into()
             })
         }))
     }
@@ -58,8 +58,8 @@ impl Tool for SystemInfo {
         };
 
         match message {
-            Message::Fetched(key, result) => {
-                if let Some(val) = self.info.get_mut(&key) {
+            Message::Fetched(task, result) => {
+                if let Some(val) = self.info.get_mut(&task) {
                     *val = Some(result);
                 }
             }
@@ -98,9 +98,9 @@ impl Tool for SystemInfo {
         let mut rows = widget::column![].spacing(2).height(Length::Fill);
 
         // Iterate through TASKS instead of self.info to preserve order
-        for (key, _) in TASKS {
-            let value = &self.info[key];
-            rows = rows.push(info_row(key, value));
+        for task in FetchTask::all() {
+            let value = &self.info[task];
+            rows = rows.push(info_row(task.name(), value));
         }
 
         let proc_button = |label, msg: ProcessOpen| {
@@ -147,11 +147,11 @@ impl Tool for SystemInfo {
             button(text("copy all").size(24).center())
                 .width(Length::Fill)
                 .on_press_maybe(all_loaded.then_some({
-                    let text = TASKS
+                    let text = FetchTask::all()
                         .iter()
-                        .filter_map(|(k, _)| {
-                            if let Some(Ok(val)) = &self.info[k] {
-                                Some(format!("{k}: {}", val.to_string()))
+                        .filter_map(|task| {
+                            if let Some(Ok(val)) = &self.info[task] {
+                                Some(format!("{task}: {}", val.to_string()))
                             } else {
                                 None
                             }

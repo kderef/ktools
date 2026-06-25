@@ -82,7 +82,7 @@ impl Tool for ExternalIP {
             }
             Message::ExternalIpPick(api) => {
                 self.api = api;
-                return self.on_activate();
+                return self.load_data();
             }
             Message::Refresh => {
                 self.response = None;
