@@ -16,6 +16,7 @@ use std::net::IpAddr;
 pub struct NetworkInfo {
     active_tab: usize,
     local_interfaces: Vec<Adapter>,
+    local_interfaces_sorted: Vec<Adapter>,
     error: Option<String>,
 }
 
@@ -186,8 +187,10 @@ impl Tool for NetworkInfo {
             Message::NetworkInterfacesFetched(result) => match result {
                 Err(e) => self.error = Some(e),
                 Ok(mut ifs) => {
+                    self.local_interfaces = ifs.clone();
+
                     ifs.sort_by(|a, b| b.importance().cmp(&a.importance()));
-                    self.local_interfaces = ifs;
+                    self.local_interfaces_sorted = ifs;
                 }
             },
             Message::Refresh => {
@@ -226,7 +229,7 @@ impl Tool for NetworkInfo {
                 },
             });
 
-        for (i, iface) in self.local_interfaces.iter().enumerate() {
+        for (i, iface) in self.local_interfaces_sorted.iter().enumerate() {
             sidebar = sidebar.push(i, TabLabel::Text(iface.friendly_name().to_string()));
         }
 
@@ -236,7 +239,7 @@ impl Tool for NetworkInfo {
             text(format!("ERROR: {error}")).style(text::danger).into()
         } else if self.local_interfaces.is_empty() {
             text("Loading...").style(text::secondary).into()
-        } else if let Some(iface) = self.local_interfaces.get(self.active_tab) {
+        } else if let Some(iface) = self.local_interfaces_sorted.get(self.active_tab) {
             iface_content(iface)
         } else {
             text("No interface selected").into()

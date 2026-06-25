@@ -40,7 +40,6 @@ winapi = {version = "0.3.9", features = ["winnt"]}
 rand = "0.10.1"
 dirs = "6.0.0"
 open = "5.3.5"
-fuzzy-matcher = "0.3.7"
 iced_aw = "0.14.1"
 serde_json = "1.0.150"
 iced_fonts = { version = "0.3.0", features = ["codicon"] }

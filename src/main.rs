@@ -17,8 +17,6 @@ mod tool;
 mod ui;
 mod window;
 
-use fuzzy_matcher::FuzzyMatcher;
-use fuzzy_matcher::skim::SkimMatcherV2;
 use iced::{
     Element, Length, Subscription, Task, clipboard, keyboard,
     widget::{self, *},
@@ -68,10 +66,6 @@ pub struct App {
     selected: SidebarItem,
     settings: Settings,
 
-    // searching
-    search: String,
-    search_matches: Vec<usize>,
-
     sidebar: Sidebar,
     window_handler: WindowHandler,
 }
@@ -84,9 +78,6 @@ impl App {
         let app = Self {
             selected: SidebarItem::Tool(0),
             settings: Settings::default(),
-
-            search: String::new(),
-            search_matches: tools.iter().enumerate().map(|(i, _)| i).collect(),
 
             window_handler: WindowHandler::new(),
             sidebar: Sidebar::from_tools(&tools),
@@ -147,8 +138,9 @@ impl App {
     /// The rest will be relegated to the currently selected `Tool`
     fn update(&mut self, message: Message) -> Task<Message> {
         #[cfg(debug_assertions)]
-        if !matches!(message, Message::Window(window::Message::CursorMoved(_))) {
-            println!("=> MESSAGE: {message:#?}");
+        match message {
+            Message::Window(window::Message::CursorMoved(_)) | Message::Ignore => {}
+            _ => println!("=> MESSAGE: {message:#?}"),
         }
 
         match message {
@@ -201,26 +193,6 @@ impl App {
             }
             Message::OpenURL(url) => {
                 let _ = open::that(url);
-            }
-            Message::Search(query) => {
-                let query_lower = query.to_lowercase();
-
-                let matcher = SkimMatcherV2::default();
-
-                let tool_indices = self.tools.iter().enumerate().map(|(i, t)| (i, t.name()));
-
-                let mut matches: Vec<(usize, i64)> = tool_indices
-                    .filter_map(|(i, tn)| {
-                        matcher
-                            .fuzzy_match(&tn.to_lowercase(), &query_lower)
-                            .map(|score| (i, score))
-                    })
-                    .collect();
-
-                matches.sort_by(|a, b| b.1.cmp(&a.1));
-
-                self.search = query;
-                self.search_matches = matches.iter().map(|(i, _)| *i).collect();
             }
             // Globally non-relevant Messages will be relegated to the `Tool`
             other => match self.selected {

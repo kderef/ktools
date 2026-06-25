@@ -104,13 +104,6 @@ impl Tool for Homescreen {
             info_row("Host", &self.hostname),
             separator(),
             info_row("Username", &self.username),
-            // info_row("Uptime", "4d 11h 27m"),
-            // separator(),
-            // info_row("CPU", "AMD Ryzen 7 7700X"),
-            // separator(),
-            // info_row("Memory", "12.4 GB / 32 GB"),
-            // separator(),
-            // info_row("Local IP", "10.0.0.14"),
         ]
         .spacing(4)
         .width(Length::Fill);
