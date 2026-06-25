@@ -5,7 +5,7 @@ mod tasks;
 pub use process::ProcessOpen;
 pub use system_value::{Bytes, Disk, SystemValue};
 
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::fmt;
 
 use iced::{
@@ -20,7 +20,8 @@ pub use tasks::Message;
 
 pub struct SystemInfo {
     /// `None` means loading, `Some(Result<...>)` will be received upon `Message::SystemInfoFetched`
-    info: HashMap<FetchTask, Option<Result<SystemValue, String>>>,
+    /// NOTE: BTreeMap because we care about the order
+    info: BTreeMap<FetchTask, Option<Result<SystemValue, String>>>,
 }
 
 impl Default for SystemInfo {
@@ -95,13 +96,8 @@ impl Tool for SystemInfo {
         Task::none()
     }
     fn view(&self) -> Element<'_, crate::Message> {
-        let mut rows = widget::column![].spacing(2).height(Length::Fill);
-
-        // Iterate through TASKS instead of self.info to preserve order
-        for task in FetchTask::all() {
-            let value = &self.info[task];
-            rows = rows.push(info_row(task.name(), value));
-        }
+        let info_rows = self.info.iter().map(|(k, v)| info_row(k.name(), v));
+        let mut rows = widget::column(info_rows).spacing(2).height(Length::Fill);
 
         let proc_button = |label, msg: ProcessOpen| {
             simple_button(label, msg.icon()).on_press(Message::OpenProcess(msg).into())
@@ -147,17 +143,19 @@ impl Tool for SystemInfo {
             button(text("copy all").size(24).center())
                 .width(Length::Fill)
                 .on_press_maybe(all_loaded.then_some({
-                    let text = FetchTask::all()
+                    let text = self
+                        .info
                         .iter()
-                        .filter_map(|task| {
-                            if let Some(Ok(val)) = &self.info[task] {
-                                Some(format!("{task}: {}", val.to_string()))
+                        .filter_map(|(k, v)| {
+                            if let Some(Ok(val)) = v {
+                                Some(format!("{k}: {}", val.to_string()))
                             } else {
                                 None
                             }
                         })
                         .collect::<Vec<_>>()
                         .join("\n");
+
                     crate::Message::CopyToClipboard(text)
                 }))
         ];

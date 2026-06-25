@@ -7,7 +7,7 @@ pub enum Message {
     Refresh,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Hash)]
 pub enum FetchTask {
     System,
     Hostname,
@@ -42,7 +42,7 @@ impl FetchTask {
             Self::Hostname => "Hostname",
             Self::Username => "Username",
             Self::Cpu => "CPU",
-            Self::GraphicsCard => "GraphicsCard",
+            Self::GraphicsCard => "Graphics Card",
             Self::Ram => "RAM",
             Self::Disks => "Disks",
         }
