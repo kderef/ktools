@@ -68,8 +68,13 @@ impl Tool for ExternalIP {
                 })
         }
 
-        let api = self.api;
-        Task::perform(async move { get(api) }, crate::Message::ExternalIpFetched)
+        // NOTE: possible memory leak, but it's only very small
+        let api = Box::leak(Box::new(self.api));
+
+        Task::perform(
+            async move { tokio::task::spawn_blocking(|| get(*api)).await.unwrap() },
+            crate::Message::ExternalIpFetched,
+        )
     }
     fn on_activate(&mut self) -> Task<crate::Message> {
         Task::none()

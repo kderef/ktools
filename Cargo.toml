@@ -47,6 +47,7 @@ serde = { version = "1.0.228", features = ["derive"] }
 ipconfig = {path = "ipconfig"}
 minreq = { version = "2.14.1", features = ["https-native"] }
 sysinfo = {version = "0.39.2", default-features = false, features = ["disk", "system"]}
+tokio = "1.52.3"
 
 # We disable wgpu to use only tiny-skia, since it saves ~5MB on the EXE and has faster startup
 [dependencies.iced]
@@ -62,7 +63,8 @@ features = [
   "linux-theme-detection",
   "x11",
   "wayland",
-  "image-without-codecs"
+  "image-without-codecs",
+  "tokio"
 ]
 
 [target.'cfg(windows)'.dependencies]

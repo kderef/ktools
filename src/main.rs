@@ -118,12 +118,14 @@ impl App {
                     _ => None,
                 }
             }
+            // track the cursor position (used for window dragging)
             Event::Mouse(me) => match me {
                 MouseEvent::CursorMoved { position } => {
                     Some(Message::Window(window::Message::CursorMoved(position)))
                 }
                 _ => None,
             },
+            // we need to have the window ID for later use
             Event::Window(we) => match we {
                 WindowEvent::Opened { position: _, size } => {
                     Some(Message::Window(window::Message::Opened { id, size }))
@@ -252,9 +254,9 @@ impl App {
             .chain([&self.settings as &dyn Tool])
     }
 
+    /// Load all data in parallel
     fn load_all_data(&mut self) -> Task<Message> {
         Task::batch(self.all_tools_mut().enumerate().map(|(i, t)| {
-            println!("fetching tool {i}: {}", t.name());
             t.load_data()
                 .map(move |msg| crate::Message::InitialDataLoaded(i, Box::new(msg)))
         }))

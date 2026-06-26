@@ -74,7 +74,11 @@ impl Tool for Settings {
     }
     fn load_data(&mut self) -> Task<crate::Message> {
         Task::perform(
-            async { get_latest_build_tag() },
+            async {
+                tokio::task::spawn_blocking(get_latest_build_tag)
+                    .await
+                    .unwrap()
+            },
             Message::FetchedLatestGitTag,
         )
     }
