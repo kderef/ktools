@@ -8,6 +8,7 @@
 mod base;
 mod homescreen;
 mod message;
+mod panic_handler;
 mod tool;
 mod ui;
 mod window;
@@ -31,7 +32,9 @@ pub use message::Message;
 const WINDOW_MIN_SIZE: (f32, f32) = (870.0, 500.0);
 
 fn main() {
-    let app_result = iced::application(App::new, App::update, App::view)
+    std::panic::set_hook(Box::new(panic_handler::handle_panic));
+
+    iced::application(App::new, App::update, App::view)
         .window(iced::window::Settings {
             min_size: Some(WINDOW_MIN_SIZE.into()),
             icon: window::icon(),
@@ -45,15 +48,8 @@ fn main() {
         .font(ICON_FONT_BYTES)
         .theme(App::theme)
         .subscription(App::subscription)
-        .run();
-
-    if let Err(e) = app_result {
-        #[cfg(debug_assertions)]
-        eprintln!("FATAL APP ERROR: {e:?}");
-
-        ui::messagebox_err("KTools fatal error", &e.to_string());
-        std::process::exit(1);
-    }
+        .run()
+        .unwrap();
 }
 
 pub struct App {
