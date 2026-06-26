@@ -182,13 +182,16 @@ pub fn app_latest_version<'a>(latest: &'a Option<Result<String, String>>) -> Row
         Some(Err(_)) => text("unknown").style(text::secondary),
     };
 
-    let latest_release_url = if let Some(Ok(tag)) = latest {
-        Some(format!(
+    let latest_release_url = match latest {
+        // If the version is already latest, we do not need the button.
+        Some(Ok(tag)) if tag == env!("CARGO_PKG_VERSION") => None,
+
+        // A release was found and is not the same as the app
+        Some(Ok(tag)) => Some(format!(
             "{}/releases/download/{tag}/ktools.exe",
             env!("CARGO_PKG_REPOSITORY")
-        ))
-    } else {
-        None
+        )),
+        _ => None,
     };
 
     let go_to_latest_btn = button("Download Latest Version")
