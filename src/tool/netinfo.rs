@@ -9,7 +9,7 @@ use iced::{
     widget::{self, *},
 };
 use iced_aw::sidebar::{Sidebar, TabLabel};
-use ipconfig::{Adapter, OperStatus};
+use ipconfig::{Adapter, IfType, OperStatus};
 use std::net::IpAddr;
 
 #[derive(Default)]
@@ -72,11 +72,11 @@ fn format_mac(mac: &[u8]) -> String {
 fn iface_content<'a>(iface: &'a Adapter) -> Element<'a, Message> {
     let (status_label, status_style): (&str, fn(&Theme) -> text::Style) = match iface.oper_status()
     {
-        OperStatus::IfOperStatusUp => ("status: up", text::success),
-        OperStatus::IfOperStatusDown => ("status: down", text::danger),
-        OperStatus::IfOperStatusTesting => ("status: testing", text::warning),
-        OperStatus::IfOperStatusDormant => ("status: dormant", text::secondary),
-        _ => ("status: unknown", text::secondary),
+        OperStatus::IfOperStatusUp => ("[operational]", text::success),
+        OperStatus::IfOperStatusDown => ("[offline]", text::danger),
+        OperStatus::IfOperStatusTesting => ("[testing]", text::warning),
+        OperStatus::IfOperStatusDormant => ("[dormant]", text::secondary),
+        _ => ("", text::secondary),
     };
 
     let top_row = row![
@@ -93,7 +93,7 @@ fn iface_content<'a>(iface: &'a Adapter) -> Element<'a, Message> {
         widget::column![
             info_row_primary("Type", iface.if_type().description()),
             info_row_primary("Description", iface.description()),
-            info_row_primary("Name", iface.adapter_name()),
+            info_row_primary("Physical Address", iface.adapter_name()),
         ]
         .into(),
         rule::horizontal(1).into(),
@@ -187,6 +187,12 @@ impl Tool for NetworkInfo {
             Message::NetworkInterfacesFetched(result) => match result {
                 Err(e) => self.error = Some(e),
                 Ok(mut ifs) => {
+                    // filter out software adapters
+                    ifs = ifs
+                        .into_iter()
+                        .filter(|i| i.if_type() != IfType::SoftwareLoopback)
+                        .collect();
+
                     self.local_interfaces = ifs.clone();
 
                     ifs.sort_by(|a, b| b.importance().cmp(&a.importance()));

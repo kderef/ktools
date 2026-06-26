@@ -13,8 +13,10 @@ pub enum Api {
     #[default]
     IpApi,
     Ipify,
+    /// Unused because rate-limit
     IpApiCo,
 }
+
 impl ToString for Api {
     fn to_string(&self) -> String {
         self.url().split('/').nth(2).unwrap().to_owned()

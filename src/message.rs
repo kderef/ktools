@@ -1,3 +1,5 @@
+use std::net::IpAddr;
+
 use crate::{ui::SidebarItem, *};
 
 /// Main message type used in the App.
@@ -21,6 +23,8 @@ pub enum Message {
     SidebarOption(SidebarItem),
 
     /* Home page messages */
+    PrimaryIPv4Loaded(Result<IpAddr, String>),
+
     /// Go to index of App::tools
     ChooseTool(usize),
     GoHome,
