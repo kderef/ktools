@@ -43,9 +43,10 @@ impl Tool for SystemInfo {
     fn load_data(&mut self) -> Task<crate::Message> {
         // Launch tasks for each of the TASKS
         Task::batch(FetchTask::all().iter().map(|ft| {
-            Task::perform(async move { (ft.action())() }, move |result| {
-                Message::Fetched(*ft, result).into()
-            })
+            Task::perform(
+                async move { tokio::task::spawn_blocking(ft.action()).await.unwrap() },
+                move |result| Message::Fetched(*ft, result).into(),
+            )
         }))
     }
 

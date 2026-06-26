@@ -4,11 +4,6 @@
 )]
 
 // TODO: add port scanning tool
-// TODO: add homescreen to tool/home.rs
-
-// TODO(fix): Sometimes InitialDataLoaded message is not sent on startup.
-// - sys_info tasks take longer to run when no internet connection
-// - minreq::get causes other tasks to be delayed until completion
 
 mod base;
 mod homescreen;

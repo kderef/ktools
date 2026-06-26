@@ -48,6 +48,7 @@ pub struct Ping {
     #[serde(skip)]
     running: bool,
 
+    /// currently running ping command
     #[serde(skip)]
     child: Option<ChildHandle>,
 }
