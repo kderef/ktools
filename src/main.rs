@@ -183,6 +183,7 @@ impl App {
             Message::ResetAllSettings => {
                 self.settings = Settings::default();
                 self.tools = tool::all();
+                return self.load_all_data();
             }
             Message::OpenURL(url) => {
                 let _ = open::that(url);
