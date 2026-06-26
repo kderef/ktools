@@ -1,5 +1,6 @@
 //! base utilities used by all tools
 
+use iced::Padding;
 use iced::border::Radius;
 use iced::font::Weight;
 
@@ -177,17 +178,27 @@ pub fn app_version<'a>() -> Row<'a, Message> {
 pub fn app_latest_version<'a>(latest: &'a Option<Result<String, String>>) -> Row<'a, Message> {
     let ver_text = match latest {
         None => text("loading...").style(text::secondary),
-        Some(Ok(s)) => text(s),
+        Some(Ok(s)) => text(s.strip_prefix('v').unwrap_or(s)),
         Some(Err(_)) => text("unknown").style(text::secondary),
     };
 
     let latest_release_url = if let Some(Ok(tag)) = latest {
-        format!("{}/releases/tag/{tag}", env!("CARGO_PKG_REPOSITORY"))
+        Some(format!(
+            "{}/releases/download/{tag}/ktools.exe",
+            env!("CARGO_PKG_REPOSITORY")
+        ))
     } else {
-        concat!(env!("CARGO_PKG_REPOSITORY"), "/releases/latest").to_owned()
+        None
     };
 
-    let go_to_latest_btn = hyperlink("Go to latest version", Some(latest_release_url), true);
+    let go_to_latest_btn = button("Download Latest Version")
+        .on_press_maybe(latest_release_url.map(Message::OpenURL))
+        .padding(Padding {
+            top: 1.0,
+            right: 4.0,
+            bottom: 1.0,
+            left: 4.0,
+        });
 
     row![ver_text.size(15), space().width(10), go_to_latest_btn]
 }
