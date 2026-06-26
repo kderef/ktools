@@ -15,6 +15,7 @@ pub struct Homescreen {
     os_version: Option<Result<String, String>>,
     username: Option<Result<String, String>>,
     hostname: Option<Result<String, String>>,
+    external_ip: Option<Result<String, String>>,
 }
 
 impl Tool for Homescreen {
@@ -34,6 +35,22 @@ impl Tool for Homescreen {
 
     fn update(&mut self, message: Message) -> Task<Message> {
         match message {
+            Message::ExternalIpFetched(result) => {
+                let result = result.and_then(|map| {
+                    let ip_keys = &["Query", "ip"];
+
+                    for key in ip_keys {
+                        if let Some(serde_json::Value::String(s)) = map.get(*key) {
+                            return Ok(s.clone());
+                        }
+                    }
+
+                    Err("No IP was found".into())
+                });
+
+                self.external_ip = Some(result);
+            }
+
             Message::SystemInfo(sys_info::Message::Fetched(task, result)) => {
                 let display_result = result.map(|r| match r {
                     SystemValue::System {
@@ -81,7 +98,7 @@ impl Tool for Homescreen {
                 text(label)
                     .size(FONT_SIZE)
                     .font(BOLD_DEFAULT)
-                    .width(Length::FillPortion(1)),
+                    .width(Length::FillPortion(2)),
                 space().width(Length::FillPortion(1)),
                 selectable_maybe(value_text, "loading...")
                     .size(FONT_SIZE)
@@ -104,6 +121,8 @@ impl Tool for Homescreen {
             info_row("Host", &self.hostname),
             separator(),
             info_row("Username", &self.username),
+            separator(),
+            info_row("External IP", &self.external_ip),
         ]
         .spacing(4)
         .width(Length::Fill);
