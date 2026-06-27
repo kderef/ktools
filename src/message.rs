@@ -1,3 +1,6 @@
+//! This file contains the global `Message` type used in the app,
+//! other sub-types of `Message` are converted into the global message here.
+
 use std::net::IpAddr;
 
 use crate::{ui::SidebarItem, *};
@@ -12,6 +15,8 @@ pub enum Message {
 
     /// Runs once when the window is opened
     Startup,
+
+    /// Window message, handled by `WindowHandler`
     Window(window::Message),
 
     /// Data from `Tool::load_data()` was loaded.
@@ -27,9 +32,7 @@ pub enum Message {
 
     /// Go to index of App::tools
     ChooseTool(usize),
-    GoHome,
     GoToSettings,
-    Search(String),
 
     /* Generic messages */
     Refresh,

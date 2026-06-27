@@ -1,3 +1,5 @@
+//! this file contains the `Tool` trait, which is used to build a `Vec<Box<dyn Tool>>`
+
 pub mod settings;
 
 use iced::{Task, Theme};

@@ -15,6 +15,8 @@ pub enum SidebarItem {
 }
 
 impl SidebarItem {
+    pub const HOME: Self = Self::Tool(0);
+
     fn style_active(theme: &Theme, status: button::Status) -> button::Style {
         let ex = theme.extended_palette();
 

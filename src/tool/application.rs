@@ -206,7 +206,6 @@ impl Tool for Applications {
     fn view(&self) -> Element<'_, crate::Message> {
         const PADDING: u16 = 20;
 
-        // The grid of Tool's
         let children = self.apps.iter().map(app_button).map(Into::into);
 
         let grid = grid(children).fluid(140).spacing(20);
@@ -240,4 +239,9 @@ fn run_elevated(cmd: &str) {
             windows::Win32::UI::WindowsAndMessaging::SW_SHOW,
         );
     }
+}
+
+#[cfg(not(target_os = "windows"))]
+fn run_elevated(cmd: &str) {
+    compile_error!("TODO: implementation for you os goes HERE");
 }

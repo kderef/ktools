@@ -1,3 +1,5 @@
+//! This file contains the `Homescreen` tool, which contains a summary of information which is important.
+
 use std::net::{IpAddr, UdpSocket};
 
 use crate::{

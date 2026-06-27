@@ -14,6 +14,7 @@ pub use iced::window::Direction;
 
 use crate::base::{BACKGROUND_TRANSPARENT, BOLD_DEFAULT};
 
+/// The space taken up by the top decorations (buttons, title bar text)
 pub const DECORATIONS_HEIGHT: f32 = 40.0;
 
 /// Will return `Some(icon)` ONLY in release builds, else `None`
@@ -144,6 +145,10 @@ impl WindowHandler {
         }
     }
     /// Creates the margins around the windows where the user can drag to resize
+    /// returns 3 elements:
+    /// - column for North and South
+    /// - Row for West and East
+    /// - Column for the corners (Northeast, Southwest, ...)
     pub fn resize_areas(&self) -> [Element<'_, crate::Message>; 3] {
         let resize_area = |dir, int| {
             let f = Length::Fill;
@@ -216,7 +221,7 @@ impl WindowHandler {
     pub fn titlebar_text<'a>(&self, selected: SidebarItem, tools: &'a [Box<dyn Tool>]) -> Text<'a> {
         let title_text = match selected {
             SidebarItem::Settings => "Settings",
-            SidebarItem::Tool(0) => "KTools",
+            SidebarItem::HOME => "KTools",
             SidebarItem::Tool(index) => tools[index].name(),
         };
 
@@ -251,6 +256,7 @@ impl WindowHandler {
     }
 }
 
+/// For example the 'X' button at the top of windows normally.
 pub fn decoration_button<'a, M: Into<crate::Message>, E: Into<Element<'a, crate::Message>>>(
     inside: E,
     message: M,

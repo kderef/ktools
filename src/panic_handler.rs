@@ -1,3 +1,5 @@
+//! Handles the global panic, showing a messagebox instead of crashing
+
 use std::panic::PanicHookInfo;
 
 use crate::ui;

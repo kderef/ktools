@@ -1,3 +1,4 @@
+// hide console
 #![cfg_attr(
     any(not(debug_assertions), feature = "nocon"),
     windows_subsystem = "windows"
@@ -32,6 +33,7 @@ pub use message::Message;
 const WINDOW_MIN_SIZE: (f32, f32) = (870.0, 500.0);
 
 fn main() {
+    // catch panic and show a nice message box
     std::panic::set_hook(Box::new(panic_handler::handle_panic));
 
     iced::application(App::new, App::update, App::view)
@@ -67,7 +69,7 @@ impl App {
         let tools = tool::all();
 
         let app = Self {
-            selected: SidebarItem::Tool(0),
+            selected: SidebarItem::HOME,
             settings: Settings::default(),
 
             window_handler: WindowHandler::new(),
@@ -105,7 +107,6 @@ impl App {
 
                 match modified_key {
                     keyboard::key::Named::Escape => Some(Message::GoHome),
-                    keyboard::key::Named::F5 => Some(Message::Refresh),
                     _ => None,
                 }
             }
@@ -142,10 +143,6 @@ impl App {
                 return self.load_all_data();
             }
             Message::Window(window_message) => return self.window_handler.handle(window_message),
-            Message::GoHome => {
-                self.selected = SidebarItem::Tool(0);
-                return self.tools[0].on_activate();
-            }
             Message::GoToSettings => {
                 self.selected = SidebarItem::Settings;
                 return self.settings.on_activate();
@@ -249,6 +246,7 @@ impl App {
     /// Load all data in parallel
     fn load_all_data(&mut self) -> Task<Message> {
         Task::batch(self.all_tools_mut().enumerate().map(|(i, t)| {
+            // wrap the loaded data message in InitialDataLoaded so that it's dispatched to the tool
             t.load_data()
                 .map(move |msg| crate::Message::InitialDataLoaded(i, Box::new(msg)))
         }))
