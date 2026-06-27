@@ -31,7 +31,8 @@ pub enum Message {
     PrimaryIPv4Loaded(Result<IpAddr, String>),
 
     /// Go to index of App::tools
-    ChooseTool(usize),
+    SelectTool(usize),
+    GoHome,
     GoToSettings,
 
     /* Generic messages */

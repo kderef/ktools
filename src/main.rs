@@ -7,7 +7,6 @@
 // TODO: add port scanning tool
 
 mod base;
-mod homescreen;
 mod message;
 mod panic_handler;
 mod tool;
@@ -106,7 +105,7 @@ impl App {
                 };
 
                 match modified_key {
-                    keyboard::key::Named::Escape => Some(Message::GoHome),
+                    // keyboard::key::Named::Escape => Some(Message::GoHome),
                     _ => None,
                 }
             }
@@ -147,7 +146,7 @@ impl App {
                 self.selected = SidebarItem::Settings;
                 return self.settings.on_activate();
             }
-            Message::ChooseTool(index) => {
+            Message::SelectTool(index) => {
                 let tool = &mut self.tools[index];
 
                 self.selected = SidebarItem::Tool(index);
