@@ -30,12 +30,14 @@ pub const fn rgba8(r: u8, g: u8, b: u8, a: f32) -> Color {
 }
 
 pub const BACKGROUND_TRANSPARENT: Background = Background::Color(Color::TRANSPARENT);
+
 pub const BOLD_DEFAULT: Font = Font {
     family: iced::font::Family::SansSerif,
     weight: Weight::Bold,
     stretch: iced::font::Stretch::Normal,
     style: iced::font::Style::Normal,
 };
+
 #[allow(unused)]
 pub const MONOSPACE_DEFAULT: Font = Font {
     family: iced::font::Family::Monospace,

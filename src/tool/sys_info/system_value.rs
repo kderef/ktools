@@ -34,7 +34,7 @@ pub struct Disk {
     pub used: Bytes,
 }
 
-/// newtype to make it easy to print bytes (automatically formats as GB, MB, etc)
+/// wrapper to make it easy to print bytes (automatically formats as GB, MB, etc)
 #[derive(Debug, Clone)]
 pub struct Bytes(pub u64);
 
@@ -91,11 +91,11 @@ impl SystemValue {
         match self {
             Self::Text(s) => row![
                 text(s.clone()).size(14).width(Length::Fill),
-                // .color(rgb8(220, 220, 220)),
                 copy_icon_btn(s.clone()),
             ]
             .align_y(Alignment::Center)
             .into(),
+
             sys @ Self::System {
                 description_long,
                 description_short: _,
