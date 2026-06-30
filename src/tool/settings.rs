@@ -18,20 +18,10 @@ define_themes! {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Default)]
 pub struct Settings {
-    pub theme: ThemeSetting,
-
-    #[serde(skip)]
+    theme_copy: ThemeSetting,
     latest_git_tag: Option<Result<String, String>>,
-}
-impl Default for Settings {
-    fn default() -> Self {
-        Self {
-            theme: ThemeSetting::default(),
-            latest_git_tag: None,
-        }
-    }
 }
 
 fn section_header<'a>(label: &'a str) -> Element<'a, Message> {
@@ -67,14 +57,6 @@ impl Tool for Settings {
         SidebarPosition::Bottom
     }
 
-    fn save_config(&self) -> Option<serde_json::Value> {
-        serde_json::to_value(self).ok()
-    }
-    fn load_config(&mut self, data: serde_json::Value) {
-        if let Ok(s) = serde_json::from_value::<Self>(data) {
-            *self = s;
-        }
-    }
     fn load_data(&mut self) -> Task<crate::Message> {
         Task::perform(
             async {
@@ -91,11 +73,11 @@ impl Tool for Settings {
 
     fn update(&mut self, message: Message) -> Task<Message> {
         match message {
-            Message::SetTheme(theme) => {
-                self.theme = theme;
-            }
             Message::FetchedLatestGitTag(result) => {
                 self.latest_git_tag = Some(result);
+            }
+            Message::SetTheme(theme) => {
+                self.theme_copy = theme;
             }
             _ => {}
         }
@@ -106,7 +88,11 @@ impl Tool for Settings {
             .style(button::danger)
             .on_press(Message::ResetAllSettings);
 
-        let theme_picker = pick_list(ThemeSetting::all(), Some(self.theme), Message::SetTheme);
+        let theme_picker = pick_list(
+            ThemeSetting::all(),
+            Some(self.theme_copy),
+            Message::SetTheme,
+        );
 
         let rows = widget::column![
             section_header("Appearance"),

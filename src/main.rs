@@ -138,12 +138,16 @@ impl App {
         match message {
             Message::Startup => {
                 self.load_all_config();
-                return self.load_all_data();
+                return self
+                    .load_all_data()
+                    .chain(Task::done(Message::SetTheme(self.theme))); // notify the settings tool we changed theme
             }
             Message::Window(window_message) => return self.window_handler.handle(window_message),
 
             Message::SetTheme(theme) => {
                 self.theme = theme;
+                // update settings as well
+                return self.tools[self.selected].update(Message::SetTheme(theme));
             }
 
             Message::InitialDataLoaded(index, message) => {
@@ -245,6 +249,17 @@ impl App {
             }
         };
 
+        // global values
+        if let Some(data) = map.get("theme") {
+            match serde_json::from_value(data.clone()) {
+                Ok(t) => self.theme = t,
+                Err(_e) => {
+                    debug!("ERROR: failed to load theme: {_e}");
+                }
+            }
+        }
+
+        // tool values
         for tool in &mut self.tools {
             if let Some(data) = map.get(tool.name()).cloned() {
                 tool.load_config(data);
@@ -254,11 +269,17 @@ impl App {
 
     /// Collect state of all the `Tool`'s and saves it in a config file
     fn save_all_config(&self) {
-        let data: serde_json::Map<String, serde_json::Value> = self
+        let mut data: serde_json::Map<String, serde_json::Value> = self
             .tools
             .iter()
             .filter_map(|t| t.save_config().map(|v| (t.name().to_owned(), v)))
             .collect();
+
+        // store theme
+        data.insert(
+            "theme".to_owned(),
+            serde_json::to_value(self.theme).unwrap(),
+        );
 
         let data_dir = Self::data_dir();
         let path = Self::data_path();
