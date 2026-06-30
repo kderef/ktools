@@ -141,7 +141,7 @@ pub fn app_button<'a>(app: &'a App) -> Button<'a, Message> {
         button::Style {
             snap: false,
             background: Some(Background::Color(tinted)),
-            text_color: rgb8(255, 255, 255),
+            text_color: Color::WHITE,
             border: Border {
                 color: theme.extended_palette().secondary.base.color,
                 width: 1.0,
@@ -246,5 +246,5 @@ fn run_elevated(cmd: &str) {
 
 #[cfg(not(target_os = "windows"))]
 fn run_elevated(cmd: &str) {
-    compile_error!("TODO: implementation for you os goes HERE");
+    compile_error!("TODO: implementation for your os goes HERE");
 }

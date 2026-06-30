@@ -12,19 +12,18 @@ use iced::{Color, widget::Button};
 
 use crate::Message;
 
-#[allow(unused)]
-pub const fn rgb(r: f32, g: f32, b: f32) -> Color {
-    Color::from_rgb(r, g, b)
+/// Forwards tokens to `eprintln!()`, but is disabled on release builds.
+#[macro_export]
+macro_rules! debug {
+    ($x:tt) => {{
+        #[cfg(debug_assertions)]
+        eprintln!($x);
+    }};
 }
-#[allow(unused)]
-pub const fn rgba(r: f32, g: f32, b: f32, a: f32) -> Color {
-    Color::from_rgba(r, g, b, a)
-}
-#[allow(unused)]
+
 pub const fn rgb8(r: u8, g: u8, b: u8) -> Color {
     Color::from_rgb8(r, g, b)
 }
-#[allow(unused)]
 pub const fn rgba8(r: u8, g: u8, b: u8, a: f32) -> Color {
     Color::from_rgba8(r, g, b, a)
 }

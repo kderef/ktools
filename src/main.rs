@@ -130,10 +130,9 @@ impl App {
     /// NOTE: only globally relevant messages such as `CopyToClipboard` will be handled here.
     /// The rest will be relegated to the currently selected `Tool`
     fn update(&mut self, message: Message) -> Task<Message> {
-        #[cfg(debug_assertions)]
         match message {
             Message::Window(window::Message::CursorMoved(_)) | Message::Ignore => {}
-            _ => println!("=> MESSAGE: {message:#?}"),
+            _ => debug!("=> MESSAGE: {message:#?}"),
         }
 
         match message {
@@ -149,6 +148,7 @@ impl App {
 
             Message::InitialDataLoaded(index, message) => {
                 // We send it to the home tool as well, since it needs information from all the tools.
+                // TODO: find a better solution instead of indexing.
                 return self.tools[0]
                     .update(*message.clone())
                     .chain(self.tools[index].update(*message));
@@ -223,14 +223,12 @@ impl App {
     fn load_all_config(&mut self) {
         let path = Self::data_path();
 
-        #[cfg(debug_assertions)]
-        println!("INFO: loading data from {path:?}");
+        debug!("INFO: loading data from {path:?}");
 
         let bytes = match std::fs::read(&path) {
             Ok(b) => b,
             Err(_e) => {
-                #[cfg(debug_assertions)]
-                eprintln!("ERROR: failed to load save: {_e}");
+                debug!("ERROR: failed to load save: {_e}");
                 return;
             }
         };
@@ -238,13 +236,11 @@ impl App {
         let map = match serde_json::from_slice(&bytes) {
             Ok(serde_json::Value::Object(m)) => m,
             Ok(_unexpected) => {
-                #[cfg(debug_assertions)]
-                eprintln!("ERROR: unexpected JSON value: {_unexpected}");
+                debug!("ERROR: unexpected JSON value: {_unexpected}");
                 return;
             }
             Err(_e) => {
-                #[cfg(debug_assertions)]
-                eprintln!("ERROR: failed to deserialize: {_e}");
+                debug!("ERROR: failed to deserialize: {_e}");
                 return;
             }
         };
@@ -267,20 +263,15 @@ impl App {
         let data_dir = Self::data_dir();
         let path = Self::data_path();
 
-        #[cfg(debug_assertions)]
-        println!("INFO: saving data to {path:?}");
+        debug!("INFO: saving data to {path:?}");
 
-        if let Err(e) = std::fs::create_dir_all(&data_dir)
-            && cfg!(debug_assertions)
-        {
-            eprintln!("ERROR: failed to create {data_dir:?}: {e}");
+        if let Err(_e) = std::fs::create_dir_all(&data_dir) {
+            debug!("ERROR: failed to create {data_dir:?}: {_e}");
         }
 
         if let Ok(json) = serde_json::to_string_pretty(&data) {
-            if let Err(e) = std::fs::write(&path, json)
-                && cfg!(debug_assertions)
-            {
-                eprintln!("ERROR: failed to create {path:?}: {e}");
+            if let Err(_e) = std::fs::write(&path, json) {
+                debug!("ERROR: failed to create {path:?}: {_e}");
             }
         }
     }

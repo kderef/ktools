@@ -2,11 +2,10 @@
 
 use std::panic::PanicHookInfo;
 
-use crate::ui;
+use crate::{debug, ui};
 
 pub fn handle_panic(info: &PanicHookInfo) {
-    #[cfg(debug_assertions)]
-    eprintln!("FATAL APP ERROR: {info:?}");
+    debug!("FATAL APP ERROR: {info:?}");
 
     let location_string = match info.location() {
         Some(loc) => format!("{}:{}:{}", loc.file(), loc.line(), loc.column()),

@@ -14,6 +14,8 @@ use iced::{
 };
 use sysinfo::System;
 
+use crate::debug;
+
 use super::*;
 pub use tasks::FetchTask;
 pub use tasks::Message;
@@ -86,8 +88,7 @@ impl Tool for SystemInfo {
 
                 let _result = process.args(args).spawn();
 
-                #[cfg(debug_assertions)]
-                println!("$ {prog} {args:?} -> {_result:?}");
+                debug!("$ {prog} {args:?} -> {_result:?}");
             }
             Message::Refresh => {
                 // Delete existing data, then start task to fetch new data
