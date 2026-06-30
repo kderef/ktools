@@ -20,6 +20,7 @@ define_themes! {
 
 #[derive(Default)]
 pub struct Settings {
+    /// This is not actually used by the app, it's here to be shown in the picker for the theme.
     theme_copy: ThemeSetting,
     latest_git_tag: Option<Result<String, String>>,
 }

@@ -14,6 +14,8 @@ mod tool;
 mod ui;
 mod window;
 
+use std::path::PathBuf;
+
 use iced::{
     Element, Length, Subscription, Task, clipboard, keyboard,
     widget::{self, *},
@@ -278,7 +280,7 @@ impl App {
         // store theme
         data.insert(
             "theme".to_owned(),
-            serde_json::to_value(self.theme).unwrap(),
+            serde_json::to_value(self.theme).unwrap_or_default(), // NOTE: unwrap should never fail here
         );
 
         let data_dir = Self::data_dir();
@@ -298,11 +300,11 @@ impl App {
     }
 
     /// Directory path for the app's config folder
-    fn data_dir() -> std::path::PathBuf {
+    fn data_dir() -> PathBuf {
         dirs::data_local_dir().unwrap_or(".".into()).join("ktools")
     }
     /// Path for the userdata file in the `data_dir` folder.
-    fn data_path() -> std::path::PathBuf {
+    fn data_path() -> PathBuf {
         Self::data_dir().join("userdata.json")
     }
 }
