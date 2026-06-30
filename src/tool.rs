@@ -1,19 +1,32 @@
 //! this file contains the `Tool` trait, which is used to build a `Vec<Box<dyn Tool>>`
 
-pub mod settings;
-
 use iced::{Task, Theme};
 
 pub use crate::base::*;
 pub use iced::{Color, Element, widget::Text};
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum SidebarPosition {
+    Top,
+    Middle,
+    Bottom,
+}
 
 /// NOTE: a `Tool` implementation must also have `Default` to be used with `register_tools!` macro.
 pub trait Tool {
     /// The name of the tool is displayed in the sidebar and in the title bar when it is selected.
     fn name(&self) -> &'static str;
 
+    /// name in the titlebar in the window decorations
+    fn name_titlebar(&self) -> &'static str {
+        self.name()
+    }
+
     /// The icon to use displayed next to the name.
     fn icon(&self) -> Text<'_>;
+
+    /// Position in the app's sidebar
+    fn sidebar_position(&self) -> SidebarPosition;
 
     /// Serialize the Tool's state into a JSON value to be loaded.
     fn save_config(&self) -> Option<serde_json::Value> {
@@ -62,4 +75,5 @@ register_tools! {
     ext_ip::ExternalIP,
     ping::Ping,
     passgen::PasswordGenerator,
+    settings::Settings,
 }

@@ -167,6 +167,9 @@ impl Tool for NetworkInfo {
     fn icon(&self) -> Text<'_> {
         icon_font::globe()
     }
+    fn sidebar_position(&self) -> SidebarPosition {
+        SidebarPosition::Middle
+    }
 
     fn load_data(&mut self) -> Task<crate::Message> {
         Task::perform(

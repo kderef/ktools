@@ -54,6 +54,9 @@ impl Tool for ExternalIP {
     fn icon(&self) -> Text<'_> {
         icon_font::broadcast()
     }
+    fn sidebar_position(&self) -> SidebarPosition {
+        SidebarPosition::Middle
+    }
 
     fn load_data(&mut self) -> Task<crate::Message> {
         fn get(api: Api) -> Result<Object, String> {

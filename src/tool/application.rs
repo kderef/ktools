@@ -159,6 +159,9 @@ impl Tool for Applications {
     fn icon(&self) -> Text<'_> {
         icon_font::terminal_cmd()
     }
+    fn sidebar_position(&self) -> SidebarPosition {
+        SidebarPosition::Middle
+    }
 
     fn save_config(&self) -> Option<serde_json::Value> {
         None

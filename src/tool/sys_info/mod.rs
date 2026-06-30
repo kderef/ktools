@@ -39,6 +39,9 @@ impl Tool for SystemInfo {
     fn icon(&self) -> Text<'_> {
         icon_font::vm()
     }
+    fn sidebar_position(&self) -> SidebarPosition {
+        SidebarPosition::Middle
+    }
 
     fn load_data(&mut self) -> Task<crate::Message> {
         // Launch tasks for each of the TASKS

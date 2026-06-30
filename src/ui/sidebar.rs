@@ -1,4 +1,4 @@
-use crate::base::icon_font;
+use crate::tool::SidebarPosition;
 use iced::{
     Background, Color, Element, Length, Theme,
     widget::{self, button, container, rule, space, text},
@@ -8,81 +8,72 @@ use crate::tool::Tool;
 
 type Message = crate::Message;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum SidebarItem {
-    Settings,
-    Tool(usize),
+fn sidebar_item_style_active(theme: &Theme, status: button::Status) -> button::Style {
+    let ex = theme.extended_palette();
+
+    let mut style = sidebar_item_style(theme, status);
+
+    style.background = Some(Background::Color(ex.background.base.color));
+    style.border = style.border.rounded(4);
+
+    style
+}
+fn sidebar_item_style(theme: &Theme, status: button::Status) -> button::Style {
+    use button::Status;
+
+    let pal = theme.palette();
+    let ex = theme.extended_palette();
+
+    button::Style {
+        background: match status {
+            Status::Hovered => Some(Background::Color(ex.background.weakest.color)),
+            _ => Some(Background::Color(Color::TRANSPARENT)),
+        },
+        text_color: match status {
+            Status::Active | Status::Hovered => pal.text,
+            Status::Pressed => pal.text,
+            Status::Disabled => pal.text,
+        },
+        border: iced::Border {
+            color: Color::TRANSPARENT,
+            width: 0.0,
+            radius: iced::border::Radius::new(0),
+        },
+        shadow: Default::default(),
+        snap: Default::default(),
+    }
 }
 
-impl SidebarItem {
-    pub const HOME: Self = Self::Tool(0);
+fn sidebar_item_render(
+    item: usize,
+    active: usize,
+    tools: &[Box<dyn Tool>],
+) -> Element<'_, Message> {
+    let is_active = active == item;
 
-    fn style_active(theme: &Theme, status: button::Status) -> button::Style {
-        let ex = theme.extended_palette();
+    let (name, icon) = (tools[item].name(), tools[item].icon());
 
-        let mut style = Self::style(theme, status);
+    let text_size = 17;
+    let button_contents = widget::row![
+        icon.size(text_size),
+        space().width(4),
+        text(name).size(text_size)
+    ];
 
-        style.background = Some(Background::Color(ex.background.base.color));
-        style.border = style.border.rounded(4);
-
-        style
-    }
-    fn style(theme: &Theme, status: button::Status) -> button::Style {
-        use button::Status;
-
-        let pal = theme.palette();
-        let ex = theme.extended_palette();
-
-        button::Style {
-            background: match status {
-                Status::Hovered => Some(Background::Color(ex.background.weakest.color)),
-                _ => Some(Background::Color(Color::TRANSPARENT)),
-            },
-            text_color: match status {
-                Status::Active | Status::Hovered => pal.text,
-                Status::Pressed => pal.text,
-                Status::Disabled => pal.text,
-            },
-            border: iced::Border {
-                color: Color::TRANSPARENT,
-                width: 0.0,
-                radius: iced::border::Radius::new(0),
-            },
-            shadow: Default::default(),
-            snap: Default::default(),
-        }
-    }
-
-    fn render(self, active: SidebarItem, tools: &[Box<dyn Tool>]) -> Element<'_, Message> {
-        let is_active = active == self;
-
-        let (name, icon) = match self {
-            Self::Settings => ("Settings", icon_font::settings_gear()),
-            Self::Tool(index) => (tools[index].name(), tools[index].icon()),
-        };
-
-        let text_size = 17;
-        let button_contents = widget::row![
-            icon.size(text_size),
-            space().width(4),
-            text(name).size(text_size)
-        ];
-
-        button(button_contents)
-            .on_press(crate::Message::SidebarOptionSelected(self))
-            .style(if is_active {
-                Self::style_active
-            } else {
-                Self::style
-            })
-            .width(Length::Fill)
-            .into()
-    }
+    button(button_contents)
+        .on_press(crate::Message::SidebarOptionSelected(item))
+        .style(if is_active {
+            sidebar_item_style_active
+        } else {
+            sidebar_item_style
+        })
+        .width(Length::Fill)
+        .into()
 }
 
 #[derive(Debug)]
 pub struct Sidebar {
-    items: Vec<SidebarItem>,
+    items: Vec<(usize, SidebarPosition)>,
 }
 
 impl Sidebar {
@@ -90,32 +81,54 @@ impl Sidebar {
         let items = tools
             .iter()
             .enumerate()
-            .map(|(i, _t)| SidebarItem::Tool(i))
+            .map(|(i, t)| (i, t.sidebar_position()))
             .collect();
 
         Self { items }
     }
 
-    pub fn view<'a>(
-        &'a self,
-        active: SidebarItem,
-        tools: &'a [Box<dyn Tool>],
-    ) -> Element<'a, Message> {
+    pub fn view<'a>(&'a self, active: usize, tools: &'a [Box<dyn Tool>]) -> Element<'a, Message> {
         // add header
-        let mut col = widget::column![].height(Length::Fill).padding(10);
+        let mut col = widget::column(
+            self.items
+                .iter()
+                .filter(|(_, pos)| *pos == SidebarPosition::Top)
+                .map(|(i, _)| {
+                    widget::column![sidebar_item_render(*i, active, tools), rule::horizontal(1)]
+                        .into()
+                }),
+        )
+        .push(rule::horizontal(2))
+        .push(space().height(Length::Fixed(10.0)))
+        .height(Length::Fill)
+        .padding(10);
 
-        // add items
+        // add middle
         col = col.extend(
             self.items
                 .iter()
-                .map(|i| widget::column![i.render(active, tools), rule::horizontal(1)].into()),
+                .filter(|(_, pos)| *pos == SidebarPosition::Middle)
+                .map(|(i, _)| {
+                    widget::column![sidebar_item_render(*i, active, tools), rule::horizontal(1)]
+                        .into()
+                }),
         );
 
-        // add footer
+        // add space before bottom
         col = col
             .push(space().height(Length::Fill))
-            .push(rule::horizontal(2))
-            .push(SidebarItem::Settings.render(active, tools));
+            .push(rule::horizontal(2));
+
+        // add bottom items
+        col = col.extend(
+            self.items
+                .iter()
+                .filter(|(_, pos)| *pos == SidebarPosition::Bottom)
+                .map(|(i, _)| {
+                    widget::column![sidebar_item_render(*i, active, tools), rule::horizontal(1)]
+                        .into()
+                }),
+        );
 
         let row = widget::row![col, rule::vertical(2)];
 

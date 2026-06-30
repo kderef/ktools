@@ -27,9 +27,15 @@ impl Tool for Homescreen {
     fn name(&self) -> &'static str {
         "Home"
     }
+    fn name_titlebar(&self) -> &'static str {
+        "KTools"
+    }
 
     fn icon(&self) -> Text<'_> {
         icon_font::home()
+    }
+    fn sidebar_position(&self) -> SidebarPosition {
+        SidebarPosition::Top
     }
 
     fn load_data(&mut self) -> Task<Message> {

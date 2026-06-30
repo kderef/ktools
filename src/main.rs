@@ -23,8 +23,7 @@ use base::ICON_FONT_BYTES;
 use ipconfig::Adapter;
 
 use crate::tool::Tool;
-use crate::tool::settings::Settings;
-use crate::ui::{Sidebar, SidebarItem};
+use crate::ui::Sidebar;
 use crate::window::WindowHandler;
 
 pub use message::Message;
@@ -56,8 +55,8 @@ fn main() {
 
 pub struct App {
     tools: Vec<Box<dyn Tool>>,
-    selected: SidebarItem,
-    settings: Settings,
+    selected: usize,
+    theme: tool::settings::ThemeSetting,
 
     sidebar: Sidebar,
     window_handler: WindowHandler,
@@ -69,8 +68,8 @@ impl App {
         let tools = tool::all();
 
         let app = Self {
-            selected: SidebarItem::HOME,
-            settings: Settings::default(),
+            selected: 0,
+            theme: Default::default(),
 
             window_handler: WindowHandler::new(),
             sidebar: Sidebar::from_tools(&tools),
@@ -86,7 +85,7 @@ impl App {
     }
 
     fn theme(&self) -> iced::Theme {
-        self.settings.theme.into()
+        self.theme.into()
     }
 
     fn subscription(&self) -> Subscription<Message> {
@@ -144,33 +143,28 @@ impl App {
             }
             Message::Window(window_message) => return self.window_handler.handle(window_message),
 
+            Message::SetTheme(theme) => {
+                self.theme = theme;
+            }
+
             Message::InitialDataLoaded(index, message) => {
                 // We send it to the home tool as well, since it needs information from all the tools.
                 return self.tools[0]
                     .update(*message.clone())
-                    .chain(self.all_tools_mut().nth(index).unwrap().update(*message));
+                    .chain(self.tools[index].update(*message));
             }
 
             // sidebar
-            Message::SidebarOptionSelected(opt) => match opt {
-                SidebarItem::Settings => {
-                    self.selected = opt;
-                    return self.settings.on_activate();
-                }
-                SidebarItem::Tool(index) => {
-                    let tool = &mut self.tools[index];
-
-                    self.selected = SidebarItem::Tool(index);
-                    return tool.on_activate();
-                }
-            },
+            Message::SidebarOptionSelected(index) => {
+                self.selected = index;
+                return self.tools[index].on_activate();
+            }
             Message::CopyToClipboard(text) => {
                 return clipboard::write(text);
             }
 
             // this is emitted by settings, but has to be handled globally because settings does not store `tools`
             Message::ResetAllSettings => {
-                self.settings = Settings::default();
                 self.tools = tool::all();
                 return self.load_all_data();
             }
@@ -178,10 +172,9 @@ impl App {
                 let _ = open::that(url);
             }
             // Globally non-relevant Messages will be relegated to the `Tool`
-            other => match self.selected {
-                SidebarItem::Settings => return self.settings.update(other),
-                SidebarItem::Tool(index) => return self.tools[index].update(other),
-            },
+            other => {
+                return self.tools[self.selected].update(other);
+            }
         }
 
         Task::none()
@@ -192,10 +185,7 @@ impl App {
     /// - Selected tool's view()
     /// - Sidebar
     fn view(&self) -> Element<'_, Message> {
-        let content: Element<'_, Message> = match self.selected {
-            SidebarItem::Settings => self.settings.view(),
-            SidebarItem::Tool(index) => self.tools[index].view(),
-        };
+        let content = self.tools[self.selected].view();
 
         let decorations = self.window_handler.decorations();
         let titlebar_text = self
@@ -220,24 +210,9 @@ impl App {
         self.window_handler.wrap(view)
     }
 
-    /// All the tools including edge cases such as `Settings` and `Home`
-    fn all_tools_mut(&mut self) -> impl Iterator<Item = &mut dyn Tool> {
-        self.tools
-            .iter_mut()
-            .map(|t| t.as_mut() as &mut dyn Tool)
-            .chain([&mut self.settings as &mut dyn Tool])
-    }
-    /// All the tools including edge cases such as `Settings` and `Home`
-    fn all_tools(&self) -> impl Iterator<Item = &dyn Tool> {
-        self.tools
-            .iter()
-            .map(Box::as_ref)
-            .chain([&self.settings as &dyn Tool])
-    }
-
     /// Load all data in parallel
     fn load_all_data(&mut self) -> Task<Message> {
-        Task::batch(self.all_tools_mut().enumerate().map(|(i, t)| {
+        Task::batch(self.tools.iter_mut().enumerate().map(|(i, t)| {
             // wrap the loaded data message in InitialDataLoaded so that it's dispatched to the tool
             t.load_data()
                 .map(move |msg| crate::Message::InitialDataLoaded(i, Box::new(msg)))
@@ -274,7 +249,7 @@ impl App {
             }
         };
 
-        for tool in self.all_tools_mut() {
+        for tool in &mut self.tools {
             if let Some(data) = map.get(tool.name()).cloned() {
                 tool.load_config(data);
             }
@@ -284,7 +259,8 @@ impl App {
     /// Collect state of all the `Tool`'s and saves it in a config file
     fn save_all_config(&self) {
         let data: serde_json::Map<String, serde_json::Value> = self
-            .all_tools()
+            .tools
+            .iter()
             .filter_map(|t| t.save_config().map(|v| (t.name().to_owned(), v)))
             .collect();
 

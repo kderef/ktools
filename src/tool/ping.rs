@@ -130,6 +130,9 @@ impl Tool for Ping {
     fn icon(&self) -> Text<'_> {
         icon_font::debug_disconnect()
     }
+    fn sidebar_position(&self) -> SidebarPosition {
+        SidebarPosition::Middle
+    }
 
     fn save_config(&self) -> Option<serde_json::Value> {
         serde_json::to_value(self).ok()

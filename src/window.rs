@@ -9,7 +9,7 @@ use iced::{
     },
 };
 
-use crate::{base::*, tool::Tool, ui::SidebarItem};
+use crate::{base::*, tool::Tool};
 pub use iced::window::Direction;
 
 use crate::base::{BACKGROUND_TRANSPARENT, BOLD_DEFAULT};
@@ -218,12 +218,8 @@ impl WindowHandler {
 
     /// The text at the top of the window containing the 'title'.
     /// Normally the Window Manager draws this, but we use custom decorations.
-    pub fn titlebar_text<'a>(&self, selected: SidebarItem, tools: &'a [Box<dyn Tool>]) -> Text<'a> {
-        let title_text = match selected {
-            SidebarItem::Settings => "Settings",
-            SidebarItem::HOME => "KTools",
-            SidebarItem::Tool(index) => tools[index].name(),
-        };
+    pub fn titlebar_text<'a>(&self, selected: usize, tools: &'a [Box<dyn Tool>]) -> Text<'a> {
+        let title_text = tools[selected].name_titlebar();
 
         let title = text(title_text).size(30).font(BOLD_DEFAULT).center();
 

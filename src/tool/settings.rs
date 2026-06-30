@@ -63,6 +63,9 @@ impl Tool for Settings {
     fn icon(&self) -> Text<'_> {
         icon_font::settings_gear()
     }
+    fn sidebar_position(&self) -> SidebarPosition {
+        SidebarPosition::Bottom
+    }
 
     fn save_config(&self) -> Option<serde_json::Value> {
         serde_json::to_value(self).ok()
