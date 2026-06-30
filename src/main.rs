@@ -54,7 +54,7 @@ fn main() {
 }
 
 pub struct App {
-    tools: Vec<Box<dyn Tool>>,
+    tools: [Box<dyn Tool>; tool::COUNT],
     selected: usize,
     theme: tool::settings::ThemeSetting,
 
