@@ -69,7 +69,7 @@ impl SidebarItem {
         ];
 
         button(button_contents)
-            .on_press(crate::Message::SidebarOption(self))
+            .on_press(crate::Message::SidebarOptionSelected(self))
             .style(if is_active {
                 Self::style_active
             } else {

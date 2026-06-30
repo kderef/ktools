@@ -21,19 +21,13 @@ pub enum Message {
 
     /// Data from `Tool::load_data()` was loaded.
     InitialDataLoaded(usize, Box<Self>),
-
     OpenURL(String),
 
     /// Something was selected in the sidebar
-    SidebarOption(SidebarItem),
+    SidebarOptionSelected(SidebarItem),
 
     /* Home page messages */
     PrimaryIPv4Loaded(Result<IpAddr, String>),
-
-    /// Go to index of App::tools
-    SelectTool(usize),
-    GoHome,
-    GoToSettings,
 
     /* Generic messages */
     Refresh,

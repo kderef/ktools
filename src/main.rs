@@ -143,16 +143,6 @@ impl App {
                 return self.load_all_data();
             }
             Message::Window(window_message) => return self.window_handler.handle(window_message),
-            Message::GoToSettings => {
-                self.selected = SidebarItem::Settings;
-                return self.settings.on_activate();
-            }
-            Message::SelectTool(index) => {
-                let tool = &mut self.tools[index];
-
-                self.selected = SidebarItem::Tool(index);
-                return tool.on_activate();
-            }
 
             Message::InitialDataLoaded(index, message) => {
                 // We send it to the home tool as well, since it needs information from all the tools.
@@ -162,7 +152,7 @@ impl App {
             }
 
             // sidebar
-            Message::SidebarOption(opt) => match opt {
+            Message::SidebarOptionSelected(opt) => match opt {
                 SidebarItem::Settings => {
                     self.selected = opt;
                     return self.settings.on_activate();
@@ -177,6 +167,8 @@ impl App {
             Message::CopyToClipboard(text) => {
                 return clipboard::write(text);
             }
+
+            // this is emitted by settings, but has to be handled globally because settings does not store `tools`
             Message::ResetAllSettings => {
                 self.settings = Settings::default();
                 self.tools = tool::all();
