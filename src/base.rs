@@ -184,9 +184,11 @@ pub fn app_latest_version<'a>(latest: &'a Option<Result<String, String>>) -> Row
         Some(Err(_)) => text("unknown").style(text::secondary),
     };
 
+    let current_version = concat!("v", env!("CARGO_PKG_VERSION"));
+
     let latest_release_url = match latest {
         // If the version is already latest, we do not need the button.
-        Some(Ok(tag)) if tag == env!("CARGO_PKG_VERSION") => None,
+        Some(Ok(tag)) if tag == current_version => None,
 
         // A release was found and is not the same as the app
         Some(Ok(tag)) => Some(format!(
@@ -196,7 +198,13 @@ pub fn app_latest_version<'a>(latest: &'a Option<Result<String, String>>) -> Row
         _ => None,
     };
 
-    let go_to_latest_btn = button("Download Latest Version")
+    let button_text = match latest {
+        Some(Ok(tag)) if tag == current_version => "Already up to date",
+        Some(Ok(_)) => "Download new version",
+        _ => "Failed to retrieve the latest version",
+    };
+
+    let go_to_latest_btn = button(button_text)
         .on_press_maybe(latest_release_url.map(Message::OpenURL))
         .padding(Padding {
             top: 1.0,
