@@ -137,7 +137,9 @@ impl App {
     /// The rest will be relegated to the currently selected `Tool`
     fn update(&mut self, message: Message) -> Task<Message> {
         match message {
-            Message::Window(window::Message::CursorMoved(_)) | Message::Ignore => {}
+            Message::Window(window::Message::CursorMoved(_))
+            | Message::Ignore
+            | Message::DownloadProgress(_, _) => {}
             Message::DownloadFinished(index, ref _result) => {
                 debug!("=> MESSAGE: DownloadFinished({index}, [...])")
             }

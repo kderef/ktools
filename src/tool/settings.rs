@@ -27,7 +27,7 @@ pub struct Settings {
     theme_copy: ThemeSetting,
     latest_git_tag: Option<Result<String, String>>,
 
-    download_progress: f32,
+    download_progress: u32,
     downloading: bool,
     download_result: Option<Result<Vec<u8>, download::DownloadError>>,
 }
@@ -89,7 +89,7 @@ impl Tool for Settings {
             }
 
             Message::DownloadStarted(_) => {
-                self.download_progress = 0.0;
+                self.download_progress = 0;
                 self.downloading = true;
                 self.download_result = None;
             }
@@ -105,7 +105,7 @@ impl Tool for Settings {
             },
 
             Message::DownloadFinished(_, result) => {
-                self.download_progress = 100.0;
+                self.download_progress = 100;
                 self.downloading = false;
 
                 match result {
@@ -178,34 +178,29 @@ impl Tool for Settings {
 
 pub fn get_latest_build_tag() -> Result<String, String> {
     const SOURCE_LINK: &str = env!("CARGO_PKG_REPOSITORY");
-
     let repo_name = SOURCE_LINK.splitn(4, '/').last().unwrap();
-    let api_url = format!("https://api.github.com/repos/{repo_name}/tags");
+    let latest_url = format!("https://github.com/{repo_name}/releases/latest");
 
-    let response = minreq::get(api_url)
+    let response = minreq::get(&latest_url)
         .with_header("User-Agent", "KTools")
         .with_timeout(5)
+        .with_follow_redirects(false)
         .send()
-        .map_err(|e| e.to_string())?
-        .into_bytes();
+        .map_err(|e| e.to_string())?;
 
-    let response_json: serde_json::Value =
-        serde_json::from_slice(&response).map_err(|e| e.to_string())?;
+    // GitHub responds with a 302 whose Location header looks like:
+    // https://github.com/{owner}/{repo}/releases/tag/{tag}
+    let location = response
+        .headers
+        .get("location")
+        .ok_or_else(|| "GitHub did not return a redirect".to_string())?;
 
-    match response_json {
-        serde_json::Value::Array(a) => a
-            .first()
-            .ok_or("No build tags found")?
-            .as_object()
-            .ok_or("Array member was not an object")?
-            .get("name")
-            .ok_or("No git name tag was found.")?
-            .as_str()
-            .ok_or("name tag was not a string")
-            .map(|s| s.to_owned()),
-        _ => Err("JSon value is not an array."),
-    }
-    .map_err(|e| e.to_string())
+    location
+        .rsplit('/')
+        .next()
+        .filter(|s| !s.is_empty())
+        .map(str::to_owned)
+        .ok_or_else(|| "Could not parse tag from redirect URL".to_string())
 }
 
 impl Settings {
@@ -235,7 +230,7 @@ impl Settings {
             let download_progress = format!("{}%", self.download_progress as i64);
 
             let row = widget::row![
-                progress_bar(0.0..=100.0, self.download_progress)
+                progress_bar(0.0..=100.0, self.download_progress as f32)
                     .girth(Length::Fill)
                     .length(250),
                 space().width(5),
