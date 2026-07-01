@@ -1,7 +1,7 @@
 ﻿# KTools
 KTools is a GUI application that combines many smaller tools into one app.  
 
-![showcase of the app](showcase/showcase-home.png)
+![showcase of the app](showcase/showcase-sysinfo.png)
 
 ---
 
