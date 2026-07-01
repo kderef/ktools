@@ -270,6 +270,9 @@ impl WindowHandler {
         }
     }
 
+    /// Sends a harmless synthetic Alt keydown+keyup, which resets Windows'
+    /// foreground-lock and makes the following SetForegroundWindow call
+    /// (triggered by iced's gain_focus) succeed unconditionally.
     pub fn unlock_foreground(&mut self) {
         #[cfg(windows)]
         {
@@ -277,10 +280,7 @@ impl WindowHandler {
                 INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_KEYUP, SendInput, VK_MENU,
             };
 
-            /// Sends a harmless synthetic Alt keydown+keyup, which resets Windows'
-            /// foreground-lock and makes the following SetForegroundWindow call
-            /// (triggered by iced's gain_focus) succeed unconditionally.
-            let mut down = INPUT {
+            let down = INPUT {
                 r#type: INPUT_KEYBOARD,
                 Anonymous: INPUT_0 {
                     ki: KEYBDINPUT {
@@ -293,7 +293,7 @@ impl WindowHandler {
                 },
             };
 
-            let mut up = INPUT {
+            let up = INPUT {
                 r#type: INPUT_KEYBOARD,
                 Anonymous: INPUT_0 {
                     ki: KEYBDINPUT {

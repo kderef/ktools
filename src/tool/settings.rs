@@ -1,6 +1,6 @@
 //! settings: the "settings" page of the app. Contains global settings relevant to all tools and the app
 
-use std::{env, fs, io, path::PathBuf, process::Command};
+use std::{env, fs, io, path::PathBuf};
 
 use crate::{Message, debug, define_themes, download};
 use download::Progress;
