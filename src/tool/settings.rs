@@ -1,11 +1,12 @@
 //! settings: the "settings" page of the app. Contains global settings relevant to all tools and the app
 
-use crate::{Message, define_themes};
+use crate::{Message, define_themes, download};
+use download::Progress;
 
 use super::*;
 use iced::{
-    Alignment, Length,
-    widget::{self, button, pick_list, row, rule, space, text},
+    Alignment, Length, Padding,
+    widget::{self, Row, button, container, pick_list, progress_bar, row, rule, space, text},
 };
 use serde::{Deserialize, Serialize};
 
@@ -23,6 +24,10 @@ pub struct Settings {
     /// This is not actually used by the app, it's here to be shown in the picker for the theme.
     theme_copy: ThemeSetting,
     latest_git_tag: Option<Result<String, String>>,
+
+    download_progress: f32,
+    downloading: bool,
+    download_result: Option<Result<(), download::DownloadError>>,
 }
 
 fn section_header<'a>(label: &'a str) -> Element<'a, Message> {
@@ -80,6 +85,29 @@ impl Tool for Settings {
             Message::SetTheme(theme) => {
                 self.theme_copy = theme;
             }
+
+            Message::DownloadStarted(_) => {
+                self.download_progress = 0.0;
+                self.downloading = true;
+                self.download_result = None;
+            }
+
+            Message::DownloadProgress(_, progress) => match progress {
+                Progress::Finished => {
+                    self.downloading = false;
+                    self.download_result = None;
+                }
+                Progress::Downloading(completion) => {
+                    self.download_progress = completion;
+                }
+            },
+
+            Message::DownloadFinished(_, result) => {
+                self.download_progress = 100.0;
+                self.downloading = false;
+                self.download_result = Some(result);
+            }
+
             _ => {}
         }
         Task::none()
@@ -112,7 +140,7 @@ impl Tool for Settings {
                 text("Kian Heitkamp").size(15).style(text::base)
             ),
             setting_row("Version", app_version()),
-            setting_row("Latest Version", app_latest_version(&self.latest_git_tag)),
+            setting_row("Latest Version", self.app_latest_version()),
             setting_row("Source Code", source_link()),
             setting_row("License", license_link()),
         ]
@@ -156,4 +184,62 @@ pub fn get_latest_build_tag() -> Result<String, String> {
         _ => Err("JSon value is not an array."),
     }
     .map_err(|e| e.to_string())
+}
+
+impl Settings {
+    fn app_latest_version(&self) -> Row<'_, Message> {
+        let ver_text = match &self.latest_git_tag {
+            None => text("loading...").style(text::secondary),
+            Some(Ok(s)) => text(s.strip_prefix('v').unwrap_or(&s)),
+            Some(Err(_)) => text("unknown").style(text::secondary),
+        };
+
+        let current_version = concat!("v", env!("CARGO_PKG_VERSION"));
+
+        let latest_release_url = match &self.latest_git_tag {
+            // If the version is already latest, we do not need the button.
+            Some(Ok(tag)) if tag == current_version => None,
+
+            // A release was found and is not the same as the app
+            Some(Ok(tag)) => Some(format!(
+                "{}/releases/download/{tag}/ktools.exe",
+                env!("CARGO_PKG_REPOSITORY")
+            )),
+            _ => None,
+        };
+
+        let update_widget: Element<'_, Message> =
+            if self.downloading || self.download_result.is_some() {
+                let download_progress = format!("{}%", self.download_progress as i64);
+
+                let row = widget::row![
+                    progress_bar(0.0..=100.0, self.download_progress)
+                        .girth(Length::Fill)
+                        .length(250),
+                    space().width(5),
+                    text(download_progress).size(15).height(Length::Shrink)
+                ];
+                // .height(Length::Fill);
+
+                container(row).center_y(Length::Fill).into()
+            } else {
+                let button_text = match &self.latest_git_tag {
+                    Some(Ok(tag)) if tag == current_version => "Already up to date",
+                    Some(Ok(_)) => "Download new version",
+                    _ => "Failed to retrieve the latest version",
+                };
+
+                button(button_text)
+                    .on_press_maybe(latest_release_url.map(Message::DownloadStart))
+                    .padding(Padding {
+                        top: 1.0,
+                        right: 4.0,
+                        bottom: 1.0,
+                        left: 4.0,
+                    })
+                    .into()
+            };
+
+        row![ver_text.size(15), space().width(10), update_widget]
+    }
 }

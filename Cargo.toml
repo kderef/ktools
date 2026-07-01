@@ -1,6 +1,6 @@
 [package]
 name = "ktools"
-version = "2.0.2"
+version = "2.0.3"
 authors = ["Kian Heitkamp"]
 license = "GPL-3.0"
 description = "App that makes getting system information easy"
@@ -64,7 +64,8 @@ features = [
   "x11",
   "wayland",
   "image-without-codecs",
-  "tokio"
+  "tokio",
+  "sipper"
 ]
 
 [target.'cfg(windows)'.dependencies]

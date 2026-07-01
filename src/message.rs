@@ -23,6 +23,11 @@ pub enum Message {
     InitialDataLoaded(usize, Box<Self>),
     OpenURL(String),
 
+    DownloadStart(String),
+    DownloadStarted(usize),
+    DownloadProgress(usize, download::Progress),
+    DownloadFinished(usize, Result<(), download::DownloadError>),
+
     /// Something was selected in the sidebar
     SidebarOptionSelected(usize),
 

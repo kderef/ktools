@@ -1,6 +1,5 @@
 //! base utilities used by all tools
 
-use iced::Padding;
 use iced::border::Radius;
 use iced::font::Weight;
 
@@ -12,7 +11,7 @@ use iced::{Color, widget::Button};
 
 use crate::Message;
 
-/// Forwards tokens to `eprintln!()`, but is disabled on release builds.
+/// Works just like `eprintln!()`, but is disabled on release builds.
 #[macro_export]
 macro_rules! debug {
     ($x:tt) => {{
@@ -174,45 +173,6 @@ pub fn app_version<'a>() -> Row<'a, Message> {
         space().width(10),
         text(format!("released on {}", env!("BUILD_DATE"))).size(15)
     ]
-}
-
-pub fn app_latest_version<'a>(latest: &'a Option<Result<String, String>>) -> Row<'a, Message> {
-    let ver_text = match latest {
-        None => text("loading...").style(text::secondary),
-        Some(Ok(s)) => text(s.strip_prefix('v').unwrap_or(s)),
-        Some(Err(_)) => text("unknown").style(text::secondary),
-    };
-
-    let current_version = concat!("v", env!("CARGO_PKG_VERSION"));
-
-    let latest_release_url = match latest {
-        // If the version is already latest, we do not need the button.
-        Some(Ok(tag)) if tag == current_version => None,
-
-        // A release was found and is not the same as the app
-        Some(Ok(tag)) => Some(format!(
-            "{}/releases/download/{tag}/ktools.exe",
-            env!("CARGO_PKG_REPOSITORY")
-        )),
-        _ => None,
-    };
-
-    let button_text = match latest {
-        Some(Ok(tag)) if tag == current_version => "Already up to date",
-        Some(Ok(_)) => "Download new version",
-        _ => "Failed to retrieve the latest version",
-    };
-
-    let go_to_latest_btn = button(button_text)
-        .on_press_maybe(latest_release_url.map(Message::OpenURL))
-        .padding(Padding {
-            top: 1.0,
-            right: 4.0,
-            bottom: 1.0,
-            left: 4.0,
-        });
-
-    row![ver_text.size(15), space().width(10), go_to_latest_btn]
 }
 
 /// Macro for src/tool/settings.rs

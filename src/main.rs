@@ -8,6 +8,7 @@
 // TODO: update showcase image in README.md
 
 mod base;
+mod download;
 mod message;
 mod panic_handler;
 mod tool;
@@ -145,6 +146,29 @@ impl App {
                     .chain(Task::done(Message::SetTheme(self.theme))); // notify the settings tool we changed theme
             }
             Message::Window(window_message) => return self.window_handler.handle(window_message),
+
+            Message::DownloadStart(url) => {
+                let current = self.selected;
+
+                let sipper = Task::sip(
+                    download::download(url),
+                    move |progress| Message::DownloadProgress(current, progress),
+                    move |output| Message::DownloadFinished(current, output),
+                );
+
+                return Task::done(Message::DownloadStarted(current)).chain(sipper);
+            }
+
+            Message::DownloadStarted(index) => {
+                return self.tools[index].update(message);
+            }
+
+            Message::DownloadProgress(index, _progress) => {
+                return self.tools[index].update(message);
+            }
+            Message::DownloadFinished(index, ref _result) => {
+                return self.tools[index].update(message);
+            }
 
             Message::SetTheme(theme) => {
                 self.theme = theme;
