@@ -107,17 +107,25 @@ impl Tool for Settings {
             Message::DownloadFinished(_, result) => {
                 self.download_progress = 100.0;
                 self.downloading = false;
-                self.download_result = Some(result);
 
-                // TODO: fix unwraps here, maybe messagebox?
-
-                // replace running EXE.
-                match self.download_result.as_ref().unwrap() {
+                match result {
                     Ok(bytes) => {
-                        apply_update(&bytes);
+                        match apply_update(&bytes) {
+                            Err(e) => {
+                                debug!("[SELF-UPDATE] failed to apply: {e}");
+                                self.download_result = Some(Err(e.to_string()));
+                            }
+                            Ok(_) => {
+                                // ask user to restart
+                                return Task::done(Message::ShowSelfUpdateMessage);
+                            }
+                        }
+                        // NOTE: on success apply_update() never returns (process::exit(0)),
+                        // so we only ever reach here on failure.
                     }
                     Err(e) => {
-                        todo!("{e}");
+                        debug!("[SELF-UPDATE] download failed: {e}");
+                        self.download_result = Some(Err(e));
                     }
                 }
             }
@@ -222,65 +230,81 @@ impl Settings {
             _ => None,
         };
 
-        // will be progress bar when it is updating, or update button if it is not.
-        let update_widget: Element<'_, Message> =
-            if self.downloading || self.download_result.is_some() {
-                // TODO: self.download_result handling error case.
-                let download_progress = format!("{}%", self.download_progress as i64);
+        // This will change depending on what the status of the update is
+        let update_widget: Element<'_, Message> = if self.downloading {
+            let download_progress = format!("{}%", self.download_progress as i64);
 
-                let row = widget::row![
-                    progress_bar(0.0..=100.0, self.download_progress)
-                        .girth(Length::Fill)
-                        .length(250),
-                    space().width(5),
-                    text(download_progress).size(15).height(Length::Shrink)
-                ];
-                // .height(Length::Fill);
+            let row = widget::row![
+                progress_bar(0.0..=100.0, self.download_progress)
+                    .girth(Length::Fill)
+                    .length(250),
+                space().width(5),
+                text(download_progress).size(15).height(Length::Shrink)
+            ];
 
-                container(row).center_y(Length::Fill).into()
-            } else {
-                let button_text = match &self.latest_git_tag {
-                    Some(Ok(tag)) if tag == current_version => "Already up to date",
-                    Some(Ok(_)) => "Download new version",
-                    _ => "Failed to retrieve the latest version",
-                };
+            container(row).center_y(Length::Fill).into()
+        } else if let Some(Err(e)) = &self.download_result {
+            let retry_url = latest_release_url.clone();
 
-                button(button_text)
-                    .on_press_maybe(latest_release_url.map(Message::DownloadStart))
+            widget::row![
+                text(format!("Update failed: {e}"))
+                    .size(14)
+                    .style(text::danger),
+                space().width(8),
+                button("Retry")
+                    .on_press_maybe(retry_url.map(Message::DownloadStart))
                     .padding(Padding {
                         top: 1.0,
                         right: 4.0,
                         bottom: 1.0,
                         left: 4.0,
-                    })
-                    .into()
+                    }),
+            ]
+            .align_y(Alignment::Center)
+            .into()
+        } else {
+            let button_text = match &self.latest_git_tag {
+                Some(Ok(tag)) if tag == current_version => "Already up to date",
+                Some(Ok(_)) => "Download new version",
+                _ => "Failed to retrieve the latest version",
             };
+
+            button(button_text)
+                .on_press_maybe(latest_release_url.map(Message::DownloadStart))
+                .padding(Padding {
+                    top: 1.0,
+                    right: 4.0,
+                    bottom: 1.0,
+                    left: 4.0,
+                })
+                .into()
+        };
 
         row![ver_text.size(15), space().width(10), update_widget]
     }
 }
 
+fn staged_path(suffix: &str) -> io::Result<PathBuf> {
+    let current_exe = env::current_exe()?;
+    let stem = current_exe
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("app");
+    let ext = current_exe
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("");
+
+    let file_name = if ext.is_empty() {
+        format!("{stem}{suffix}")
+    } else {
+        format!("{stem}{suffix}.{ext}")
+    };
+
+    Ok(current_exe.with_file_name(file_name))
+}
+
 fn apply_update(new_exe_bytes: &[u8]) -> io::Result<()> {
-    fn staged_path(suffix: &str) -> io::Result<PathBuf> {
-        let current_exe = env::current_exe()?;
-        let stem = current_exe
-            .file_stem()
-            .and_then(|s| s.to_str())
-            .unwrap_or("app");
-        let ext = current_exe
-            .extension()
-            .and_then(|e| e.to_str())
-            .unwrap_or("");
-
-        let file_name = if ext.is_empty() {
-            format!("{stem}{suffix}")
-        } else {
-            format!("{stem}{suffix}.{ext}")
-        };
-
-        Ok(current_exe.with_file_name(file_name))
-    }
-
     let current_exe = env::current_exe()?;
     let new_path = staged_path("_new")?; // e.g. ktools_new.exe
     let old_path = staged_path("_old")?; // e.g. ktools_old.exe
@@ -294,6 +318,37 @@ fn apply_update(new_exe_bytes: &[u8]) -> io::Result<()> {
     debug!("[SELF-UPDATE] rename {new_path:?} -> {current_exe:?}");
     fs::rename(&new_path, &current_exe)?;
 
-    Command::new(&current_exe).spawn()?;
-    std::process::exit(0);
+    Ok(())
+}
+
+pub fn cleanup_old_exe() {
+    let old_path = match staged_path("_old") {
+        Ok(p) => p,
+        Err(e) => {
+            debug!("[SELF-UPDATE] could not resolve old exe path: {e}");
+            return;
+        }
+    };
+
+    if !old_path.exists() {
+        return;
+    }
+
+    debug!("[SELF-UPDATE] cleaning up leftover {old_path:?}");
+
+    for attempt in 0..5 {
+        match fs::remove_file(&old_path) {
+            Ok(()) => {
+                debug!("[SELF-UPDATE] removed {old_path:?}");
+                return;
+            }
+            Err(e) if attempt < 4 => {
+                debug!("[SELF-UPDATE] remove attempt {attempt} failed: {e}, retrying");
+                std::thread::sleep(std::time::Duration::from_millis(200));
+            }
+            Err(e) => {
+                debug!("[SELF-UPDATE] giving up removing {old_path:?}: {e}");
+            }
+        }
+    }
 }

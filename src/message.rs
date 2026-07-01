@@ -19,6 +19,10 @@ pub enum Message {
     /// Window message, handled by `WindowHandler`
     Window(window::Message),
 
+    /// Show a message box asking the user if they want to restart to apply update
+    ShowSelfUpdateMessage,
+    ApplySelfUpdate,
+
     /// Data from `Tool::load_data()` was loaded.
     InitialDataLoaded(usize, Box<Self>),
     OpenURL(String),

@@ -25,9 +25,9 @@ use iced::{
 use base::ICON_FONT_BYTES;
 use ipconfig::Adapter;
 
-use crate::tool::Tool;
-use crate::ui::Sidebar;
 use crate::window::WindowHandler;
+use crate::{tool::Tool, ui::messagebox_yesno};
+use crate::{tool::settings::cleanup_old_exe, ui::Sidebar};
 
 pub use message::Message;
 
@@ -37,6 +37,9 @@ const WINDOW_MIN_SIZE: (f32, f32) = (870.0, 500.0);
 fn main() {
     // catch panic and show a nice message box
     std::panic::set_hook(Box::new(panic_handler::handle_panic));
+
+    // old exe may be left behind after applying the update.
+    cleanup_old_exe();
 
     iced::application(App::new, App::update, App::view)
         .window(iced::window::Settings {
@@ -171,6 +174,34 @@ impl App {
             }
             Message::DownloadFinished(index, ref _result) => {
                 return self.tools[index].update(message);
+            }
+
+            Message::ShowSelfUpdateMessage => {
+                return Task::perform(
+                    tokio::task::spawn_blocking(|| {
+                        messagebox_yesno(
+                            "KTools update",
+                            "Do you want to restart to apply the update?",
+                        )
+                    }),
+                    |yes| {
+                        if yes.unwrap() {
+                            Message::ApplySelfUpdate
+                        } else {
+                            Message::Ignore
+                        }
+                    },
+                );
+            }
+            Message::ApplySelfUpdate => {
+                self.save_all_config();
+
+                let current_exe = std::env::current_exe().unwrap();
+                let child = std::process::Command::new(&current_exe).spawn().unwrap();
+
+                self.window_handler.allow_set_foreground_window(child.id());
+
+                std::process::exit(0);
             }
 
             Message::SetTheme(theme) => {

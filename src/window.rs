@@ -9,7 +9,7 @@ use iced::{
     },
 };
 
-use crate::{base::*, tool::Tool};
+use crate::{base::*, debug, tool::Tool};
 pub use iced::window::Direction;
 
 use crate::base::{BACKGROUND_TRANSPARENT, BOLD_DEFAULT};
@@ -76,9 +76,14 @@ impl WindowHandler {
             Message::Opened { id, size } => {
                 self.window_id = Some(id);
                 self.window_size = size;
+
+                self.unlock_foreground();
+
                 return iced::window::raw_id::<crate::Message>(id)
                     .map(Message::GotRawID)
-                    .map(crate::Message::Window);
+                    .map(crate::Message::Window)
+                    // focus
+                    .chain(iced::window::gain_focus(id));
             }
             Message::GotRawID(raw_id) => {
                 let use_rounded = self.set_rounded_corners(raw_id);
@@ -249,6 +254,63 @@ impl WindowHandler {
 
         // enable user to move the window
         mouse_area(bar).on_press(Message::Drag.into()).into()
+    }
+
+    /// allow the newly spawned process to grab window focus
+    pub fn allow_set_foreground_window(&mut self, pid: u32) {
+        #[cfg(windows)]
+        {
+            use windows::Win32::UI::WindowsAndMessaging::AllowSetForegroundWindow;
+
+            unsafe {
+                if let Err(e) = AllowSetForegroundWindow(pid) {
+                    debug!("[AllowSetForegroundWindow] error: {e}");
+                }
+            }
+        }
+    }
+
+    pub fn unlock_foreground(&mut self) {
+        #[cfg(windows)]
+        {
+            use windows::Win32::UI::Input::KeyboardAndMouse::{
+                INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_KEYUP, SendInput, VK_MENU,
+            };
+
+            /// Sends a harmless synthetic Alt keydown+keyup, which resets Windows'
+            /// foreground-lock and makes the following SetForegroundWindow call
+            /// (triggered by iced's gain_focus) succeed unconditionally.
+            let mut down = INPUT {
+                r#type: INPUT_KEYBOARD,
+                Anonymous: INPUT_0 {
+                    ki: KEYBDINPUT {
+                        wVk: VK_MENU,
+                        wScan: 0,
+                        dwFlags: Default::default(),
+                        time: 0,
+                        dwExtraInfo: 0,
+                    },
+                },
+            };
+
+            let mut up = INPUT {
+                r#type: INPUT_KEYBOARD,
+                Anonymous: INPUT_0 {
+                    ki: KEYBDINPUT {
+                        wVk: VK_MENU,
+                        wScan: 0,
+                        dwFlags: KEYEVENTF_KEYUP,
+                        time: 0,
+                        dwExtraInfo: 0,
+                    },
+                },
+            };
+
+            unsafe {
+                SendInput(&mut [down], std::mem::size_of::<INPUT>() as i32);
+                SendInput(&mut [up], std::mem::size_of::<INPUT>() as i32);
+            }
+        }
     }
 }
 
