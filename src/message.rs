@@ -24,9 +24,10 @@ pub enum Message {
     OpenURL(String),
 
     DownloadStart(String),
+    /// Sent after `DownloadStart`
     DownloadStarted(usize),
     DownloadProgress(usize, download::Progress),
-    DownloadFinished(usize, Result<(), download::DownloadError>),
+    DownloadFinished(usize, Result<Vec<u8>, download::DownloadError>),
 
     /// Something was selected in the sidebar
     SidebarOptionSelected(usize),

@@ -135,6 +135,9 @@ impl App {
     fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::Window(window::Message::CursorMoved(_)) | Message::Ignore => {}
+            Message::DownloadFinished(index, ref _result) => {
+                debug!("=> MESSAGE: DownloadFinished({index}, [...])")
+            }
             _ => debug!("=> MESSAGE: {message:#?}"),
         }
 

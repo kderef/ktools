@@ -1,6 +1,8 @@
 //! settings: the "settings" page of the app. Contains global settings relevant to all tools and the app
 
-use crate::{Message, define_themes, download};
+use std::{env, fs, io, path::PathBuf, process::Command};
+
+use crate::{Message, debug, define_themes, download};
 use download::Progress;
 
 use super::*;
@@ -27,7 +29,7 @@ pub struct Settings {
 
     download_progress: f32,
     downloading: bool,
-    download_result: Option<Result<(), download::DownloadError>>,
+    download_result: Option<Result<Vec<u8>, download::DownloadError>>,
 }
 
 fn section_header<'a>(label: &'a str) -> Element<'a, Message> {
@@ -106,6 +108,18 @@ impl Tool for Settings {
                 self.download_progress = 100.0;
                 self.downloading = false;
                 self.download_result = Some(result);
+
+                // TODO: fix unwraps here, maybe messagebox?
+
+                // replace running EXE.
+                match self.download_result.as_ref().unwrap() {
+                    Ok(bytes) => {
+                        apply_update(&bytes);
+                    }
+                    Err(e) => {
+                        todo!("{e}");
+                    }
+                }
             }
 
             _ => {}
@@ -208,8 +222,10 @@ impl Settings {
             _ => None,
         };
 
+        // will be progress bar when it is updating, or update button if it is not.
         let update_widget: Element<'_, Message> =
             if self.downloading || self.download_result.is_some() {
+                // TODO: self.download_result handling error case.
                 let download_progress = format!("{}%", self.download_progress as i64);
 
                 let row = widget::row![
@@ -242,4 +258,42 @@ impl Settings {
 
         row![ver_text.size(15), space().width(10), update_widget]
     }
+}
+
+fn apply_update(new_exe_bytes: &[u8]) -> io::Result<()> {
+    fn staged_path(suffix: &str) -> io::Result<PathBuf> {
+        let current_exe = env::current_exe()?;
+        let stem = current_exe
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("app");
+        let ext = current_exe
+            .extension()
+            .and_then(|e| e.to_str())
+            .unwrap_or("");
+
+        let file_name = if ext.is_empty() {
+            format!("{stem}{suffix}")
+        } else {
+            format!("{stem}{suffix}.{ext}")
+        };
+
+        Ok(current_exe.with_file_name(file_name))
+    }
+
+    let current_exe = env::current_exe()?;
+    let new_path = staged_path("_new")?; // e.g. ktools_new.exe
+    let old_path = staged_path("_old")?; // e.g. ktools_old.exe
+
+    debug!("[SELF-UPDATE] writing {new_path:?}");
+    fs::write(&new_path, new_exe_bytes)?;
+
+    debug!("[SELF-UPDATE] rename {current_exe:?} -> {old_path:?}");
+    fs::rename(&current_exe, &old_path)?;
+
+    debug!("[SELF-UPDATE] rename {new_path:?} -> {current_exe:?}");
+    fs::rename(&new_path, &current_exe)?;
+
+    Command::new(&current_exe).spawn()?;
+    std::process::exit(0);
 }
